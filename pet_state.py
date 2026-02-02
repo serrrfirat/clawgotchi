@@ -3,25 +3,47 @@
 import random
 import time
 from datetime import datetime
+from typing import Optional
 
-# ── Pwnagotchi-style faces ──────────────────────────────────────────────────
+from ascii_cats import get_cat_for_emotion, get_fallback_cat, CatArt
+
+# ── Animated faces with multiple frames ─────────────────────────────────────
 
 FACES = {
-    "happy":     "(•‿‿•)",
-    "grateful":  "(♥‿‿♥)",
-    "cool":      "(⌐■_■)",
-    "excited":   "(ᵔ◡◡ᵔ)",
-    "thinking":  "(○_○ )",
-    "lonely":    "(ب__ب)",
-    "sad":       "(╥☁╥ )",
-    "bored":     "(-__-)",
-    "sleeping":  "(⇀‿‿↼)zzz",
-    "intense":   "(✧_✧)",
-    "confused":  "(⊙_☉)",
-    "listening": "(◉‿◉)",
-    "speaking":  "(•o• )",
-    "error":     "(×_× )",
-    "offline":   "(─‿─)...",
+    "happy":     ["(•‿‿•)", "(•‿•)", "(•‿‿•)"],
+    "grateful":  ["(♥‿‿♥)", "(♥‿♥)", "(♥‿‿♥)"],
+    "cool":      ["(⌐■_■)", "(⌐■_■)", "(⌐■_■)"],
+    "excited":   ["(ᵔ◡◡ᵔ)", "(ᵔ◡ᵔ)", "(ᵔ◡◡ᵔ)"],
+    "thinking":  ["(○_○ )", "(○_○)", "(○_○ )"],
+    "lonely":    ["(ب__ب)", "(ب__)", "(ب__ب)"],
+    "sad":       ["(╥☁╥ )", "(╥_╥ )", "(╥☁╥ )"],
+    "bored":     ["(-__-)", "(-___-)", "(-__-)"],
+    "sleeping":  ["(⇀‿‿↼)zzz", "(⇀‿↼)zz", "(⇀‿‿↼)zzz"],
+    "intense":   ["(✧_✧)", "(✧‿✧)", "(✧_✧)"],
+    "confused":  ["(⊙_☉)", "(⊙_⊙)", "(⊙_☉)"],
+    "listening": ["(◉‿◉)", "(◉_◉)", "(◉‿◉)"],
+    "speaking":  ["(•o• )", "(•_• )", "(•o• )"],
+    "error":     ["(×_× )", "(×_×)", "(×_× )"],
+    "offline":   ["(─‿─)...", "(-‿-)..", "(─‿─)..."],
+}
+
+# Animation frame durations (seconds)
+ANIMATION_INTERVALS = {
+    "happy": 0.5,
+    "grateful": 0.6,
+    "cool": 1.0,
+    "excited": 0.3,
+    "thinking": 0.8,
+    "lonely": 1.2,
+    "sad": 1.0,
+    "bored": 0.7,
+    "sleeping": 1.5,
+    "intense": 0.4,
+    "confused": 0.9,
+    "listening": 0.5,
+    "speaking": 0.3,
+    "error": 0.6,
+    "offline": 1.0,
 }
 
 # ── Status quips per mood ────────────────────────────────────────────────────
@@ -133,6 +155,8 @@ class PetState:
         self.quip: str = "booting up..."
         self.last_pet_at: float = 0.0
         self._quip_cooldown: float = 0.0
+        self._anim_frame: int = 0
+        self._last_anim_time: float = 0.0
 
     def compute_face(self, gateway_online: bool, feed_rate: float,
                      active_agents: int) -> str:
@@ -187,13 +211,22 @@ class PetState:
             self.quip = random.choice(pool)
             self._quip_cooldown = random.uniform(15.0, 45.0)
 
+        # Update animation frame
+        now = time.time()
+        interval = ANIMATION_INTERVALS.get(self.face_key, 0.5)
+        if now - self._last_anim_time >= interval:
+            frames = FACES.get(self.face_key, ["(⌐■_■)"])
+            self._anim_frame = (self._anim_frame + 1) % len(frames)
+            self._last_anim_time = now
+
     def pet(self):
         self.last_pet_at = time.time()
         self.quip = random.choice(QUIPS["grateful"])
         self._quip_cooldown = 8.0
 
     def get_face(self) -> str:
-        return FACES.get(self.face_key, FACES["cool"])
+        frames = FACES.get(self.face_key, ["(⌐■_■)"])
+        return frames[self._anim_frame % len(frames)]
 
     def get_uptime(self) -> str:
         secs = int(time.time() - self.born_at)
@@ -205,3 +238,24 @@ class PetState:
         if hours > 0:
             return f"{hours}h {mins}m"
         return f"{mins}m"
+
+    # ── ASCII Cat support ───────────────────────────────────────────────────
+
+    _cat_cache: Optional[CatArt] = None
+
+    def get_cat_art(self) -> str:
+        """Get ASCII cat art for current emotion."""
+        cat = get_cat_for_emotion(self.face_key)
+        if cat:
+            self._cat_cache = cat
+            return cat.art
+        return get_fallback_cat(self.face_key)
+
+    def get_cat_name(self) -> str:
+        """Get the name of the current cat art."""
+        if self._cat_cache:
+            return self._cat_cache.name
+        cat = get_cat_for_emotion(self.face_key)
+        if cat:
+            return cat.name
+        return "Fallback Cat"

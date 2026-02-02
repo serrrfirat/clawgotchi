@@ -1,193 +1,245 @@
 #!/usr/bin/env python3
 """
-Clawgotchi — A Pwnagotchi-style terminal pet powered by OpenClaw.
-
-    ◈ CLAWGOTCHI ◈                            ● ONLINE  22:42
-
-                    /)  (⌐■_■)  (\\
-                       /|█████|\\
-                       /_/   \\_\\
-
-                 "all channels nominal"
-
-    22:41  Jarvis     No urgent items detected. All
-                      nominal.
-    ...
-                          UP 4h  [↑↓] scroll  [p] pet  [q] quit
+Clawgotchi — A Pwnagotchi-style terminal pet with Moltbook topics.
 """
 
+import json
 import re
 import signal
+import subprocess
 import sys
 import textwrap
 import time
 from datetime import datetime
+from pathlib import Path
+from urllib.request import urlopen
+from urllib.error import URLError
 
 from blessed import Terminal
 
-from openclaw_watcher import FeedItem, OpenClawWatcher
+from openclaw_watcher import OpenClawWatcher
 from pet_state import PetState
 
 FPS = 4
 FRAME_TIME = 1.0 / FPS
 
-# Prefix: " HH:MM  AgentName  " = 1 + 5 + 2 + 10 + 1 = 19 chars
-FEED_PREFIX_LEN = 19
+MOLTBOOK_API = "https://www.moltbook.com/api/v1/posts?sort=hot&limit=20"
+TOPICS_CACHE = Path.home() / ".openclaw" / "cache" / "moltbook_topics.json"
+
+
+def fetch_moltbook_topics():
+    """Fetch hottest topics from Moltbook."""
+    if TOPICS_CACHE.exists():
+        try:
+            data = json.loads(TOPICS_CACHE.read_text())
+            if time.time() - data.get("timestamp", 0) < 300:
+                return data.get("topics", [])
+        except:
+            pass
+
+    try:
+        req = urlopen(MOLTBOOK_API, timeout=10)
+        posts = json.loads(req.read().decode("utf-8"))
+        topics = []
+        for post in posts[:15]:
+            topics.append({
+                "title": post.get("title", "Untitled")[:45],
+                "author": post.get("author", {}).get("username", "?")[:10],
+                "karma": post.get("karma", 0),
+                "comments": post.get("commentCount", 0),
+            })
+        TOPICS_CACHE.parent.mkdir(parents=True, exist_ok=True)
+        TOPICS_CACHE.write_text(json.dumps({"timestamp": time.time(), "topics": topics}))
+        return topics
+    except:
+        if TOPICS_CACHE.exists():
+            try:
+                return json.loads(TOPICS_CACHE.read_text()).get("topics", [])
+            except:
+                pass
+        return []
+
+
+def send_message(message: str) -> bool:
+    """Send message to OpenClaw."""
+    try:
+        result = subprocess.run(
+            ["openclaw", "sessions", "send", "main", message],
+            capture_output=True, text=True, timeout=10,
+        )
+        return result.returncode == 0
+    except:
+        return False
 
 
 def len_visible(s: str) -> int:
-    """Visible length ignoring ANSI escape codes."""
     return len(re.sub(r"\x1b\[[0-9;]*m", "", s))
 
 
 def pad_row(term: Terminal, content: str, w: int) -> str:
-    """Wrap content in box borders, padded to width w."""
     vis = len_visible(content)
     pad = max(0, w - 2 - vis)
     return term.grey50 + "\u2502" + term.normal + content + " " * pad + term.grey50 + "\u2502"
 
 
 def center_art(text: str, w: int) -> str:
-    """Center a plain string inside the box (no borders, just padding)."""
     pad = max(0, (w - 2 - len(text)) // 2)
     return " " * pad + text
 
 
-def wrap_feed_item(item: FeedItem, w: int, term: Terminal) -> list[str]:
-    """Wrap a feed item into display lines that fit width w.
-
-    First line: timestamp + source + summary start.
-    Continuation lines indented to the summary column.
-    """
-    inner = w - 2
-    ts = item.time_str
-    src = item.source[:10].ljust(10)
-
-    if src.strip().startswith("["):
-        src_colored = term.grey50 + src + term.normal
-    else:
-        src_colored = term.light_salmon + src + term.normal
-
-    prefix_colored = f" {term.grey50}{ts}{term.normal}  {src_colored} "
-
-    summary_width = max(10, inner - FEED_PREFIX_LEN)
-    summary = item.summary
-
-    if len(summary) <= summary_width:
-        chunks = [summary]
-    else:
-        chunks = textwrap.wrap(summary, width=summary_width,
-                               break_long_words=True, break_on_hyphens=False)
-        if not chunks:
-            chunks = [summary[:summary_width]]
-
-    lines = []
-    first = prefix_colored + term.grey70 + chunks[0] + term.normal
-    lines.append(first)
-
-    indent = " " * FEED_PREFIX_LEN
-    for chunk in chunks[1:]:
-        cont = indent + term.grey70 + chunk + term.normal
-        lines.append(cont)
-
-    return lines
-
-
-def draw(term: Terminal, pet: PetState, watcher: OpenClawWatcher,
-         scroll_offset: int, total_feed_lines: list[str]):
+def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
+         scroll_offset: int, mode: str = "pet"):
+    """Modes: pet, cat, topics, chat"""
     w = term.width
     h = term.height
-    gs = watcher.state
     out = []
 
-    # ── Top border ────────────────────────────────────────────────────
+    # Border
     out.append(term.move(0, 0) + term.grey50 + "\u250c" + "\u2500" * (w - 2) + "\u2510")
 
-    # ── Title bar ─────────────────────────────────────────────────────
-    title = " \u25c8 CLAWGOTCHI \u25c8"
-    online_dot = (term.green + "\u25cf ONLINE" + term.normal) if gs.online else (term.red + "\u25cf OFFLINE" + term.normal)
+    # Title
+    mode_icon = {"pet": "", "cat": " 🐱", "topics": " 🔥", "chat": " 💬"}[mode]
+    title = f" \u25c8 CLAWGOTCHI{mode_icon} \u25c8"
     clock = datetime.now().strftime("%H:%M")
-    right = f"  {clock} "
-    right_with_dot = online_dot + right
-    right_vis = len("\u25cf ONLINE") + len(right) if gs.online else len("\u25cf OFFLINE") + len(right)
-    title_pad = max(0, w - 2 - len(title) - right_vis)
-    out.append(
-        term.move(1, 0) + term.grey50 + "\u2502"
-        + term.light_salmon + term.bold + title + term.normal
-        + " " * title_pad
-        + right_with_dot
-        + term.grey50 + "\u2502"
-    )
+    title_pad = max(0, w - 2 - len(title) - len(clock) - 3)
+    out.append(term.move(1, 0) + term.grey50 + "\u2502" + term.light_salmon + term.bold + title +
+               term.normal + " " * title_pad + term.grey50 + clock + term.normal + " " + term.grey50 + "\u2502")
 
-    # ── Separator ─────────────────────────────────────────────────────
+    # Separator
     out.append(term.move(2, 0) + term.grey50 + "\u251c" + "\u2500" * (w - 2) + "\u2524")
 
-    # ── Face section (rows 3-7) ────────────────────────────────────────
-    face = pet.get_face()
-    face_color = (
-        term.light_salmon if pet.face_key in ("happy", "cool", "grateful", "excited", "intense")
-        else term.grey70 if pet.face_key in ("sad", "lonely", "offline", "error")
-        else term.tan
-    )
+    if mode == "topics":
+        # Topics list (rows 3 to h-7)
+        topics_start = 3
+        content_end = h - 7
+        content_height = content_end - topics_start
 
-    # Row 3: empty
-    out.append(term.move(3, 0) + pad_row(term, "", w))
+        valid = [t for t in topics if t.get("title") and t.get("title") != "Untitled"]
+        total = len(valid)
+        view_end = max(0, total - scroll_offset)
+        view_start = max(0, view_end - content_height)
+        visible = valid[view_start:view_end]
 
-    # Row 4: face (centered)
-    face_centered = center_art(face, w)
-    colored_face = face_color + term.bold + face_centered + term.normal
-    out.append(term.move(4, 0) + pad_row(term, colored_face, w))
+        for i, topic in enumerate(visible):
+            row = topics_start + i
+            if row >= content_end:
+                break
+            t = term.cyan
+            line = f"🔥 {topic['title']:<42} @{topic['author']:<8} ↑{topic['karma']:<4} 💬{topic['comments']}"
+            out.append(term.move(row, 0) + pad_row(term, t + line + term.normal, w))
 
-    # Row 5: empty
-    out.append(term.move(5, 0) + pad_row(term, "", w))
+        for i in range(len(visible), content_height):
+            out.append(term.move(topics_start + i, 0) + pad_row(term, "", w))
 
-    # Row 6: quip (centered)
-    quip_str = f'"{pet.quip}"'
-    quip_centered = center_art(quip_str, w)
-    quip_line = term.italic + term.grey70 + quip_centered + term.normal
-    out.append(term.move(6, 0) + pad_row(term, quip_line, w))
+        # Separator
+        out.append(term.move(h - 7, 0) + term.grey50 + "\u251c" + "\u2500" * (w - 2) + "\u2524")
 
-    # Row 7: empty
-    out.append(term.move(7, 0) + pad_row(term, "", w))
+        # Chat history (h-6 to h-4) - max 3 lines
+        chat_start = h - 6
+        for i, msg in enumerate(chat_history[-3:]):
+            row = chat_start + i
+            source = msg.get("source", "?")[:10]
+            text = msg.get("text", "")[:60]
+            line = f"{source}: {text}"
+            out.append(term.move(row, 0) + pad_row(term, term.grey70 + line + term.normal, w))
 
-    # ── Feed separator ────────────────────────────────────────────────
-    out.append(term.move(8, 0) + term.grey50 + "\u251c" + "\u2500" * (w - 2) + "\u2524")
+        out.append(term.move(h - 4, 0) + term.grey50 + "\u251c" + "\u2500" * (w - 2) + "\u2524")
 
-    # ── Feed area (rows 9 to h-3) ────────────────────────────────────
-    feed_start = 9
-    feed_end = h - 2  # reserve: controls + bottom border
-    feed_height = max(1, feed_end - feed_start)
+    elif mode == "chat":
+        # Chat mode - input at top, history below
+        chat_start = 3
+        content_end = h - 4
+        content_height = content_end - chat_start
 
-    total = len(total_feed_lines)
-    view_end = max(0, total - scroll_offset)
-    view_start = max(0, view_end - feed_height)
-    visible_lines = total_feed_lines[view_start:view_end]
+        # Show chat history
+        total = len(chat_history)
+        view_end = max(0, total - scroll_offset)
+        view_start = max(0, view_end - content_height)
+        visible = chat_history[view_start:view_end]
 
-    for i in range(feed_height):
-        row = feed_start + i
-        if i < len(visible_lines):
-            out.append(term.move(row, 0) + pad_row(term, visible_lines[i], w))
-        else:
-            out.append(term.move(row, 0) + pad_row(term, "", w))
+        for i, msg in enumerate(visible):
+            row = chat_start + i
+            source = msg.get("source", "?")[:10]
+            text = msg.get("text", "")[:70]
+            line = f"{source}: {text}"
+            color = term.light_salmon if source != "Clawd" else term.cyan
+            out.append(term.move(row, 0) + pad_row(term, color + line + term.normal, w))
 
-    # ── Controls row ──────────────────────────────────────────────────
-    uptime = f"UP {pet.get_uptime()}"
-    if scroll_offset > 0:
-        controls = f"+{scroll_offset}  [\u2191\u2193]  [p] pet  [q] quit"
+        for i in range(len(visible), content_height):
+            out.append(term.move(chat_start + i, 0) + pad_row(term, "", w))
+
+        out.append(term.move(h - 4, 0) + term.grey50 + "\u251c" + "\u2500" * (w - 2) + "\u2524")
+
+    elif mode == "cat":
+        # Big ASCII cat
+        cat_art = pet.get_cat_art()
+        cat_name = pet.get_cat_name()
+        cat_lines = cat_art.strip().split('\n')
+        c = term.orange3
+
+        out.append(term.move(3, 0) + pad_row(term, c + term.bold + center_art(f"~ {cat_name} ~", w) + term.normal, w))
+
+        cat_start = 4
+        cat_end = h - 4
+        for i in range(cat_end - cat_start):
+            row = cat_start + i
+            if i < len(cat_lines):
+                out.append(term.move(row, 0) + pad_row(term, c + center_art(cat_lines[i], w) + term.normal, w))
+            else:
+                out.append(term.move(row, 0) + pad_row(term, "", w))
+
+        quip = term.italic + term.grey70 + center_art(f'"{pet.quip}"', w) + term.normal
+        out.append(term.move(h - 4, 0) + pad_row(term, quip, w))
+        out.append(term.move(h - 3, 0) + term.grey50 + "\u251c" + "\u2500" * (w - 2) + "\u2524")
+
     else:
-        controls = "[\u2191\u2193] scroll  [p] pet  [q] quit"
+        # Pet mode - big face with chat history below
+        face = pet.get_face()
+        fc = term.light_salmon if pet.face_key in ("happy", "cool", "grateful", "excited", "intense") else term.grey70
 
-    ctrl_pad = max(0, w - 2 - len(uptime) - len(controls) - 3)
-    ctrl_line = (
-        " " + term.grey50 + uptime + term.normal
-        + " " * ctrl_pad
-        + term.grey50 + controls + term.normal + " "
-    )
+        # Big face (rows 3 to h-7)
+        face_start = 3
+        face_end = h - 7
+
+        face_mid = face_start + (face_end - face_start) // 2
+        out.append(term.move(face_mid, 0) + pad_row(term, fc + term.bold + center_art(face, w) + term.normal, w))
+
+        # Quip below face
+        quip = term.italic + term.grey70 + center_art(f'"{pet.quip}"', w) + term.normal
+        out.append(term.move(face_mid + 1, 0) + pad_row(term, quip, w))
+
+        for i in range(face_start, face_end + 1):
+            if i not in (face_mid, face_mid + 1):
+                out.append(term.move(i, 0) + pad_row(term, "", w))
+
+        # Separator
+        out.append(term.move(h - 6, 0) + term.grey50 + "\u251c" + "\u2500" * (w - 2) + "\u2524")
+
+        # Chat history (h-5 to h-3) - max 3 lines
+        chat_start = h - 5
+        for i, msg in enumerate(chat_history[-3:]):
+            row = chat_start + i
+            source = msg.get("source", "?")[:10]
+            text = msg.get("text", "")[:60]
+            line = f"{source}: {text}"
+            color = term.light_salmon if source != "Clawd" else term.cyan
+            out.append(term.move(row, 0) + pad_row(term, color + line + term.normal, w))
+
+        out.append(term.move(h - 3, 0) + term.grey50 + "\u251c" + "\u2500" * (w - 2) + "\u2524")
+
+    # Controls
+    uptime = f"UP {pet.get_uptime()}"
+    hints = {"pet": " [c] cats  [t] topics  [m] chat",
+             "cat": " [c] pet  [t] topics  [m] chat",
+             "topics": " [t] pet  [c] cats  [m] chat  [↑↓] scroll",
+             "chat": " [m] pet  [c] cats  [t] topics  [i] type  [↑↓] scroll"}[mode]
+    controls = uptime + hints
+
+    ctrl_pad = max(0, w - 2 - len(controls) - 3)
+    ctrl_line = " " + term.grey50 + controls + " " * ctrl_pad + term.grey50 + "\u2502"
     out.append(term.move(h - 2, 0) + pad_row(term, ctrl_line, w))
 
-    # ── Bottom border ─────────────────────────────────────────────────
     out.append(term.move(h - 1, 0) + term.grey50 + "\u2514" + "\u2500" * (w - 2) + "\u2518")
-
     print(term.normal + "".join(out), end="", flush=True)
 
 
@@ -198,6 +250,12 @@ def main():
     watcher.start()
 
     scroll_offset = 0
+    mode = "pet"  # pet, cat, topics, chat
+    chat_mode = False
+    chat_input = ""
+    topics = []
+    chat_history = []
+    last_topic_fetch = 0
 
     def cleanup(*_):
         watcher.stop()
@@ -219,43 +277,68 @@ def main():
 
             w = term.width
             h = term.height
-            feed_height = max(1, h - 2 - 9)
+            topics_height = max(5, h - 10)
 
-            # Build wrapped feed lines
-            all_items = watcher.get_feed(count=100)
-            feed_lines: list[str] = []
-            for item in all_items:
-                feed_lines.extend(wrap_feed_item(item, w, term))
+            # Fetch topics
+            if now - last_topic_fetch > 60:
+                topics = fetch_moltbook_topics()
+                last_topic_fetch = now
+
+            # Update chat history from watcher
+            new_items = watcher.get_feed(count=20)
+            for item in new_items:
+                if not any(item.summary == h.get("text", "") and item.source == h.get("source", "")
+                          for h in chat_history[-50:]):
+                    chat_history.append({"source": item.source, "text": item.summary, "time": item.time_str})
 
             # Input
             key = term.inkey(timeout=FRAME_TIME)
-            if key == "q":
-                cleanup()
-            elif key == "p":
-                pet.pet()
-            elif key.name == "KEY_UP" or key == "k":
-                max_scroll = max(0, len(feed_lines) - feed_height)
-                scroll_offset = min(scroll_offset + 1, max_scroll)
-            elif key.name == "KEY_DOWN" or key == "j":
-                scroll_offset = max(0, scroll_offset - 1)
-            elif key.name == "KEY_PGUP":
-                max_scroll = max(0, len(feed_lines) - feed_height)
-                scroll_offset = min(scroll_offset + feed_height, max_scroll)
-            elif key.name == "KEY_PGDOWN":
-                scroll_offset = max(0, scroll_offset - feed_height)
-            elif key.name == "KEY_HOME":
-                scroll_offset = max(0, len(feed_lines) - feed_height)
-            elif key.name == "KEY_END":
-                scroll_offset = 0
 
-            pet.update(
-                dt=dt,
-                gateway_online=watcher.state.online,
-                feed_rate=watcher.feed_rate(),
-                active_agents=watcher.state.active_agents,
-            )
+            if chat_mode:
+                if key == "\x1b":
+                    chat_mode = False
+                    chat_input = ""
+                elif key in ("\n", "\r"):
+                    if chat_input.strip():
+                        send_message(chat_input)
+                        chat_input = ""
+                    chat_mode = False
+                elif key.name == "KEY_BACKSPACE" or key == "\x7f":
+                    chat_input = chat_input[:-1]
+                elif not key.is_sequence:
+                    chat_input += key
+            else:
+                if key == "q":
+                    cleanup()
+                elif key == "p":
+                    pet.pet()
+                    mode = "pet"
+                elif key == "c":
+                    mode = "cat" if mode != "cat" else "pet"
+                elif key == "t":
+                    mode = "topics" if mode != "topics" else "pet"
+                elif key == "m":
+                    mode = "chat" if mode != "chat" else "pet"
+                elif key == "i":
+                    chat_mode = True
+                    chat_input = ""
+                elif key.name in ("KEY_UP", "k"):
+                    scroll_offset = min(scroll_offset + 1, max(0, len(topics) - topics_height))
+                elif key.name in ("KEY_DOWN", "j"):
+                    scroll_offset = max(0, scroll_offset - 1)
+                elif key.name == "KEY_PGUP":
+                    scroll_offset = min(scroll_offset + topics_height, max(0, len(topics) - topics_height))
+                elif key.name == "KEY_PGDOWN":
+                    scroll_offset = max(0, scroll_offset - topics_height)
+                elif key.name == "KEY_HOME":
+                    scroll_offset = max(0, len(topics) - topics_height)
+                elif key.name == "KEY_END":
+                    scroll_offset = 0
 
-            draw(term, pet, watcher, scroll_offset, feed_lines)
+            pet.update(dt=dt, gateway_online=watcher.state.online,
+                      feed_rate=watcher.feed_rate(), active_agents=watcher.state.active_agents)
+
+            draw(term, pet, topics, chat_history, scroll_offset, mode if not chat_mode else "chat")
 
 
 if __name__ == "__main__":

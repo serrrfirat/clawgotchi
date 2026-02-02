@@ -14,7 +14,7 @@ CRON_JOBS_FILE = Path.home() / ".openclaw" / "cron" / "jobs.json"
 SESSIONS_DIR = Path.home() / ".openclaw" / "agents" / "main" / "sessions"
 SESSIONS_INDEX = SESSIONS_DIR / "sessions.json"
 POLL_INTERVAL = 10  # seconds
-MAX_FEED = 50
+MAX_FEED = 500
 SESSION_TAIL_INTERVAL = 2  # seconds
 
 # Agent names to look for when parsing event text
@@ -211,7 +211,7 @@ class OpenClawWatcher:
         return "[cron]"
 
     def _extract_summary(self, text: str) -> str:
-        """Get a clean one-line summary from event text."""
+        """Get a clean summary from event text."""
         # Remove markdown bold/italic/header markers but keep underscores in words
         clean = re.sub(r"\*+", "", text)
         clean = re.sub(r"^#+\s*", "", clean, flags=re.MULTILINE)
@@ -229,8 +229,6 @@ class OpenClawWatcher:
             line = re.sub(r"^[\s\ufe0f]+", "", line)
             if not line:
                 continue
-            if len(line) > 80:
-                line = line[:77] + "..."
             return line
 
         return "All nominal. Standing by."
@@ -320,7 +318,7 @@ class OpenClawWatcher:
             try:
                 size = file_path.stat().st_size
                 # Main session can be very large — read more to find telegram chats
-                read_size = 200_000 if agent_name == "Clawd" else 20_000
+                read_size = 500_000 if agent_name == "Clawd" else 50_000
                 read_from = max(0, size - read_size)
                 with open(file_path, "r") as f:
                     if read_from > 0:
@@ -328,7 +326,7 @@ class OpenClawWatcher:
                         f.readline()  # skip partial line
                     lines = f.readlines()
                 # Parse last N relevant messages
-                for line in lines[-50:]:
+                for line in lines[-100:]:
                     self._parse_session_message(line.strip(), agent_name)
             except OSError:
                 continue
@@ -413,14 +411,14 @@ class OpenClawWatcher:
             m = re.match(r"\[Telegram\s+(.+?)(?:\s+\(.*?\))?\s+.*?\]\s*(.+)", text, re.DOTALL)
             if m:
                 user_name = m.group(1).split()[0]  # First name
-                message = m.group(2).strip().split("\n")[0]  # First line
+                message = m.group(2).strip()  # Full message (not just first line)
                 if message and "[message_id:" not in message:
                     source = f"[tg] {user_name}"
-                    self._add_feed(FeedItem(ts, source, message[:120]))
+                    self._add_feed(FeedItem(ts, source, message))
             # Skip cron prompts and system messages (not real user chat)
 
         elif role == "assistant":
-            # Only show text responses, skip tool calls / thinking
+            # Show full text responses, skip tool calls / thinking
             clean = text.strip()
             if not clean or "HEARTBEAT_OK" in clean:
                 return
@@ -431,7 +429,8 @@ class OpenClawWatcher:
             clean = clean.strip()
             if not clean:
                 return
-            summary = clean.split("\n")[0][:120]
+            # Get full text (join multiple lines)
+            summary = clean.replace("\n", " ")
             self._add_feed(FeedItem(ts, agent_name, summary))
 
     # ── Log file watching ─────────────────────────────────────────────────
@@ -484,20 +483,20 @@ class OpenClawWatcher:
             summary = re.sub(r".*?\[telegram\]\s*", "", line, count=1)
             summary = re.sub(r"^\[\w+\]\s*", "", summary)  # strip [default] etc.
             if summary:
-                self._add_feed(FeedItem(ts, "[telegram]", summary[:100]))
+                self._add_feed(FeedItem(ts, "[telegram]", summary))
 
         elif "[gateway]" in lower and ("signal" in lower or "listening" in lower or "shut" in lower):
             summary = re.sub(r".*?\[gateway\]\s*", "", line, count=1)
-            self._add_feed(FeedItem(ts, "[gateway]", summary[:100]))
+            self._add_feed(FeedItem(ts, "[gateway]", summary))
 
         elif "[heartbeat]" in lower:
             summary = re.sub(r".*?\[heartbeat\]\s*", "", line, count=1)
-            self._add_feed(FeedItem(ts, "[heartbeat]", summary[:100]))
+            self._add_feed(FeedItem(ts, "[heartbeat]", summary))
 
         elif "error" in lower and "[ws]" not in lower:
             summary = re.sub(r".*?(error|ERR)\s*:?\s*", "", line, flags=re.IGNORECASE)
             if summary:
-                self._add_feed(FeedItem(ts, "[error]", summary[:100]))
+                self._add_feed(FeedItem(ts, "[error]", summary))
 
     # ── Feed management ───────────────────────────────────────────────────
 
