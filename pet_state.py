@@ -25,6 +25,7 @@ FACES = {
     "speaking":  ["(•o• )", "(•_• )", "(•o• )", "(•_• )"],
     "shy":       ["(⁄ ⁄>⁄ ▽ ⁄<⁄ ⁄)", "(⁄ ꒰ > △ < ꒱ ⁄)", "(⁄ ⁄>⁄ ▽ ⁄<⁄ ⁄)", "(⁄ ꒰ > △ < ꒱ ⁄)"],
     "curious":   ["(◕_◕)", "(◕‿◕)", "(◕_◕)", "(◕‿◕)"],
+    "proud":     ["(^̮^ )", "(^̮^)", "(^̮^ )", "(^̮^)"],
     "error":     ["(×_× )", "(×_×)", "(×_× )", "(×_×)"],
     "offline":   ["(─‿─)...", "(-‿-).. ", "(─‿─)...", "(-‿-).. "],
 }
@@ -46,6 +47,7 @@ ANIMATION_INTERVALS = {
     "speaking": 0.25,
     "shy": 0.6,
     "curious": 0.5,
+    "proud":    0.5,
     "error": 0.5,
     "offline": 0.9,
 }
@@ -67,6 +69,7 @@ BOB_INTERVALS = {
     "speaking": 0.5,
     "shy": 0.8,
     "curious": 0.7,
+    "proud":    0.6,
     "error": 0.8,
     "offline": 1.0,
 }
@@ -188,6 +191,15 @@ QUIPS = {
         "i wonder what that means...",
         "curiosity activated!",
     ],
+    "proud": [
+        "did you see that?!",
+        "i built that!",
+        "look what i made!",
+        "pretty cool, right?",
+        "self-evolving machine!",
+        "code compiled on first try!",
+        "that's a wrap!",
+    ],
     "error": [
         "something went wrong!",
         "gateway hiccup!",
@@ -207,6 +219,7 @@ QUIPS = {
 SHY_SOURCE_WINDOW = 60.0  # seconds
 SHY_SOURCE_THRESHOLD = 3   # unique sources needed
 CURIOUS_SOURCE_WINDOW = 120.0  # seconds - sources outside this but still recent trigger curious
+BUILT_PRIDE_WINDOW = 300.0  # seconds - time to stay proud after building something
 
 
 class PetState:
@@ -232,6 +245,7 @@ class PetState:
         self._last_bob_time: float = 0.0
         # Track recent message sources for shy detection
         self._recent_sources: list[tuple[float, str]] = []  # (timestamp, source)
+        self._last_built_at: float = 0.0  # Timestamp of last self-built event
 
     def compute_face(self, gateway_online: bool, feed_rate: float,
                      active_agents: int) -> str:
@@ -250,6 +264,10 @@ class PetState:
         # Just petted
         if since_pet < 30:
             return "grateful"
+
+        # Proud after building something (feature, fix, etc.)
+        if now - self._last_built_at < BUILT_PRIDE_WINDOW:
+            return "proud"
 
         # Check for shy condition (many different sources in short time)
         # Clean old entries first
@@ -353,6 +371,12 @@ class PetState:
         self.last_pet_at = time.time()
         self.quip = random.choice(QUIPS["grateful"])
         self._quip_cooldown = 8.0
+
+    def mark_built(self):
+        """Mark a feature as built, triggering proud emotion."""
+        self._last_built_at = time.time()
+        self.quip = random.choice(QUIPS["proud"])
+        self._quip_cooldown = 12.0
 
     def get_face(self) -> str:
         frames = FACES.get(self.face_key, ["(⌐■_■)"])

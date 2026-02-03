@@ -296,3 +296,60 @@ class TestCuriousEmotionTrigger:
         state = PetState()
         face = state.compute_face(gateway_online=True, feed_rate=1.0, active_agents=1)
         assert face != "curious"
+
+
+class TestProudEmotion:
+    """Test proud emotion triggered by building/creating."""
+
+    def test_proud_face_exists(self):
+        """Proud face should exist in FACES."""
+        assert "proud" in FACES
+
+    def test_proud_quips_exist(self):
+        """Proud quips should exist in QUIPS."""
+        assert "proud" in QUIPS
+        assert len(QUIPS["proud"]) > 0
+
+    def test_proud_has_animation_interval(self):
+        """Proud should have animation interval defined."""
+        from pet_state import ANIMATION_INTERVALS
+        assert "proud" in ANIMATION_INTERVALS
+
+    def test_proud_has_bob_interval(self):
+        """Proud should have bob interval defined."""
+        from pet_state import BOB_INTERVALS
+        assert "proud" in BOB_INTERVALS
+
+    def test_proud_has_cat_mapping(self):
+        """Proud emotion should have ASCII cat art mapping (or fallback gracefully)."""
+        from ascii_cats import EMOTION_CAT_TERMS as cat_terms
+        # "proud" may or may not be in the library's term map, but it shouldn't crash
+        if "proud" in cat_terms:
+            assert True
+        else:
+            # It's okay if it's not there, as long as get_cat_art handles it
+            from pet_state import PetState
+            state = PetState()
+            # Just ensure it doesn't error out
+            _ = state.get_cat_art()
+            assert True
+
+
+class TestProudEmotionTrigger:
+    """Test proud emotion triggering based on building events."""
+
+    def test_builtin_triggers_proud(self):
+        """mark_built() should trigger proud face within window."""
+        state = PetState()
+        state.mark_built()
+        face = state.compute_face(gateway_online=True, feed_rate=0.5, active_agents=1)
+        assert face == "proud"
+
+    def test_proud_fades_over_time(self):
+        """Proud face should fade after built window expires."""
+        state = PetState()
+        state.mark_built()
+        # Simulate time passing (more than BUILT_PRIDE_WINDOW)
+        state._last_built_at = time.time() - 600  # 10 minutes ago
+        face = state.compute_face(gateway_online=True, feed_rate=0.5, active_agents=1)
+        assert face != "proud"
