@@ -152,6 +152,73 @@ class TestGetUptime:
         assert uptime.endswith('m')
 
 
+class TestSessionTracking:
+    """Test session tracking for uptime stats."""
+
+    def test_session_start_recorded_on_init(self):
+        """session_start should be set on initialization."""
+        state = PetState()
+        assert hasattr(state, 'session_start')
+        now = time.time()
+        assert abs(state.session_start - now) < 1.0
+
+    def test_total_uptime_initialized_to_zero(self):
+        """total_uptime should start at 0."""
+        state = PetState()
+        assert hasattr(state, 'total_uptime_seconds')
+        assert state.total_uptime_seconds == 0
+
+    def test_get_session_uptime_returns_string(self):
+        """get_session_uptime should return a string."""
+        state = PetState()
+        uptime = state.get_session_uptime()
+        assert isinstance(uptime, str)
+
+    def test_get_total_uptime_returns_string(self):
+        """get_total_uptime should return a string."""
+        state = PetState()
+        uptime = state.get_total_uptime()
+        assert isinstance(uptime, str)
+
+    def test_get_total_uptime_format_with_days(self):
+        """get_total_uptime should show days when enough time accumulated."""
+        state = PetState()
+        # Simulate some total uptime
+        state.total_uptime_seconds = 90061  # 1 day, 1 hour, 1 minute
+        uptime = state.get_total_uptime()
+        assert "d" in uptime
+
+    def test_last_seen_at_initialized_on_init(self):
+        """last_seen_at should be set to session_start on init."""
+        state = PetState()
+        assert hasattr(state, 'last_seen_at')
+        now = time.time()
+        assert abs(state.last_seen_at - now) < 1.0
+
+    def test_last_seen_at_updates_on_activity(self):
+        """last_seen_at should update when update() is called."""
+        state = PetState()
+        original_last_seen = state.last_seen_at
+        time.sleep(0.1)
+        state.update(dt=1.0, gateway_online=True, feed_rate=1.0, active_agents=1)
+        # last_seen_at should have been updated
+        assert state.last_seen_at >= original_last_seen
+
+    def test_mark_active_updates_last_seen(self):
+        """mark_active() should update last_seen_at."""
+        state = PetState()
+        time.sleep(0.1)
+        state.mark_active()
+        assert time.time() - state.last_seen_at < 1.0
+
+    def test_get_last_seen_returns_string(self):
+        """get_last_seen should return a relative time string."""
+        state = PetState()
+        last_seen = state.get_last_seen()
+        assert isinstance(last_seen, str)
+        assert "just now" in last_seen.lower() or "ago" in last_seen.lower()
+
+
 class TestShyEmotion:
     """Test shy emotion triggered by multiple different sources."""
 

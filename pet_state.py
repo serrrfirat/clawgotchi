@@ -227,6 +227,9 @@ class PetState:
 
     def __init__(self):
         self.born_at: float = time.time()
+        self.session_start: float = time.time()  # Track current session start
+        self.total_uptime_seconds: float = 0.0  # Cumulative uptime across sessions
+        self.last_seen_at: float = time.time()  # Last activity timestamp
         self.face_key: str = "cool"
         self.quip: str = "booting up..."
         self.last_pet_at: float = 0.0
@@ -317,6 +320,10 @@ class PetState:
         self.last_feed_rate = feed_rate
         self.last_active_agents = active_agents
         self.gateway_online = gateway_online
+        # Track session time
+        self.total_uptime_seconds += dt
+        # Update last seen on any activity
+        self.last_seen_at = time.time()
 
         # Trigger spark animation on sudden activity spikes
         rate_jump = feed_rate - self._last_rate
@@ -405,6 +412,47 @@ class PetState:
         if hours > 0:
             return f"{hours}h {mins}m"
         return f"{mins}m"
+
+    def get_session_uptime(self) -> str:
+        """Get current session duration as formatted string."""
+        secs = int(time.time() - self.session_start)
+        hours = secs // 3600
+        mins = (secs % 3600) // 60
+        if hours > 0:
+            return f"{hours}h {mins}m"
+        return f"{mins}m"
+
+    def get_total_uptime(self) -> str:
+        """Get cumulative total uptime across all sessions."""
+        secs = int(self.total_uptime_seconds)
+        days = secs // 86400
+        hours = (secs % 86400) // 3600
+        mins = (secs % 3600) // 60
+        if days > 0:
+            return f"{days}d {hours}h {mins}m"
+        if hours > 0:
+            return f"{hours}h {mins}m"
+        return f"{mins}m"
+
+    def mark_active(self):
+        """Mark the pet as active (updates last_seen_at)."""
+        self.last_seen_at = time.time()
+
+    def get_last_seen(self) -> str:
+        """Get relative time string for when pet was last active."""
+        secs_ago = int(time.time() - self.last_seen_at)
+        if secs_ago < 10:
+            return "just now"
+        if secs_ago < 60:
+            return f"{secs_ago}s ago"
+        mins = secs_ago // 60
+        if mins < 60:
+            return f"{mins}m ago"
+        hours = mins // 60
+        if hours < 24:
+            return f"{hours}h ago"
+        days = hours // 24
+        return f"{days}d ago"
 
     # ── ASCII Cat support ───────────────────────────────────────────────────
 
