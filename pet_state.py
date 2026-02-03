@@ -24,6 +24,7 @@ FACES = {
     "listening": ["(◉‿◉)", "(◉_◉)", "(◉‿◉)", "(◉_◉)"],
     "speaking":  ["(•o• )", "(•_• )", "(•o• )", "(•_• )"],
     "shy":       ["(⁄ ⁄>⁄ ▽ ⁄<⁄ ⁄)", "(⁄ ꒰ > △ < ꒱ ⁄)", "(⁄ ⁄>⁄ ▽ ⁄<⁄ ⁄)", "(⁄ ꒰ > △ < ꒱ ⁄)"],
+    "curious":   ["(◕_◕)", "(◕‿◕)", "(◕_◕)", "(◕‿◕)"],
     "error":     ["(×_× )", "(×_×)", "(×_× )", "(×_×)"],
     "offline":   ["(─‿─)...", "(-‿-).. ", "(─‿─)...", "(-‿-).. "],
 }
@@ -44,6 +45,7 @@ ANIMATION_INTERVALS = {
     "listening": 0.45,
     "speaking": 0.25,
     "shy": 0.6,
+    "curious": 0.5,
     "error": 0.5,
     "offline": 0.9,
 }
@@ -64,6 +66,7 @@ BOB_INTERVALS = {
     "listening": 0.7,
     "speaking": 0.5,
     "shy": 0.8,
+    "curious": 0.7,
     "error": 0.8,
     "offline": 1.0,
 }
@@ -172,6 +175,18 @@ QUIPS = {
         "everyone's looking at me!",
         "um, hello there...",
         "too much attention!",
+        "i'm not used to this...",
+        "so many names to remember...",
+        "making me blush~",
+        "could you... not?",
+        "feeling a bit overwhelmed...",
+    ],
+    "curious": [
+        "what's this new thing?",
+        "ooh, interesting!",
+        "tell me more!",
+        "i wonder what that means...",
+        "curiosity activated!",
     ],
     "error": [
         "something went wrong!",
@@ -191,6 +206,7 @@ QUIPS = {
 # Threshold for triggering "shy" — number of unique sources in time window
 SHY_SOURCE_WINDOW = 60.0  # seconds
 SHY_SOURCE_THRESHOLD = 3   # unique sources needed
+CURIOUS_SOURCE_WINDOW = 120.0  # seconds - sources outside this but still recent trigger curious
 
 
 class PetState:
@@ -242,6 +258,16 @@ class PetState:
         unique_sources = set(src for _, src in self._recent_sources)
         if len(unique_sources) >= SHY_SOURCE_THRESHOLD:
             return "shy"
+
+        # Check for curious condition (new/returning sources detected)
+        # Sources outside shy window but within curious window indicate novelty
+        curious_cutoff = now - CURIOUS_SOURCE_WINDOW
+        recent_sources_set = set(src for ts, src in self._recent_sources if ts > cutoff)
+        older_sources_set = set(src for ts, src in self._recent_sources if ts <= cutoff and ts > curious_cutoff)
+        if unique_sources and (recent_sources_set or older_sources_set):
+            # Has activity from known or returning sources
+            if len(unique_sources) < SHY_SOURCE_THRESHOLD:
+                return "curious"
 
         # High activity
         if feed_rate >= 10 or active_agents >= 5:

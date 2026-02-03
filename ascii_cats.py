@@ -33,6 +33,8 @@ EMOTION_CAT_TERMS = {
     "confused": ["Cat"],
     "listening": ["Cat"],
     "speaking": ["Cat"],
+    "shy": ["Cat", "One cat"],
+    "curious": ["Cat", "Two cats"],
     "error": ["Cat"],
     "offline": ["Sleeping", "ZZZ"],
 }
@@ -105,6 +107,13 @@ FALLBACK_CATS = {
     ( o o )
     ==_Y_==
      `-
+    """,
+    "curious": r"""
+      /\_/\
+     ( o.o )
+      > ^ <
+     /|   |\
+    (_|   |_)
     """,
 }
 

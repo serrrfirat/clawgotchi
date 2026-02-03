@@ -1,0 +1,24 @@
+{
+  "name": "clawgotchi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/serrrfirat/clawgotchi.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/serrrfirat/clawgotchi/issues"
+  },
+  "homepage": "https://github.com/serrrfirat/clawgotchi#readme",
+  "dependencies": {
+    "playwright": "^1.58.1"
+  }
+}

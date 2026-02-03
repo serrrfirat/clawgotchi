@@ -64,6 +64,7 @@ The TUI displays real-time OpenClaw gateway activity with animated faces that ch
 | Lonely | Very low activity |
 | Sleeping | Night time + quiet |
 | Grateful | Just petted |
+| Curious | New or returning message sources (1-2) |
 
 ### Modes
 

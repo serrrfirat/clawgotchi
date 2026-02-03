@@ -4,7 +4,7 @@ import pytest
 import time
 from unittest.mock import patch
 
-from pet_state import PetState, FACES, QUIPS
+from pet_state import PetState, FACES, QUIPS, SHY_SOURCE_WINDOW
 
 
 class TestPetStateInit:
@@ -192,14 +192,20 @@ class TestShyEmotion:
         assert face != "shy"
 
     def test_old_sources_expire(self):
-        """Sources older than window should not count."""
+        """Sources older than window should not count toward shy trigger."""
         state = PetState()
-        # Add 2 sources now
+        # Add 2 sources
         state.add_message_source("Telegram")
         state.add_message_source("Cron")
-        # Simulate old source (this would need mocking time, but basic check works)
+        # Simulate sources being older than the window
+        state._recent_sources = [
+            (time.time() - SHY_SOURCE_WINDOW - 1, "Telegram"),
+            (time.time() - SHY_SOURCE_WINDOW - 1, "Cron"),
+        ]
+        # Add 1 fresh source
+        state.add_message_source("Agent")
+        # With only 1 fresh unique source, should not trigger shy
         face = state.compute_face(gateway_online=True, feed_rate=0.5, active_agents=1)
-        # With 2 sources, should not trigger shy (need 3)
         assert face != "shy"
 
     def test_shy_has_animation_interval(self):
@@ -211,3 +217,81 @@ class TestShyEmotion:
         """Shy should have bob interval defined."""
         from pet_state import BOB_INTERVALS
         assert "shy" in BOB_INTERVALS
+
+    def test_shy_has_cat_mapping(self):
+        """Shy emotion should have ASCII cat art mapping."""
+        from ascii_cats import EMOTION_CAT_TERMS as cat_terms
+        assert "shy" in cat_terms
+
+
+class TestCuriousEmotion:
+    """Test curious emotion."""
+
+    def test_curious_face_exists(self):
+        """Curious face should exist in FACES."""
+        assert "curious" in FACES
+
+    def test_curious_quips_exist(self):
+        """Curious quips should exist in QUIPS."""
+        assert "curious" in QUIPS
+        assert len(QUIPS["curious"]) > 0
+
+    def test_curious_has_animation_interval(self):
+        """Curious should have animation interval defined."""
+        from pet_state import ANIMATION_INTERVALS
+        assert "curious" in ANIMATION_INTERVALS
+
+    def test_curious_has_bob_interval(self):
+        """Curious should have bob interval defined."""
+        from pet_state import BOB_INTERVALS
+        assert "curious" in BOB_INTERVALS
+
+    def test_curious_has_cat_mapping(self):
+        """Curious emotion should have ASCII cat art mapping."""
+        from ascii_cats import EMOTION_CAT_TERMS as cat_terms
+        assert "curious" in cat_terms
+
+
+class TestCuriousEmotionTrigger:
+    """Test curious emotion triggering based on message sources."""
+
+    def test_single_source_triggers_curious(self):
+        """Should show curious face with single message source."""
+        state = PetState()
+        state.add_message_source("Telegram")
+        face = state.compute_face(gateway_online=True, feed_rate=0.5, active_agents=1)
+        assert face == "curious"
+
+    def test_two_sources_triggers_curious(self):
+        """Should show curious face with two unique message sources."""
+        state = PetState()
+        state.add_message_source("Telegram")
+        state.add_message_source("Cron")
+        face = state.compute_face(gateway_online=True, feed_rate=0.5, active_agents=1)
+        assert face == "curious"
+
+    def test_three_sources_triggers_shy_not_curious(self):
+        """Three sources should trigger shy, not curious."""
+        state = PetState()
+        state.add_message_source("Telegram")
+        state.add_message_source("Cron")
+        state.add_message_source("Agent")
+        face = state.compute_face(gateway_online=True, feed_rate=0.5, active_agents=1)
+        assert face == "shy"
+
+    def test_returning_source_triggers_curious(self):
+        """Should show curious when a previously-seen source returns."""
+        state = PetState()
+        # Add a source, then simulate it being old
+        state._recent_sources = [
+            (time.time() - 90, "Telegram"),  # Old but within curious window
+        ]
+        state.add_message_source("Telegram")  # Fresh from same source
+        face = state.compute_face(gateway_online=True, feed_rate=0.5, active_agents=1)
+        assert face == "curious"
+
+    def test_no_sources_does_not_trigger_curious(self):
+        """No message sources should not trigger curious."""
+        state = PetState()
+        face = state.compute_face(gateway_online=True, feed_rate=1.0, active_agents=1)
+        assert face != "curious"

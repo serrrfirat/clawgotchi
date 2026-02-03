@@ -169,6 +169,7 @@ def build_mood_meter(term: Terminal, pet: PetState, max_len: int) -> str:
         "listening": "LIST",
         "speaking": "TALK",
         "shy": "SHY",
+        "curious": "CURI",
         "error": "ERR",
         "offline": "OFF",
     }
