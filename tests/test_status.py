@@ -37,6 +37,7 @@ class TestStatus:
         mock_pet = MagicMock()
         mock_pet.get_cat_name.return_value = "happy"
         mock_pet.get_face.return_value = "(•‿‿•)"
+        mock_pet.last_feed_rate = 0.0  # Default to idle
         monkeypatch.setattr(status, "PetState", lambda: mock_pet)
 
     def test_format_status_line_uses_lifetime_data(self, mock_lifetime_stats):
@@ -66,10 +67,13 @@ class TestStatus:
         assert "mood" in report["agent_status"]
         assert "face" in report["agent_status"]
         assert "activity" in report["agent_status"]
+        assert "feed_rate" in report["agent_status"]
         # Mood should be the cat emotion
         assert report["agent_status"]["mood"] == "happy"
         # Face should be the current frame
         assert report["agent_status"]["face"] == "(•‿‿•)"
+        # Activity should be a string
+        assert isinstance(report["agent_status"]["activity"], str)
 
     def test_cli_output_contains_uptime(self, mock_lifetime_stats, mock_pet_state, capsys):
         """CLI mode should print status to stdout."""

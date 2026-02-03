@@ -177,3 +177,57 @@ class TestSendMessageAsync:
         # Thread should start and finish quickly for this test
         import time
         time.sleep(0.1)
+
+
+class TestGetActivityLevel:
+    """Test activity level mapping from feed rate."""
+
+    def test_activity_level_idle(self):
+        """Zero feed rate should be idle."""
+        from status import get_activity_level
+        assert get_activity_level(0.0) == "idle"
+        assert get_activity_level(0) == "idle"
+
+    def test_activity_level_low(self):
+        """Low feed rate should be low."""
+        from status import get_activity_level
+        assert get_activity_level(0.1) == "low"
+        assert get_activity_level(0.49) == "low"
+
+    def test_activity_level_moderate(self):
+        """Moderate feed rate should be moderate."""
+        from status import get_activity_level
+        assert get_activity_level(0.5) == "moderate"
+        assert get_activity_level(1.99) == "moderate"
+
+    def test_activity_level_active(self):
+        """Active feed rate should be active."""
+        from status import get_activity_level
+        assert get_activity_level(2.0) == "active"
+        assert get_activity_level(4.99) == "active"
+
+    def test_activity_level_very_active(self):
+        """High feed rate should be very_active."""
+        from status import get_activity_level
+        assert get_activity_level(5.0) == "very_active"
+        assert get_activity_level(100.0) == "very_active"
+
+
+class TestGetAgentStatus:
+    """Test agent status function."""
+
+    def test_get_agent_status_returns_dict(self):
+        """Should return a dictionary with expected keys."""
+        from status import get_agent_status
+        result = get_agent_status()
+        assert isinstance(result, dict)
+        assert "mood" in result
+        assert "face" in result
+        assert "activity" in result
+        assert "feed_rate" in result
+
+    def test_get_agent_status_activity_is_string(self):
+        """Activity should be a string value."""
+        from status import get_agent_status
+        result = get_agent_status()
+        assert isinstance(result["activity"], str)

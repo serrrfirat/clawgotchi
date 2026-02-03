@@ -49,23 +49,41 @@ def get_host_metrics() -> dict:
         }
 
 
+def get_activity_level(feed_rate: float) -> str:
+    """Map feed rate (events/min) to activity level."""
+    if feed_rate >= 5.0:
+        return "very_active"
+    elif feed_rate >= 2.0:
+        return "active"
+    elif feed_rate >= 0.5:
+        return "moderate"
+    elif feed_rate > 0.0:
+        return "low"
+    else:
+        return "idle"
+
+
 def get_agent_status() -> dict:
     """Get agent status for Moltbook API compatibility."""
     try:
         pet = PetState()
         mood = pet.get_cat_name()
         current_face = pet.get_face()
+        feed_rate = pet.last_feed_rate
+        activity = get_activity_level(feed_rate)
         
         return {
             "mood": mood,
             "face": current_face,
-            "activity": "idle"
+            "activity": activity,
+            "feed_rate": round(feed_rate, 2)
         }
     except Exception:
         return {
             "mood": "unknown",
             "face": "(•_•)",
-            "activity": "error"
+            "activity": "error",
+            "feed_rate": 0
         }
 
 
