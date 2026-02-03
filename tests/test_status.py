@@ -3,7 +3,7 @@
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import pytest
 
@@ -31,27 +31,47 @@ class TestStatus:
             }
         monkeypatch.setattr(status, "get_lifetime_stats", _mock_stats)
 
+    @pytest.fixture
+    def mock_pet_state(self, monkeypatch):
+        """Provide mock pet state."""
+        mock_pet = MagicMock()
+        mock_pet.get_cat_name.return_value = "happy"
+        mock_pet.get_face.return_value = "(•‿‿•)"
+        monkeypatch.setattr(status, "PetState", lambda: mock_pet)
+
     def test_format_status_line_uses_lifetime_data(self, mock_lifetime_stats):
         """format_status_line should return a string."""
         line = status.format_status_line()
         assert isinstance(line, str)
         assert len(line) > 0
 
-    def test_get_status_report_returns_dict(self, mock_lifetime_stats):
+    def test_get_status_report_returns_dict(self, mock_lifetime_stats, mock_pet_state):
         """get_status_report should return a dictionary."""
         report = status.get_status_report()
         assert isinstance(report, dict)
         assert "lifetime" in report
         assert "generated_at" in report
 
-    def test_get_status_report_includes_timestamp(self, mock_lifetime_stats):
+    def test_get_status_report_includes_timestamp(self, mock_lifetime_stats, mock_pet_state):
         """get_status_report should include a generated_at timestamp."""
         report = status.get_status_report()
         assert "generated_at" in report
         # Should be a valid ISO string
         datetime.fromisoformat(report["generated_at"])
 
-    def test_cli_output_contains_uptime(self, mock_lifetime_stats, capsys):
+    def test_get_status_report_includes_agent_status(self, mock_lifetime_stats, mock_pet_state):
+        """get_status_report should include agent_status for Moltbook API compatibility."""
+        report = status.get_status_report()
+        assert "agent_status" in report
+        assert "mood" in report["agent_status"]
+        assert "face" in report["agent_status"]
+        assert "activity" in report["agent_status"]
+        # Mood should be the cat emotion
+        assert report["agent_status"]["mood"] == "happy"
+        # Face should be the current frame
+        assert report["agent_status"]["face"] == "(•‿‿•)"
+
+    def test_cli_output_contains_uptime(self, mock_lifetime_stats, mock_pet_state, capsys):
         """CLI mode should print status to stdout."""
         import sys
         from io import StringIO
@@ -68,7 +88,7 @@ class TestStatus:
         
         assert "5d 3h" in output or "uptime" in output.lower()
 
-    def test_cli_output_contains_wakeups(self, mock_lifetime_stats, capsys):
+    def test_cli_output_contains_wakeups(self, mock_lifetime_stats, mock_pet_state, capsys):
         """CLI mode should print wakeup count."""
         import sys
         from io import StringIO

@@ -10,6 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 import lifetime
+from pet_state import PetState
 
 
 def get_lifetime_stats() -> dict:
@@ -48,6 +49,26 @@ def get_host_metrics() -> dict:
         }
 
 
+def get_agent_status() -> dict:
+    """Get agent status for Moltbook API compatibility."""
+    try:
+        pet = PetState()
+        mood = pet.get_cat_name()
+        current_face = pet.get_face()
+        
+        return {
+            "mood": mood,
+            "face": current_face,
+            "activity": "idle"
+        }
+    except Exception:
+        return {
+            "mood": "unknown",
+            "face": "(•_•)",
+            "activity": "error"
+        }
+
+
 def format_status_line() -> str:
     """Format a one-line status summary for the terminal pet."""
     stats = get_lifetime_stats()
@@ -61,9 +82,11 @@ def get_status_report() -> dict:
     """Get a full status report dictionary."""
     lifetime_stats = get_lifetime_stats()
     host_metrics = get_host_metrics()
+    agent_status = get_agent_status()
     return {
         "lifetime": lifetime_stats,
         "host": host_metrics,
+        "agent_status": agent_status,
         "generated_at": datetime.now().isoformat()
     }
 
@@ -77,6 +100,7 @@ def main(args=None):
     parsed_args = parser.parse_args(args)
     lifetime_stats = get_lifetime_stats()
     host_metrics = get_host_metrics()
+    agent_status = get_agent_status()
     
     if parsed_args.json:
         import json
@@ -91,6 +115,9 @@ def main(args=None):
     print(f"║  Wakeups:  {lifetime_stats.get('total_wakeups', 0):<26}║")
     print(f"║  Uptime:   {lifetime_stats.get('total_uptime_formatted', 'Unknown'):<26}║")
     print(f"║  Session:  {lifetime_stats.get('current_session_formatted', 'Unknown'):<26}║")
+    print("╠══════════════════════════════════════╣")
+    print(f"║  Mood:     {agent_status.get('mood', 'unknown'):<26}║")
+    print(f"║  Face:     {agent_status.get('face', '(•_•)'):<26}║")
     print("╠══════════════════════════════════════╣")
     print(f"║  Disk:     {host_metrics.get('disk_percent', 0)}% used ({host_metrics.get('disk_used_gb', 0)}GB/{host_metrics.get('disk_total_gb', 0)}GB)    ║")
     print(f"║  Free:     {host_metrics.get('disk_free_gb', 0)}GB                        ║")
