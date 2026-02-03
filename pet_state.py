@@ -10,41 +10,76 @@ from ascii_cats import get_cat_for_emotion, get_fallback_cat, CatArt
 # ── Animated faces with multiple frames ─────────────────────────────────────
 
 FACES = {
-    "happy":     ["(•‿‿•)", "(•‿•)", "(•‿‿•)"],
-    "grateful":  ["(♥‿‿♥)", "(♥‿♥)", "(♥‿‿♥)"],
-    "cool":      ["(⌐■_■)", "(⌐■_■)", "(⌐■_■)"],
-    "excited":   ["(ᵔ◡◡ᵔ)", "(ᵔ◡ᵔ)", "(ᵔ◡◡ᵔ)"],
-    "thinking":  ["(○_○ )", "(○_○)", "(○_○ )"],
-    "lonely":    ["(ب__ب)", "(ب__)", "(ب__ب)"],
-    "sad":       ["(╥☁╥ )", "(╥_╥ )", "(╥☁╥ )"],
-    "bored":     ["(-__-)", "(-___-)", "(-__-)"],
-    "sleeping":  ["(⇀‿‿↼)zzz", "(⇀‿↼)zz", "(⇀‿‿↼)zzz"],
-    "intense":   ["(✧_✧)", "(✧‿✧)", "(✧_✧)"],
-    "confused":  ["(⊙_☉)", "(⊙_⊙)", "(⊙_☉)"],
-    "listening": ["(◉‿◉)", "(◉_◉)", "(◉‿◉)"],
-    "speaking":  ["(•o• )", "(•_• )", "(•o• )"],
-    "error":     ["(×_× )", "(×_×)", "(×_× )"],
-    "offline":   ["(─‿─)...", "(-‿-)..", "(─‿─)..."],
+    "happy":     ["(•‿‿•)", "(•‿•)", "(•‿‿•)", "(•‿•)"],
+    "grateful":  ["(♥‿‿♥)", "(♥‿♥)", "(♥‿‿♥)", "(♥‿♥)"],
+    "cool":      ["(⌐■_■)", "(⌐■‿■)", "(⌐■_■)", "(⌐■‿■)"],
+    "excited":   ["(ᵔ◡◡ᵔ)", "(ᵔ◡ᵔ)", "(ᵔ◡◡ᵔ)", "(ᵔ◡ᵔ)"],
+    "thinking":  ["(○_○ )", "(○_○)", "(○_○ )", "(○_○)"],
+    "lonely":    ["(ب__ب)", "(ب__)", "(ب__ب)", "(ب__ )"],
+    "sad":       ["(╥☁╥ )", "(╥_╥ )", "(╥☁╥ )", "(╥_╥ )"],
+    "bored":     ["(-__-)", "(-___-)", "(-__-)", "(-___-)"],
+    "sleeping":  ["(⇀‿‿↼)zzz", "(⇀‿↼)zz ", "(⇀‿‿↼)zzz", "(⇀‿↼)zz "],
+    "intense":   ["(✧_✧)", "(✧‿✧)", "(✧_✧)", "(✧‿✧)"],
+    "confused":  ["(⊙_☉)", "(⊙_⊙)", "(⊙_☉)", "(⊙_⊙)"],
+    "listening": ["(◉‿◉)", "(◉_◉)", "(◉‿◉)", "(◉_◉)"],
+    "speaking":  ["(•o• )", "(•_• )", "(•o• )", "(•_• )"],
+    "shy":       ["(⁄ ⁄>⁄ ▽ ⁄<⁄ ⁄)", "(⁄ ꒰ > △ < ꒱ ⁄)", "(⁄ ⁄>⁄ ▽ ⁄<⁄ ⁄)", "(⁄ ꒰ > △ < ꒱ ⁄)"],
+    "error":     ["(×_× )", "(×_×)", "(×_× )", "(×_×)"],
+    "offline":   ["(─‿─)...", "(-‿-).. ", "(─‿─)...", "(-‿-).. "],
 }
 
 # Animation frame durations (seconds)
 ANIMATION_INTERVALS = {
-    "happy": 0.5,
-    "grateful": 0.6,
-    "cool": 1.0,
-    "excited": 0.3,
-    "thinking": 0.8,
+    "happy": 0.4,
+    "grateful": 0.5,
+    "cool": 0.7,
+    "excited": 0.25,
+    "thinking": 0.7,
+    "lonely": 1.0,
+    "sad": 0.9,
+    "bored": 0.8,
+    "sleeping": 1.2,
+    "intense": 0.3,
+    "confused": 0.8,
+    "listening": 0.45,
+    "speaking": 0.25,
+    "shy": 0.6,
+    "error": 0.5,
+    "offline": 0.9,
+}
+
+BOB_PATTERN = [0, 1, 0, -1]
+BOB_INTERVALS = {
+    "happy": 0.6,
+    "grateful": 0.7,
+    "cool": 0.9,
+    "excited": 0.45,
+    "thinking": 0.9,
     "lonely": 1.2,
-    "sad": 1.0,
-    "bored": 0.7,
-    "sleeping": 1.5,
+    "sad": 1.1,
+    "bored": 1.0,
+    "sleeping": 1.4,
     "intense": 0.4,
     "confused": 0.9,
-    "listening": 0.5,
-    "speaking": 0.3,
-    "error": 0.6,
+    "listening": 0.7,
+    "speaking": 0.5,
+    "shy": 0.8,
+    "error": 0.8,
     "offline": 1.0,
 }
+
+# ── Activity spike spark animation ─────────────────────────────────────────
+
+SPARK_FRAMES = [
+    "  *   .   *   .   *  ",
+    "  .   *   .   *   .  ",
+    " *  .  *  .  *  .  * ",
+    " .  *  .  *  .  *  . ",
+]
+SPARK_INTERVAL = 0.12
+SPARK_DURATION = 1.0
+SPARK_RATE_JUMP = 2.0
+SPARK_AGENT_JUMP = 2
 
 # ── Status quips per mood ────────────────────────────────────────────────────
 
@@ -131,6 +166,13 @@ QUIPS = {
         "let me explain...",
         "here's what i think",
     ],
+    "shy": [
+        "so many people!",
+        "hi... hello...",
+        "everyone's looking at me!",
+        "um, hello there...",
+        "too much attention!",
+    ],
     "error": [
         "something went wrong!",
         "gateway hiccup!",
@@ -146,6 +188,11 @@ QUIPS = {
 }
 
 
+# Threshold for triggering "shy" — number of unique sources in time window
+SHY_SOURCE_WINDOW = 60.0  # seconds
+SHY_SOURCE_THRESHOLD = 3   # unique sources needed
+
+
 class PetState:
     """Face + quip driven by feed activity level and gateway status."""
 
@@ -157,6 +204,18 @@ class PetState:
         self._quip_cooldown: float = 0.0
         self._anim_frame: int = 0
         self._last_anim_time: float = 0.0
+        self.last_feed_rate: float = 0.0
+        self.last_active_agents: int = 0
+        self.gateway_online: bool = True
+        self._last_rate: float = 0.0
+        self._last_agents: int = 0
+        self._spark_timer: float = 0.0
+        self._spark_frame: int = 0
+        self._last_spark_time: float = 0.0
+        self._bob_frame: int = 0
+        self._last_bob_time: float = 0.0
+        # Track recent message sources for shy detection
+        self._recent_sources: list[tuple[float, str]] = []  # (timestamp, source)
 
     def compute_face(self, gateway_online: bool, feed_rate: float,
                      active_agents: int) -> str:
@@ -175,6 +234,14 @@ class PetState:
         # Just petted
         if since_pet < 30:
             return "grateful"
+
+        # Check for shy condition (many different sources in short time)
+        # Clean old entries first
+        cutoff = now - SHY_SOURCE_WINDOW
+        self._recent_sources = [(ts, src) for ts, src in self._recent_sources if ts > cutoff]
+        unique_sources = set(src for _, src in self._recent_sources)
+        if len(unique_sources) >= SHY_SOURCE_THRESHOLD:
+            return "shy"
 
         # High activity
         if feed_rate >= 10 or active_agents >= 5:
@@ -201,6 +268,16 @@ class PetState:
     def update(self, dt: float, gateway_online: bool, feed_rate: float,
                active_agents: int):
         """Tick the pet state forward."""
+        self.last_feed_rate = feed_rate
+        self.last_active_agents = active_agents
+        self.gateway_online = gateway_online
+
+        # Trigger spark animation on sudden activity spikes
+        rate_jump = feed_rate - self._last_rate
+        agent_jump = active_agents - self._last_agents
+        if gateway_online and (rate_jump >= SPARK_RATE_JUMP or agent_jump >= SPARK_AGENT_JUMP):
+            self._spark_timer = SPARK_DURATION
+
         old_face = self.face_key
         self.face_key = self.compute_face(gateway_online, feed_rate, active_agents)
 
@@ -219,6 +296,31 @@ class PetState:
             self._anim_frame = (self._anim_frame + 1) % len(frames)
             self._last_anim_time = now
 
+        # Update bobbing (subtle vertical movement)
+        bob_interval = BOB_INTERVALS.get(self.face_key, 0.8)
+        if now - self._last_bob_time >= bob_interval:
+            self._bob_frame = (self._bob_frame + 1) % len(BOB_PATTERN)
+            self._last_bob_time = now
+
+        # Update spark animation
+        if self._spark_timer > 0:
+            self._spark_timer = max(0.0, self._spark_timer - dt)
+            if now - self._last_spark_time >= SPARK_INTERVAL:
+                self._spark_frame = (self._spark_frame + 1) % len(SPARK_FRAMES)
+                self._last_spark_time = now
+
+        self._last_rate = feed_rate
+        self._last_agents = active_agents
+
+    def add_message_source(self, source: str):
+        """Record a message source for shy detection."""
+        now = time.time()
+        self._recent_sources.append((now, source))
+        # Clean old entries periodically
+        if len(self._recent_sources) > 100:
+            cutoff = now - SHY_SOURCE_WINDOW
+            self._recent_sources = [(ts, src) for ts, src in self._recent_sources if ts > cutoff]
+
     def pet(self):
         self.last_pet_at = time.time()
         self.quip = random.choice(QUIPS["grateful"])
@@ -227,6 +329,19 @@ class PetState:
     def get_face(self) -> str:
         frames = FACES.get(self.face_key, ["(⌐■_■)"])
         return frames[self._anim_frame % len(frames)]
+
+    def get_bob_offset(self) -> int:
+        if not BOB_PATTERN:
+            return 0
+        return BOB_PATTERN[self._bob_frame % len(BOB_PATTERN)]
+
+    def spark_active(self) -> bool:
+        return self._spark_timer > 0
+
+    def get_spark_frame(self) -> str:
+        if not SPARK_FRAMES:
+            return ""
+        return SPARK_FRAMES[self._spark_frame % len(SPARK_FRAMES)]
 
     def get_uptime(self) -> str:
         secs = int(time.time() - self.born_at)

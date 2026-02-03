@@ -168,6 +168,7 @@ def build_mood_meter(term: Terminal, pet: PetState, max_len: int) -> str:
         "confused": "HUH",
         "listening": "LIST",
         "speaking": "TALK",
+        "shy": "SHY",
         "error": "ERR",
         "offline": "OFF",
     }
@@ -500,6 +501,7 @@ def main():
                 if not any(item.summary == ch.get("text", "") and item.source == ch.get("source", "")
                           for ch in chat_history[-50:]):
                     chat_history.append({"source": item.source, "text": item.summary, "time": item.time_str})
+                    pet.add_message_source(item.source)
 
             # Input
             key = term.inkey(timeout=FRAME_TIME)

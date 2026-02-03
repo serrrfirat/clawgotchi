@@ -320,7 +320,7 @@ class OpenClawWatcher:
                 # Main session can be very large — read more to find telegram chats
                 read_size = 500_000 if agent_name == "Clawd" else 50_000
                 read_from = max(0, size - read_size)
-                with open(file_path, "r") as f:
+                with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                     if read_from > 0:
                         f.seek(read_from)
                         f.readline()  # skip partial line
@@ -359,7 +359,7 @@ class OpenClawWatcher:
             if size <= pos:
                 continue
             try:
-                with open(file_path, "r") as f:
+                with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                     f.seek(pos)
                     new_lines = f.readlines()
                     self._session_positions[file_path_str] = f.tell()
@@ -457,7 +457,7 @@ class OpenClawWatcher:
             self._log_pos = 0
         if size <= self._log_pos:
             return
-        with open(GATEWAY_LOG, "r") as f:
+        with open(GATEWAY_LOG, "r", encoding="utf-8", errors="replace") as f:
             f.seek(self._log_pos)
             new_lines = f.readlines()
             self._log_pos = f.tell()

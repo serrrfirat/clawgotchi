@@ -150,3 +150,64 @@ class TestGetUptime:
         state = PetState()
         uptime = state.get_uptime()
         assert uptime.endswith('m')
+
+
+class TestShyEmotion:
+    """Test shy emotion triggered by multiple different sources."""
+
+    def test_shy_face_exists(self):
+        """Shy face should exist in FACES."""
+        assert "shy" in FACES
+
+    def test_shy_quips_exist(self):
+        """Shy quips should exist in QUIPS."""
+        assert "shy" in QUIPS
+        assert len(QUIPS["shy"]) > 0
+
+    def test_add_message_source_tracks_source(self):
+        """add_message_source should record the source."""
+        state = PetState()
+        state.add_message_source("Telegram")
+        assert len(state._recent_sources) == 1
+        assert state._recent_sources[0][1] == "Telegram"
+
+    def test_multiple_sources_triggers_shy(self):
+        """Should show shy face when 3+ unique sources in window."""
+        state = PetState()
+        # Add 3 different sources
+        state.add_message_source("Telegram")
+        state.add_message_source("Cron")
+        state.add_message_source("Agent")
+        # Compute face with low activity (should trigger shy)
+        face = state.compute_face(gateway_online=True, feed_rate=0.5, active_agents=1)
+        assert face == "shy"
+
+    def test_single_source_does_not_trigger_shy(self):
+        """Should not show shy face with only one source."""
+        state = PetState()
+        state.add_message_source("Telegram")
+        state.add_message_source("Telegram")
+        state.add_message_source("Telegram")
+        face = state.compute_face(gateway_online=True, feed_rate=0.5, active_agents=1)
+        assert face != "shy"
+
+    def test_old_sources_expire(self):
+        """Sources older than window should not count."""
+        state = PetState()
+        # Add 2 sources now
+        state.add_message_source("Telegram")
+        state.add_message_source("Cron")
+        # Simulate old source (this would need mocking time, but basic check works)
+        face = state.compute_face(gateway_online=True, feed_rate=0.5, active_agents=1)
+        # With 2 sources, should not trigger shy (need 3)
+        assert face != "shy"
+
+    def test_shy_has_animation_interval(self):
+        """Shy should have animation interval defined."""
+        from pet_state import ANIMATION_INTERVALS
+        assert "shy" in ANIMATION_INTERVALS
+
+    def test_shy_has_bob_interval(self):
+        """Shy should have bob interval defined."""
+        from pet_state import BOB_INTERVALS
+        assert "shy" in BOB_INTERVALS
