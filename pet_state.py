@@ -3,6 +3,7 @@
 import random
 import time
 from datetime import datetime
+from lifetime import get_stats as get_lifetime_stats
 from typing import Optional
 
 from ascii_cats import get_cat_for_emotion, get_fallback_cat, CatArt
@@ -227,8 +228,8 @@ class PetState:
 
     def __init__(self):
         self.born_at: float = time.time()
+        self.total_uptime_seconds: float = get_lifetime_stats()["total_uptime_seconds"]  # Cumulative uptime - synced from lifetime.json
         self.session_start: float = time.time()  # Track current session start
-        self.total_uptime_seconds: float = 0.0  # Cumulative uptime across sessions
         self.last_seen_at: float = time.time()  # Last activity timestamp
         self.face_key: str = "cool"
         self.quip: str = "booting up..."
@@ -322,6 +323,7 @@ class PetState:
         self.gateway_online = gateway_online
         # Track session time
         self.total_uptime_seconds += dt
+        self._sync_uptime_to_lifetime()
         # Update last seen on any activity
         self.last_seen_at = time.time()
 
@@ -474,3 +476,25 @@ class PetState:
         if cat:
             return cat.name
         return "Fallback Cat"
+
+    def _sync_uptime_to_lifetime(self) -> None:
+        """Sync total_uptime_seconds to lifetime.json for persistence."""
+        import json
+        from pathlib import Path
+        lifetime_file = Path(__file__).parent / "memory" / "lifetime.json"
+        try:
+            if lifetime_file.exists():
+                with open(lifetime_file, "r") as f:
+                    data = json.load(f)
+                # Update the last open session's duration to include current total
+                for session in reversed(data["sessions"]):
+                    if session["end"] is None:
+                        # Calculate what the session duration should be
+                        from datetime import datetime
+                        start_dt = datetime.fromisoformat(session["start"])
+                        session["duration_seconds"] = (datetime.now() - start_dt).total_seconds()
+                        break
+                with open(lifetime_file, "w") as f:
+                    json.dump(data, f, indent=2)
+        except (json.JSONDecodeError, IOError, KeyError):
+            pass  # Best effort sync
