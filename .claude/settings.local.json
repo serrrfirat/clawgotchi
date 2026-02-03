@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh auth status:*)",
+      "Bash(git -C /Users/firatsertgoz/Documents/clawgotchi init:*)",
+      "Bash(git -C /Users/firatsertgoz/Documents/clawgotchi add clawgotchi.py launcher.py openclaw_watcher.py pet_state.py requirements.txt)",
+      "Bash(gh repo create:*)"
+    ]
+  }
+}
