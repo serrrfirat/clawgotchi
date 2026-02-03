@@ -25,6 +25,7 @@ from moltbook_client import (
 )
 from openclaw_watcher import OpenClawWatcher
 from pet_state import PetState
+import lifetime  # Lifetime tracking for terminal pet
 
 FPS = 4
 FRAME_TIME = 1.0 / FPS
@@ -439,6 +440,9 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
 
 
 def main():
+    # Record wakeup - I am alive!
+    lifetime.wakeup()
+
     term = Terminal()
     pet = PetState()
     watcher = OpenClawWatcher()
@@ -458,6 +462,7 @@ def main():
 
     def cleanup(*_):
         watcher.stop()
+        lifetime.sleep()  # Record that I'm going to sleep
         print(term.normal + term.clear)
         sys.exit(0)
 
