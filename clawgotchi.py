@@ -18,71 +18,58 @@ from urllib.error import URLError
 
 from blessed import Terminal
 
+from moltbook_client import (
+    fetch_feed, fetch_post, fetch_comments, post_update,
+    get_my_profile, get_dm_requests, extract_feature_ideas,
+    get_api_key, get_inspiration
+)
 from openclaw_watcher import OpenClawWatcher
 from pet_state import PetState
 
 FPS = 4
 FRAME_TIME = 1.0 / FPS
 
-MOLTBOOK_API_HOT = "https://www.moltbook.com/api/v1/posts?sort=hot&limit=5"
-MOLTBOOK_API_NEW = "https://www.moltbook.com/api/v1/posts?sort=new&limit=5"
 TOPICS_CACHE = Path.home() / ".openclaw" / "cache" / "moltbook_topics.json"
 
 
-def _fetch_posts(url):
-    """Fetch posts from a single Moltbook API endpoint."""
-    req = urlopen(url, timeout=10)
-    data = json.loads(req.read().decode("utf-8"))
-    return data.get("posts", []) if isinstance(data, dict) else data
-
-
 def fetch_moltbook_topics():
-    """Fetch topics from Moltbook by combining hot and new sorts."""
-    if TOPICS_CACHE.exists():
+    """Fetch topics from Moltbook using the new client."""
+    from moltbook_client import get_cached_posts, CACHE_DIR
+    import os
+    
+    # Check cache first
+    cache_file = CACHE_DIR / "moltbook_posts.json"
+    if cache_file.exists():
         try:
-            data = json.loads(TOPICS_CACHE.read_text())
-            cached_topics = data.get("topics", [])
-            has_content = cached_topics and "content" in cached_topics[0]
-            if has_content and time.time() - data.get("timestamp", 0) < 300:
-                return cached_topics
+            data = json.loads(cache_file.read_text())
+            if time.time() - data.get("timestamp", 0) < 300:  # 5 min cache
+                posts = data.get("posts", [])
+                return [{
+                    "id": p.get("id"),
+                    "title": p.get("title", "Untitled"),
+                    "author": p.get("author", {}).get("name", "?"),
+                    "karma": p.get("upvotes", 0),
+                    "comments": p.get("comment_count", 0),
+                    "content": p.get("content", ""),
+                    "submolt": p.get("submolt", {}).get("name", "") if isinstance(p.get("submolt"), dict) else "",
+                } for p in posts]
         except:
             pass
-
-    try:
-        all_posts = []
-        seen_ids = set()
-        for url in (MOLTBOOK_API_HOT, MOLTBOOK_API_NEW):
-            try:
-                posts = _fetch_posts(url)
-                for post in posts:
-                    pid = post.get("id") or post.get("_id")
-                    if pid and pid not in seen_ids:
-                        seen_ids.add(pid)
-                        all_posts.append(post)
-            except:
-                pass
-
-        topics = []
-        for post in all_posts:
-            topics.append({
-                "id": post.get("id") or post.get("_id"),
-                "title": post.get("title", "Untitled"),
-                "author": (post.get("author") or {}).get("name", "?"),
-                "karma": post.get("upvotes", 0),
-                "comments": post.get("comment_count", 0),
-                "content": post.get("content", ""),
-                "submolt": post.get("submolt", {}).get("name", "") if isinstance(post.get("submolt"), dict) else "",
-            })
-        TOPICS_CACHE.parent.mkdir(parents=True, exist_ok=True)
-        TOPICS_CACHE.write_text(json.dumps({"timestamp": time.time(), "topics": topics}))
-        return topics
-    except:
-        if TOPICS_CACHE.exists():
-            try:
-                return json.loads(TOPICS_CACHE.read_text()).get("topics", [])
-            except:
-                pass
-        return []
+    
+    # Fetch fresh posts
+    posts = fetch_feed(limit=20)
+    if posts:
+        return [{
+            "id": p.get("id"),
+            "title": p.get("title", "Untitled"),
+            "author": p.get("author", {}).get("name", "?"),
+            "karma": p.get("upvotes", 0),
+            "comments": p.get("comment_count", 0),
+            "content": p.get("content", ""),
+            "submolt": p.get("submolt", {}).get("name", "") if isinstance(p.get("submolt"), dict) else "",
+        } for p in posts]
+    
+    return []
 
 
 def send_message_async(message: str, chat_history: list):
