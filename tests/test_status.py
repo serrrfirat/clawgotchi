@@ -1,0 +1,89 @@
+"""Tests for status.py module."""
+
+import json
+from datetime import datetime, timedelta
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+# Module under test
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent))
+import status
+
+
+class TestStatus:
+    """Test suite for status reporting module."""
+
+    @pytest.fixture
+    def mock_lifetime_stats(self, monkeypatch):
+        """Provide mock lifetime stats."""
+        def _mock_stats():
+            return {
+                "born_at": "2026-01-01T00:00:00",
+                "total_wakeups": 42,
+                "total_uptime_formatted": "5d 3h",
+                "total_uptime_seconds": 442800.0,
+                "current_session_seconds": 3600.0,
+                "current_session_formatted": "1h 0m",
+                "is_current_session": True
+            }
+        monkeypatch.setattr(status, "get_lifetime_stats", _mock_stats)
+
+    def test_format_status_line_uses_lifetime_data(self, mock_lifetime_stats):
+        """format_status_line should return a string."""
+        line = status.format_status_line()
+        assert isinstance(line, str)
+        assert len(line) > 0
+
+    def test_get_status_report_returns_dict(self, mock_lifetime_stats):
+        """get_status_report should return a dictionary."""
+        report = status.get_status_report()
+        assert isinstance(report, dict)
+        assert "lifetime" in report
+        assert "generated_at" in report
+
+    def test_get_status_report_includes_timestamp(self, mock_lifetime_stats):
+        """get_status_report should include a generated_at timestamp."""
+        report = status.get_status_report()
+        assert "generated_at" in report
+        # Should be a valid ISO string
+        datetime.fromisoformat(report["generated_at"])
+
+    def test_cli_output_contains_uptime(self, mock_lifetime_stats, capsys):
+        """CLI mode should print status to stdout."""
+        import sys
+        from io import StringIO
+        
+        # Capture stdout
+        old_stdout = sys.stdout
+        sys.stdout = StringIO()
+        
+        try:
+            status.main(["cli"])
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        
+        assert "5d 3h" in output or "uptime" in output.lower()
+
+    def test_cli_output_contains_wakeups(self, mock_lifetime_stats, capsys):
+        """CLI mode should print wakeup count."""
+        import sys
+        from io import StringIO
+        
+        old_stdout = sys.stdout
+        sys.stdout = StringIO()
+        
+        try:
+            status.main(["cli"])
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        
+        assert "42" in output or "wakeups" in output.lower()
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])
