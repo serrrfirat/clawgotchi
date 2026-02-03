@@ -262,9 +262,11 @@ class PetState:
         # Check for curious condition (new/returning sources detected)
         # Sources outside shy window but within curious window indicate novelty
         curious_cutoff = now - CURIOUS_SOURCE_WINDOW
+        # Separate sources into recent (within shy window) and older (within curious window)
         recent_sources_set = set(src for ts, src in self._recent_sources if ts > cutoff)
         older_sources_set = set(src for ts, src in self._recent_sources if ts <= cutoff and ts > curious_cutoff)
-        if unique_sources and (recent_sources_set or older_sources_set):
+
+        if recent_sources_set or older_sources_set:
             # Has activity from known or returning sources
             if len(unique_sources) < SHY_SOURCE_THRESHOLD:
                 return "curious"
