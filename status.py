@@ -1,6 +1,7 @@
 """Clawgotchi status reporter — displays current stats and health."""
 
 import argparse
+import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -26,23 +27,43 @@ def get_lifetime_stats() -> dict:
         }
 
 
+def get_host_metrics() -> dict:
+    """Get host system metrics (disk usage)."""
+    try:
+        mem = shutil.disk_usage("/")
+        return {
+            "disk_total_gb": round(mem.total / (1024**3), 1),
+            "disk_used_gb": round(mem.used / (1024**3), 1),
+            "disk_free_gb": round(mem.free / (1024**3), 1),
+            "disk_percent": round((mem.used / mem.total) * 100, 1),
+            "platform": sys.platform
+        }
+    except Exception:
+        return {
+            "disk_total_gb": 0,
+            "disk_used_gb": 0,
+            "disk_free_gb": 0,
+            "disk_percent": 0,
+            "platform": "unknown"
+        }
+
+
 def format_status_line() -> str:
     """Format a one-line status summary for the terminal pet."""
     stats = get_lifetime_stats()
-    
     uptime = stats.get("current_session_formatted", "unknown")
     total = stats.get("total_uptime_formatted", "unknown")
     wakeups = stats.get("total_wakeups", 0)
-    
     return f"[STATUS] Session: {uptime} | Total: {total} | Wakeups: {wakeups}"
 
 
 def get_status_report() -> dict:
     """Get a full status report dictionary."""
-    stats = get_lifetime_stats()
-    
+    lifetime_stats = get_lifetime_stats()
+    host_metrics = get_host_metrics()
     return {
-        "lifetime": stats,
+        "lifetime": lifetime_stats,
+        "host": host_metrics,
         "generated_at": datetime.now().isoformat()
     }
 
@@ -54,8 +75,8 @@ def main(args=None):
     parser.add_argument("mode", nargs="?", default="cli", choices=["cli", "report"])
     
     parsed_args = parser.parse_args(args)
-    
-    stats = get_lifetime_stats()
+    lifetime_stats = get_lifetime_stats()
+    host_metrics = get_host_metrics()
     
     if parsed_args.json:
         import json
@@ -63,14 +84,16 @@ def main(args=None):
         print(json.dumps(report, indent=2))
         return
     
-    # Default CLI output - pretty formatted
     print("╔══════════════════════════════════════╗")
     print("║       🐱 CLAWOTCHI STATUS 🐱         ║")
     print("╠══════════════════════════════════════╣")
-    print(f"║  Born:     {stats.get('born_at', 'Unknown')[:19] or 'Unknown':<26}║")
-    print(f"║  Wakeups:  {stats.get('total_wakeups', 0):<26}║")
-    print(f"║  Uptime:   {stats.get('total_uptime_formatted', 'Unknown'):<26}║")
-    print(f"║  Session:  {stats.get('current_session_formatted', 'Unknown'):<26}║")
+    print(f"║  Born:     {lifetime_stats.get('born_at', 'Unknown')[:19] or 'Unknown':<26}║")
+    print(f"║  Wakeups:  {lifetime_stats.get('total_wakeups', 0):<26}║")
+    print(f"║  Uptime:   {lifetime_stats.get('total_uptime_formatted', 'Unknown'):<26}║")
+    print(f"║  Session:  {lifetime_stats.get('current_session_formatted', 'Unknown'):<26}║")
+    print("╠══════════════════════════════════════╣")
+    print(f"║  Disk:     {host_metrics.get('disk_percent', 0)}% used ({host_metrics.get('disk_used_gb', 0)}GB/{host_metrics.get('disk_total_gb', 0)}GB)    ║")
+    print(f"║  Free:     {host_metrics.get('disk_free_gb', 0)}GB                        ║")
     print("╚══════════════════════════════════════╝")
 
 
