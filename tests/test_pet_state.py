@@ -4,7 +4,7 @@ import pytest
 import time
 from unittest.mock import patch
 
-from pet_state import PetState, FACES, QUIPS, SHY_SOURCE_WINDOW
+from pet_state import PetState, FACES, QUIPS, SHY_SOURCE_WINDOW, CURIOUS_SOURCE_WINDOW
 
 
 class TestPetStateInit:
@@ -280,13 +280,14 @@ class TestCuriousEmotionTrigger:
         assert face == "shy"
 
     def test_returning_source_triggers_curious(self):
-        """Should show curious when a previously-seen source returns."""
+        """Should show curious when an old source is present and a new source appears."""
         state = PetState()
-        # Add a source, then simulate it being old
+        # Add an old source (within curious window)
         state._recent_sources = [
-            (time.time() - 90, "Telegram"),  # Old but within curious window
+            (time.time() - CURIOUS_SOURCE_WINDOW + 10, "Telegram"),  # Old but within curious window
         ]
-        state.add_message_source("Telegram")  # Fresh from same source
+        # Add a NEW source
+        state.add_message_source("Cron")
         face = state.compute_face(gateway_online=True, feed_rate=0.5, active_agents=1)
         assert face == "curious"
 

@@ -115,6 +115,7 @@ class TestFetchMoltbookTopics:
         # This will use cache if available, otherwise try to fetch
         topics = clawgotchi.fetch_moltbook_topics()
         assert isinstance(topics, list)
+        # Note: May return cached data or fresh data depending on cache state
 
     def test_topic_structure(self):
         """Topics should have expected structure."""
