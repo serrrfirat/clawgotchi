@@ -2,13 +2,34 @@ from __future__ import annotations
 
 """Clawgotchi pet state — Pwnagotchi-style faces driven by live activity."""
 
+import json
 import random
 import time
 from datetime import datetime
+from pathlib import Path
 from core.lifetime import get_stats as get_lifetime_stats
 from typing import Optional
 
 from core.ascii_cats import get_cat_for_emotion, get_fallback_cat, CatArt
+from config import DATA_DIR
+
+# ── Load ASCII mood animations from generated JSON ───────────────────────────
+
+ASCII_MOODS: dict[str, list[list[str]]] = {}  # emotion -> list of frames (each frame = list[str])
+ASCII_MOODS_COLORED: dict[str, list[list[str]]] = {}  # emotion -> colored frames (ANSI escapes)
+_ascii_moods_file = DATA_DIR / "ascii_moods.json"
+if _ascii_moods_file.exists():
+    try:
+        _data = json.loads(_ascii_moods_file.read_text())
+        for _name, _info in _data.get("moods", {}).items():
+            _frames = [f["lines"] for f in _info.get("frames", []) if f.get("lines")]
+            _colored = [f["colored_lines"] for f in _info.get("frames", []) if f.get("colored_lines")]
+            if _frames:
+                ASCII_MOODS[_name] = _frames
+            if _colored:
+                ASCII_MOODS_COLORED[_name] = _colored
+    except Exception:
+        pass
 
 # ── Animated faces with multiple frames ─────────────────────────────────────
 
@@ -349,8 +370,9 @@ class PetState:
         now = time.time()
         interval = ANIMATION_INTERVALS.get(self.face_key, 0.5)
         if now - self._last_anim_time >= interval:
-            frames = FACES.get(self.face_key, ["(⌐■_■)"])
-            self._anim_frame = (self._anim_frame + 1) % len(frames)
+            ascii_frames = ASCII_MOODS.get(self.face_key)
+            frame_count = len(ascii_frames) if ascii_frames else len(FACES.get(self.face_key, ["(⌐■_■)"]))
+            self._anim_frame = (self._anim_frame + 1) % frame_count
             self._last_anim_time = now
 
         # Update bobbing (subtle vertical movement)
@@ -388,6 +410,21 @@ class PetState:
         self._last_built_at = time.time()
         self.quip = random.choice(QUIPS["proud"])
         self._quip_cooldown = 12.0
+
+    def get_face_lines(self, colored: bool = True) -> list[str] | None:
+        """Multi-line ASCII art for current emotion, or None for fallback.
+
+        If colored=True and colored frames exist, returns lines with ANSI
+        escape sequences for truecolor rendering.
+        """
+        if colored:
+            cframes = ASCII_MOODS_COLORED.get(self.face_key)
+            if cframes:
+                return cframes[self._anim_frame % len(cframes)]
+        frames = ASCII_MOODS.get(self.face_key)
+        if not frames:
+            return None
+        return frames[self._anim_frame % len(frames)]
 
     def get_face(self) -> str:
         frames = FACES.get(self.face_key, ["(⌐■_■)"])

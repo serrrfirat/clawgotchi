@@ -26,9 +26,9 @@ ASCII_WIDTH = 40
 ASCII_HEIGHT = 12
 
 SETTINGS = Settings(
-    charset=CharsetName.SIMPLE,
-    color_mode=ColorMode.NONE,
-    dither=False,
+    charset=CharsetName.BRAILLE,
+    color_mode=ColorMode.TRUECOLOR,
+    dither=True,
     brightness=0,
     contrast=100,
     invert=False,
@@ -39,24 +39,24 @@ SETTINGS = Settings(
 # ── Curated Tenor GIF URLs (direct CDN links) ────────────────────────
 
 TENOR_URLS = {
-    "happy": "https://media.tenor.com/bFdcfUkgSk8AAAAC/happy-cat.gif",
-    "grateful": "https://media.tenor.com/GryShwZXsRMAAAAC/thank-you-cat.gif",
-    "cool": "https://media.tenor.com/Wsi1MAoE5y0AAAAC/cool-cat.gif",
-    "excited": "https://media.tenor.com/on2GxLDlcikAAAAC/cat-excited.gif",
-    "thinking": "https://media.tenor.com/MYZgsN2TDJAAAAAC/thinking-cat.gif",
-    "lonely": "https://media.tenor.com/6ExvCbk5HbUAAAAC/sad-cat.gif",
-    "sad": "https://media.tenor.com/TqxfP2EGsFcAAAAC/crying-cat.gif",
-    "bored": "https://media.tenor.com/mlKdp6M4TssAAAAC/bored-cat.gif",
-    "sleeping": "https://media.tenor.com/Ow7oBePxqMgAAAAC/sleeping-cat.gif",
-    "intense": "https://media.tenor.com/c4Cg4BfI_mMAAAAC/intense-cat.gif",
-    "confused": "https://media.tenor.com/rG8dN0MqZJIAAAAC/confused-cat.gif",
-    "listening": "https://media.tenor.com/3TGh0FUk9m0AAAAC/cat-listening.gif",
-    "speaking": "https://media.tenor.com/WgmOpmqVXRoAAAAC/talking-cat.gif",
-    "shy": "https://media.tenor.com/R0gMiaNGMBEAAAAC/shy-cat.gif",
-    "curious": "https://media.tenor.com/0AVv1oJSXjYAAAAC/curious-cat.gif",
-    "proud": "https://media.tenor.com/gnRSK_yL85IAAAAC/proud-cat.gif",
-    "error": "https://media.tenor.com/cXxwJMPW_LAAAAAC/shocked-cat.gif",
-    "offline": "https://media.tenor.com/euMOB4d3TzcAAAAC/cat-waiting.gif",
+    "happy": "https://media.tenor.com/lfDATg4Bhc0AAAAC/happy-cat.gif",
+    "grateful": "https://media.tenor.com/EHzKl_vkZS8AAAAC/saleh-jumping-saleh-the-cat.gif",
+    "cool": "https://media.tenor.com/QEBosU0qSGUAAAAC/cool-cat-thug-life-glasses.gif",
+    "excited": "https://media.tenor.com/oVvRVIH-2foAAAAC/excited-cat.gif",
+    "thinking": "https://media.tenor.com/4EsDSXQlO5cAAAAC/cat-thinking.gif",
+    "lonely": "https://media.tenor.com/iXOn-lbMXOsAAAAC/i-miss-you-cat.gif",
+    "sad": "https://media.tenor.com/zHEngmtwKvkAAAAC/sad-cat-alone.gif",
+    "bored": "https://media.tenor.com/HdIS-hqps_kAAAAC/bored-cat.gif",
+    "sleeping": "https://media.tenor.com/5c9RaitzJmAAAAAC/cat-sleeping.gif",
+    "intense": "https://media.tenor.com/EBqkMIG-o0IAAAAC/cat-stare.gif",
+    "confused": "https://media.tenor.com/DESSJFJ8_XkAAAAC/confused-cat-confused.gif",
+    "listening": "https://media.tenor.com/v6VivIG_8BEAAAAC/cat-music.gif",
+    "speaking": "https://media.tenor.com/1VPfEhD8CpUAAAAC/cat-talking.gif",
+    "shy": "https://media.tenor.com/m6cZxZLvRBUAAAAC/shy-cat-cat.gif",
+    "curious": "https://media.tenor.com/NUxKSQ-pzVoAAAAC/interesting.gif",
+    "proud": "https://media.tenor.com/Ulac1y7nAkwAAAAC/cat-proud.gif",
+    "error": "https://media.tenor.com/JgJ9BQVFT8MAAAAC/shocked-cat.gif",
+    "offline": "https://media.tenor.com/C7qUq8vEEygAAAAC/cat-waiting.gif",
 }
 
 # ── Output path ───────────────────────────────────────────────────────
@@ -93,7 +93,7 @@ def generate_mood(emotion: str, url: str) -> dict | None:
     ascii_frames = []
     for frame in sampled:
         processed = process_frame(frame, SETTINGS)
-        # Pad each line to exact width
+        # Pad plain lines to exact width
         lines = []
         for line in processed.lines:
             if len(line) < ASCII_WIDTH:
@@ -101,12 +101,17 @@ def generate_mood(emotion: str, url: str) -> dict | None:
             elif len(line) > ASCII_WIDTH:
                 line = line[:ASCII_WIDTH]
             lines.append(line)
-        # Pad to exact height
         while len(lines) < ASCII_HEIGHT:
             lines.append(" " * ASCII_WIDTH)
 
+        # Colored lines (with ANSI escapes) — same count, already correct width
+        colored = list(processed.colored_lines[:ASCII_HEIGHT])
+        while len(colored) < ASCII_HEIGHT:
+            colored.append(" " * ASCII_WIDTH)
+
         ascii_frames.append({
             "lines": lines,
+            "colored_lines": colored,
             "duration_ms": frame.duration_ms,
         })
 
@@ -119,7 +124,7 @@ def generate_mood(emotion: str, url: str) -> dict | None:
 
 def main():
     print(f"Generating ASCII moods -> {OUTPUT_FILE}")
-    print(f"Settings: {ASCII_WIDTH}x{ASCII_HEIGHT}, charset=simple, no color")
+    print(f"Settings: {ASCII_WIDTH}x{ASCII_HEIGHT}, charset=braille, truecolor, dither")
     print()
 
     moods = {}
@@ -136,7 +141,9 @@ def main():
         "version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "settings": {
-            "charset": "simple",
+            "charset": "braille",
+            "color_mode": "truecolor",
+            "dither": True,
             "width": ASCII_WIDTH,
             "height": ASCII_HEIGHT,
         },

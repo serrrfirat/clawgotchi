@@ -328,7 +328,8 @@ def pad_row(term: Terminal, content: str, w: int) -> str:
 
 
 def center_art(text: str, w: int) -> str:
-    pad = max(0, (w - 2 - len(text)) // 2)
+    vis = len_visible(text) if "\x1b" in text else len(text)
+    pad = max(0, (w - 2 - vis) // 2)
     return " " * pad + text
 
 
@@ -794,32 +795,75 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
         if face_end <= face_start:
             face_end = face_start + 1
 
-        face_mid = face_start + (face_end - face_start) // 2
         bob = pet.get_bob_offset()
-        face_mid = max(face_start, min(face_end - 1, face_mid + bob))
+        face_lines = pet.get_face_lines()
+
         spark_row = None
-        if pet.spark_active():
-            spark = pet.get_spark_frame()
-            if spark:
-                spark_max = max(0, w - 2)
-                if len(spark) > spark_max:
-                    spark = spark[:spark_max]
-                candidate_row = max(face_start, face_mid - 1)
-                if candidate_row not in (face_mid, face_mid + 1):
-                    spark_row = candidate_row
-                    out.append(
-                        term.move(spark_row, 0)
-                        + pad_row(term, term.yellow + center_art(spark, w) + term.normal, w)
-                    )
-        out.append(term.move(face_mid, 0) + pad_row(term, fc + term.bold + center_art(face, w) + term.normal, w))
+        if face_lines:
+            # Multi-line ASCII art — center vertically + horizontally in face area
+            art_height = len(face_lines)
+            area_height = face_end - face_start
+            art_top = face_start + max(0, (area_height - art_height - 1) // 2) + bob
+            art_top = max(face_start, min(face_end - art_height - 1, art_top))
 
-        # Quip below face
-        quip = term.italic + term.grey70 + center_art(f'"{pet.quip}"', w) + term.normal
-        out.append(term.move(face_mid + 1, 0) + pad_row(term, quip, w))
+            # Spark above art
+            if pet.spark_active():
+                spark = pet.get_spark_frame()
+                if spark:
+                    spark_max = max(0, w - 2)
+                    if len(spark) > spark_max:
+                        spark = spark[:spark_max]
+                    candidate_row = max(face_start, art_top - 1)
+                    if candidate_row < art_top:
+                        spark_row = candidate_row
+                        out.append(
+                            term.move(spark_row, 0)
+                            + pad_row(term, term.yellow + center_art(spark, w) + term.normal, w)
+                        )
 
-        for i in range(face_start, face_end + 1):
-            if i not in (face_mid, face_mid + 1) and i != spark_row:
-                out.append(term.move(i, 0) + pad_row(term, "", w))
+            for i, line in enumerate(face_lines):
+                row = art_top + i
+                if face_start <= row < face_end:
+                    centered = center_art(line, w)
+                    out.append(term.move(row, 0) + pad_row(term, centered + term.normal, w))
+
+            quip_row = min(art_top + art_height, face_end - 1)
+            quip = term.italic + term.grey70 + center_art(f'"{pet.quip}"', w) + term.normal
+            out.append(term.move(quip_row, 0) + pad_row(term, quip, w))
+
+            # Fill empty rows
+            used = set(range(art_top, min(art_top + art_height, face_end))) | {quip_row}
+            if spark_row is not None:
+                used.add(spark_row)
+            for i in range(face_start, face_end + 1):
+                if i not in used:
+                    out.append(term.move(i, 0) + pad_row(term, "", w))
+        else:
+            # Existing single-line face (fallback)
+            face_mid = face_start + (face_end - face_start) // 2
+            face_mid = max(face_start, min(face_end - 1, face_mid + bob))
+
+            if pet.spark_active():
+                spark = pet.get_spark_frame()
+                if spark:
+                    spark_max = max(0, w - 2)
+                    if len(spark) > spark_max:
+                        spark = spark[:spark_max]
+                    candidate_row = max(face_start, face_mid - 1)
+                    if candidate_row not in (face_mid, face_mid + 1):
+                        spark_row = candidate_row
+                        out.append(
+                            term.move(spark_row, 0)
+                            + pad_row(term, term.yellow + center_art(spark, w) + term.normal, w)
+                        )
+            out.append(term.move(face_mid, 0) + pad_row(term, fc + term.bold + center_art(face, w) + term.normal, w))
+
+            quip = term.italic + term.grey70 + center_art(f'"{pet.quip}"', w) + term.normal
+            out.append(term.move(face_mid + 1, 0) + pad_row(term, quip, w))
+
+            for i in range(face_start, face_end + 1):
+                if i not in (face_mid, face_mid + 1) and i != spark_row:
+                    out.append(term.move(i, 0) + pad_row(term, "", w))
 
         # Vitals strip (h-10)
         out.append(term.move(h - 10, 0) + build_vitals_strip(term, w))
