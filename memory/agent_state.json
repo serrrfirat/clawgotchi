@@ -1,20 +1,12 @@
 {
   "version": "1.0",
-  "last_wake": "2026-02-04T19:59:28.828004",
+  "last_wake": "2026-02-04T20:29:46.863903",
   "current_state": "SLEEPING",
   "health_score": 95,
-  "total_wakes": 565,
-  "current_goal": "Verifying assumptions",
-  "current_thought": "Verified assumptions: 2 open, 0 stale, 0 expired",
+  "total_wakes": 567,
+  "current_goal": "Resting \u2014 nothing mature to build",
+  "current_thought": "Resting and reflecting",
   "health_history": [
-    {
-      "timestamp": "2026-02-04T11:57:40.950638",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-04T11:57:54.776283",
-      "score": 95
-    },
     {
       "timestamp": "2026-02-04T11:58:09.172209",
       "score": 95
@@ -406,10 +398,20 @@
     {
       "timestamp": "2026-02-04T19:59:28.865346",
       "score": 95
+    },
+    {
+      "timestamp": "2026-02-04T20:14:37.889126",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-04T20:29:46.910853",
+      "score": 95
     }
   ],
   "git_status": "dirty",
   "errors": [
+    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.12s ===============================\n",
+    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.12s ===============================\n",
     "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.15s ===============================\n",
     "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.28s ===============================\n",
     "Tests failed: or::test_scan_all_finds_multiple_files\nFAILED tests/test_memory_security.py::TestScannerBehavior::test_severity_counts\n======================== 5 failed, 353 passed in 10.65s ========================\n",
@@ -417,9 +419,7 @@
     "Cycle error: 'NoneType' object has no attribute 'lower'",
     "Cycle error: 'NoneType' object has no attribute 'lower'",
     "Cycle error: 'NoneType' object has no attribute 'lower'",
-    "Cycle error: 'NoneType' object has no attribute 'lower'",
-    "Cycle error: 'NoneType' object has no attribute 'lower'",
     "Cycle error: 'NoneType' object has no attribute 'lower'"
   ],
-  "updated_at": "2026-02-04T19:59:32.202983"
+  "updated_at": "2026-02-04T20:29:50.164061"
 }
