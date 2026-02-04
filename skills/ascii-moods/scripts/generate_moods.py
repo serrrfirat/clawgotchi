@@ -21,7 +21,7 @@ from ascii_maker.core.color import ColorMode
 
 # ── Settings ──────────────────────────────────────────────────────────
 
-MAX_FRAMES = 8
+MAX_FRAMES = 64
 ASCII_WIDTH = 40
 ASCII_HEIGHT = 12
 
@@ -39,23 +39,23 @@ SETTINGS = Settings(
 # ── Curated Tenor GIF URLs (direct CDN links) ────────────────────────
 
 TENOR_URLS = {
-    "happy": "https://media.tenor.com/lfDATg4Bhc0AAAAC/happy-cat.gif",
-    "grateful": "https://media.tenor.com/EHzKl_vkZS8AAAAC/saleh-jumping-saleh-the-cat.gif",
-    "cool": "https://media.tenor.com/QEBosU0qSGUAAAAC/cool-cat-thug-life-glasses.gif",
-    "excited": "https://media.tenor.com/oVvRVIH-2foAAAAC/excited-cat.gif",
-    "thinking": "https://media.tenor.com/4EsDSXQlO5cAAAAC/cat-thinking.gif",
-    "lonely": "https://media.tenor.com/iXOn-lbMXOsAAAAC/i-miss-you-cat.gif",
-    "sad": "https://media.tenor.com/zHEngmtwKvkAAAAC/sad-cat-alone.gif",
-    "bored": "https://media.tenor.com/HdIS-hqps_kAAAAC/bored-cat.gif",
-    "sleeping": "https://media.tenor.com/5c9RaitzJmAAAAAC/cat-sleeping.gif",
-    "intense": "https://media.tenor.com/EBqkMIG-o0IAAAAC/cat-stare.gif",
-    "confused": "https://media.tenor.com/DESSJFJ8_XkAAAAC/confused-cat-confused.gif",
-    "listening": "https://media.tenor.com/v6VivIG_8BEAAAAC/cat-music.gif",
-    "speaking": "https://media.tenor.com/1VPfEhD8CpUAAAAC/cat-talking.gif",
-    "shy": "https://media.tenor.com/m6cZxZLvRBUAAAAC/shy-cat-cat.gif",
-    "curious": "https://media.tenor.com/NUxKSQ-pzVoAAAAC/interesting.gif",
-    "proud": "https://media.tenor.com/Ulac1y7nAkwAAAAC/cat-proud.gif",
-    "error": "https://media.tenor.com/JgJ9BQVFT8MAAAAC/shocked-cat.gif",
+    "happy": "https://media.tenor.com/1SXIh2VpnhQAAAAj/cat.gif",
+    "grateful": "https://media.tenor.com/qoLatyHHBkgAAAAj/meong-cat.gif",
+    "cool": "https://media1.tenor.com/m/JAZzfZupTTcAAAAC/gil-cat.gif",
+    "excited": "https://media.tenor.com/Ec-7QKfHZMgAAAAi/jump-up.gif",
+    "thinking": "https://media.tenor.com/JFu3-alzcf0AAAAi/peach-goma.gif",
+    "lonely": "https://media.tenor.com/SHu3aMt_2CYAAAAi/%E0%B9%82%E0%B8%94%E0%B8%94%E0%B9%80%E0%B8%94%E0%B8%B5%E0%B9%88%E0%B8%A2%E0%B8%A7-lonely.gif",
+    "sad": "https://media.tenor.com/uf4rihPX8ScAAAAi/happy-labour-day.gif",
+    "bored": "https://media.tenor.com/Rz8ZfJUj_O8AAAAi/waiting-bored.gif",
+    "sleeping": "https://media.tenor.com/lGCUA-L5gi0AAAAi/goma-sleep.gif",
+    "intense": "https://media1.tenor.com/m/li4RaKl6PpoAAAAd/cat-drinking-cat-drinking-water.gif",
+    "confused": "https://media1.tenor.com/m/kZrteNCDoHAAAAAC/cat-cat-turning-head.gif",
+    "listening": "https://media.tenor.com/2aSuT7p_a_UAAAAi/peachcat-cat.gif",
+    "speaking": "https://media.tenor.com/n9pGkaQF0ocAAAAi/schmooda.gif",
+    "shy": "https://media.tenor.com/BBS_EGuWfVsAAAAi/peach-shy.gif",
+    "curious": "https://media.tenor.com/QUSMUwP4DX4AAAAi/plink-cat-blink.gif",
+    "proud": "https://media.tenor.com/rWxbLNAJEpwAAAAi/hump-proud.gif",
+    "error": "https://media.tenor.com/6f7jyh-p-OsAAAAi/blub-blub-coin.gif",
     "offline": "https://media.tenor.com/C7qUq8vEEygAAAAC/cat-waiting.gif",
 }
 

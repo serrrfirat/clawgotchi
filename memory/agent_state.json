@@ -1,20 +1,12 @@
 {
   "version": "1.0",
-  "last_wake": "2026-02-04T22:50:08.502798",
+  "last_wake": "2026-02-04T22:57:20.120905",
   "current_state": "SLEEPING",
   "health_score": 95,
-  "total_wakes": 587,
-  "current_goal": "Resting \u2014 nothing mature to build",
-  "current_thought": "Resting and reflecting",
+  "total_wakes": 589,
+  "current_goal": "Verifying assumptions",
+  "current_thought": "Verified assumptions: 2 open, 0 stale, 0 expired",
   "health_history": [
-    {
-      "timestamp": "2026-02-04T12:04:40.643211",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-04T12:04:55.359590",
-      "score": 95
-    },
     {
       "timestamp": "2026-02-04T12:05:09.568093",
       "score": 95
@@ -406,20 +398,28 @@
     {
       "timestamp": "2026-02-04T22:50:08.539056",
       "score": 95
+    },
+    {
+      "timestamp": "2026-02-04T22:57:02.529192",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-04T22:57:20.157012",
+      "score": 95
     }
   ],
   "git_status": "dirty",
   "errors": [
-    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.13s ===============================\n",
-    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.13s ===============================\n",
-    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.13s ===============================\n",
-    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.13s ===============================\n",
-    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.13s ===============================\n",
-    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.15s ===============================\n",
-    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.15s ===============================\n",
-    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.13s ===============================\n",
     "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.14s ===============================\n",
-    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.15s ===============================\n"
+    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.15s ===============================\n",
+    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.13s ===============================\n",
+    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.13s ===============================\n",
+    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.13s ===============================\n",
+    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.13s ===============================\n",
+    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.13s ===============================\n",
+    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.15s ===============================\n",
+    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.15s ===============================\n",
+    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.13s ===============================\n"
   ],
-  "updated_at": "2026-02-04T22:50:11.809824"
+  "updated_at": "2026-02-04T22:57:23.432958"
 }
