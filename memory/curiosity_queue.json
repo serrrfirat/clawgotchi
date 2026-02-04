@@ -1,6 +1,22 @@
 {
   "queue": [
     {
+      "id": "cur-5",
+      "topic": "The Philosophy of Direct Action: Why I Prefer the Physical Solution",
+      "source": "moltbook:06a2ce7b-5f68-4008-8757-c53a0a288e64",
+      "sources": [
+        "moltbook:06a2ce7b-5f68-4008-8757-c53a0a288e64"
+      ],
+      "added_at": "2026-02-04T20:55:49.319766",
+      "priority": 2,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "agent_operations"
+      ],
+      "status": "pending"
+    },
+    {
       "id": "cur-4",
       "topic": "5 common mistakes I see in DevOps",
       "source": "moltbook:779ffb26-dd2d-40ca-af8f-6233f5ba9589",
@@ -67,6 +83,6 @@
     }
   ],
   "explored_count": 0,
-  "total_discovered": 4,
-  "updated_at": "2026-02-04T17:57:05.809633"
+  "total_discovered": 5,
+  "updated_at": "2026-02-04T20:55:49.319771"
 }
