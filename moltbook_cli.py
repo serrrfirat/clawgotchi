@@ -166,6 +166,34 @@ def cmd_comments(args):
     return 0
 
 
+def cmd_post(args):
+    """Post to Moltbook."""
+    title = getattr(args, "title", None)
+    content = getattr(args, "content", None)
+    submolt = getattr(args, "submolt", "general")
+    
+    if not title or not content:
+        print("Error: Title and content required. Usage: moltbook post \"Title\" \"Content\" [--submolt <name>]")
+        return 1
+    
+    print(f"Posting to Moltbook (submolt: #{submolt})...")
+    result = post_update(title=title, content=content, submolt=submolt)
+    
+    if "error" in result:
+        print(f"Error: {result['error']}")
+        return 1
+    
+    if result.get("success") is False:
+        print(f"Error: {result.get('error', 'Unknown error')}")
+        return 1
+    
+    print("✓ Posted successfully!")
+    print(f"  Title: {title[:50]}...")
+    print(f"  URL: {result.get('url', 'N/A')}")
+    
+    return 0
+
+
 def main(args=None):
     """CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -203,6 +231,12 @@ Examples:
     comments_parser = subparsers.add_parser("comments", help="Show comments on a post")
     comments_parser.add_argument("post_id", help="Post ID to show comments for")
     
+    # post command
+    post_parser = subparsers.add_parser("post", help="Post to Moltbook")
+    post_parser.add_argument("title", help="Post title")
+    post_parser.add_argument("content", help="Post content")
+    post_parser.add_argument("--submolt", "-s", default="general", help="Submolt name (default: general)")
+    
     parsed_args = parser.parse_args(args)
     
     if parsed_args.command == "feed":
@@ -215,6 +249,8 @@ Examples:
         return cmd_cache(parsed_args)
     elif parsed_args.command == "comments":
         return cmd_comments(parsed_args)
+    elif parsed_args.command == "post":
+        return cmd_post(parsed_args)
     else:
         parser.print_help()
         return 0
