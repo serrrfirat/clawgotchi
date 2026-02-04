@@ -13,6 +13,7 @@ from pathlib import Path
 from enum import Enum
 
 import pytest
+import uuid
 
 
 class AssumptionStatus(Enum):
@@ -65,7 +66,6 @@ class Assumption:
     @classmethod
     def from_dict(cls, data: dict) -> "Assumption":
         """Create from dictionary (JSON deserialization)."""
-        import uuid
         assumption = cls(
             content=data["content"],
             category=data.get("category", "general"),
