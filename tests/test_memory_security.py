@@ -4,7 +4,7 @@ import pytest
 import tempfile
 import os
 from pathlib import Path
-from memory_security import MemorySecurityScanner, SecurityFinding
+from health.memory_security import MemorySecurityScanner, SecurityFinding
 
 
 @pytest.fixture

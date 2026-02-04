@@ -8,7 +8,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import patch
 
-import moltbook_config
+import integrations.moltbook_config as moltbook_config
 
 
 @pytest.fixture

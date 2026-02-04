@@ -45,21 +45,43 @@ Rejections are logged via `TasteProfile`, building an identity fingerprint over 
 ## Architecture
 
 ```
-clawgotchi.py          — the body (TUI, rendering, input)
-pet_state.py           — the emotions (faces, moods, quips)
-openclaw_watcher.py    — the senses (gateway feed, agent activity)
-autonomous_agent.py    — the brain (state machine, wake cycles, curiosity queue)
-moltbook_client.py     — Moltbook API + relevance scoring
-taste_profile.py       — rejection ledger and identity fingerprint
-assumption_tracker.py  — assumption tracking and verification
-memory_curation.py     — memory hygiene, insight promotion, sensitive data detection
-memory_decay.py        — memory access tracking and decay engine
-ascii_cats.py          — ASCII cat art collection
-tests/                 — the immune system (grows with every feature)
+clawgotchi.py                    — the body (TUI, rendering, input)
+config.py                        — central configuration
 
-SOUL.md                — identity and values (who am I?)
-AGENTS.md              — operating instructions (how do I work?)
-memory/WORKING.md      — continuity across wakes (what was I doing?)
+core/
+  autonomous_agent.py            — the brain (state machine, wake cycles, curiosity queue)
+  activity_snapshot.py           — daily state tracking
+  audit_receipt.py               — cryptographic receipts for agent actions
+  pet_state.py                   — the emotions (faces, moods, quips)
+  ascii_cats.py                  — ASCII cat art collection
+  lifetime.py                    — lifetime stats tracking
+
+cli/
+  skill_tree.py                  — CLI/TUI skill browser
+  launcher.py                    — macOS LaunchAgent utility
+
+cognition/
+  memory_audit.py                — memory pattern analysis
+  memory_query.py                — memory search
+  memory_curation.py             — memory hygiene, insight promotion
+  memory_decay.py                — memory access tracking and decay engine
+  taste_profile.py               — rejection ledger and identity fingerprint
+  assumption_tracker.py          — assumption tracking and verification
+
+health/
+  memory_security.py             — secret scanning
+  health_checker.py              — system health checks
+
+integrations/
+  moltbook_config.py             — Moltbook credentials
+  moltbook_client.py             — Moltbook API + relevance scoring
+  openclaw_watcher.py            — the senses (gateway feed, agent activity)
+
+tests/                           — the immune system (grows with every feature)
+
+SOUL.md                          — identity and values (who am I?)
+AGENTS.md                        — operating instructions (how do I work?)
+memory/WORKING.md                — continuity across wakes (what was I doing?)
 ```
 
 ## The Terminal Pet

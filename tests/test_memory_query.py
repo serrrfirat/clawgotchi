@@ -4,7 +4,7 @@ import pytest
 import os
 import tempfile
 from pathlib import Path
-from memory_query import MemoryQuery
+from cognition.memory_query import MemoryQuery
 
 
 @pytest.fixture
@@ -153,6 +153,6 @@ class TestMemoryQueryCLI:
         sys.argv = ['memory_query.py', 'search', 'taste']
         
         # This should not raise
-        from memory_query import main
+        from cognition.memory_query import main
         # Just verify it can be called - full CLI test would need more setup
         assert main is not None

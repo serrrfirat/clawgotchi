@@ -12,7 +12,7 @@ from unittest.mock import patch, MagicMock
 
 def test_parse_wake_cycles():
     """Test parsing wake cycle entries from memory content"""
-    from memory_audit import parse_wake_cycles
+    from cognition.memory_audit import parse_wake_cycles
     
     content = """## Wake Cycle #575 (2026-02-04 21:38)
 - Action: JSON Escape Utility
@@ -33,7 +33,7 @@ def test_parse_wake_cycles():
 
 def test_extract_key_metrics():
     """Test extraction of key metrics from content"""
-    from memory_audit import extract_key_metrics
+    from cognition.memory_audit import extract_key_metrics
     
     content = """
 - Tests: All json_escape tests passing (10/10)
@@ -50,7 +50,7 @@ def test_extract_key_metrics():
 
 def test_detect_patterns():
     """Test detection of repeating patterns in memory"""
-    from memory_audit import detect_patterns
+    from cognition.memory_audit import detect_patterns
     
     content = """
 - Action: Curating memories
@@ -69,7 +69,7 @@ def test_detect_patterns():
 
 def test_generate_audit_summary():
     """Test generating a full audit summary"""
-    from memory_audit import generate_audit_summary
+    from cognition.memory_audit import generate_audit_summary
     
     mock_files = {
         'memory/2026-02-04.md': """
@@ -104,7 +104,7 @@ def test_generate_audit_summary():
 """
     }
     
-    with patch('memory_audit.read_memory_file') as mock_read:
+    with patch('cognition.memory_audit.read_memory_file') as mock_read:
         mock_read.side_effect = lambda f: mock_files.get(f, '')
         summary = generate_audit_summary()
         
@@ -117,7 +117,7 @@ def test_generate_audit_summary():
 
 def test_update_memory_with_insights():
     """Test updating MEMORY.md with distilled insights"""
-    from memory_audit import update_memory_with_insights
+    from cognition.memory_audit import update_memory_with_insights
     
     mock_summary = {
         'date': '2026-02-04',
@@ -128,8 +128,8 @@ def test_update_memory_with_insights():
     }
     
     # Mock file operations
-    with patch('memory_audit.read_file', return_value=''), \
-         patch('memory_audit.write_file') as mock_write:
+    with patch('cognition.memory_audit.read_file', return_value=''), \
+         patch('cognition.memory_audit.write_file') as mock_write:
         update_memory_with_insights(mock_summary)
         mock_write.assert_called_once()
         content = mock_write.call_args[0][1]
@@ -139,15 +139,15 @@ def test_update_memory_with_insights():
 
 def test_run_audit():
     """Test the full audit run"""
-    from memory_audit import run_audit
+    from cognition.memory_audit import run_audit
     
     mock_files = {
         'memory/2026-02-04.md': '# Daily Memory - Feb 4, 2026\n\n## Wake Cycles\n## Wake Cycle #575\n- Action: Testing\n- Result: Success',
         'memory/2026-02-03.md': '# Daily Memory - Feb 3, 2026\n\n## Wake Cycles\n## Wake Cycle #570\n- Action: Previous work\n- Result: Done'
     }
     
-    with patch('memory_audit.read_memory_file', side_effect=lambda f: mock_files.get(f, '')), \
-         patch('memory_audit.update_memory_with_insights') as mock_update:
+    with patch('cognition.memory_audit.read_memory_file', side_effect=lambda f: mock_files.get(f, '')), \
+         patch('cognition.memory_audit.update_memory_with_insights') as mock_update:
         result = run_audit()
         assert mock_update.called
         assert 'summary' in result

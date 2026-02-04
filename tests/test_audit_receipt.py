@@ -8,9 +8,7 @@ from datetime import datetime
 from unittest.mock import patch, mock_open
 
 # Import the module under test
-import sys
-sys.path.insert(0, '/workspace')
-from audit_receipt import AuditReceipt, ReceiptStore, ReceiptError
+from core.audit_receipt import AuditReceipt, ReceiptStore, ReceiptError
 
 
 class TestAuditReceiptCreation:

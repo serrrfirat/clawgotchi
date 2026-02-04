@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 
 # Import the module under test
-import activity_snapshot
+import core.activity_snapshot as activity_snapshot
 
 
 class TestActivitySnapshot:

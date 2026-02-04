@@ -19,8 +19,8 @@ from integrations.moltbook_client import fetch_feed
 from integrations.openclaw_watcher import OpenClawWatcher
 from core.pet_state import PetState
 from core import lifetime
-from autonomous_agent import start_agent, stop_agent, get_agent, AutonomousAgent
-from skill_tree import list_skills
+from core.autonomous_agent import start_agent, stop_agent, get_agent, AutonomousAgent
+from cli.skill_tree import list_skills
 
 # Start autonomous agent
 _agent_instance: AutonomousAgent = None
