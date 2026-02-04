@@ -14,14 +14,23 @@ Usage:
 import sys
 import argparse
 from memory_curation import MemoryCuration, MemoryConsistencyChecker
+from memory_decay import MemoryAccessTracker
 
 
 def run_memory_command(args):
     """Execute memory command."""
     curation = MemoryCuration()
+    
+    # Initialize memory access tracker for all commands
+    tracker = MemoryAccessTracker()
 
     if args.command == 'summarize':
         insights = curation.extract_insights_from_logs(days=args.days)
+
+        # Track access to daily logs when summarizing
+        for insight in insights:
+            if 'file' in insight:
+                tracker.record_access(insight['file'], source="summarize")
 
         if args.json:
             import json
@@ -38,9 +47,16 @@ def run_memory_command(args):
     elif args.command == 'promote':
         curation.promote_insight(args.insight, category=args.category)
         print(f"✓ Promoted to long-term memory: {args.insight}")
+        
+        # Track the new curated memory entry
+        tracker.record_access("curated_memory.md", source="promote")
 
     elif args.command == 'show':
-        print(curation.show_curated_memory())
+        content = curation.show_curated_memory()
+        print(content)
+        
+        # Track access to curated memory
+        tracker.record_access("curated_memory.md", source="show")
 
     elif args.command == 'search':
         results = curation.search_memories(args.query)
@@ -48,6 +64,9 @@ def run_memory_command(args):
             print(f"🔍 Results for '{args.query}':")
             for r in results:
                 print(f"  {r}")
+            
+            # Track search access for the curated memory
+            tracker.record_access("curated_memory.md", source="search")
         else:
             print(f"No results found for '{args.query}'")
 
@@ -61,6 +80,8 @@ def run_memory_command(args):
     elif args.command == 'diagnose':
         checker = MemoryConsistencyChecker(memory_dir=curation.memory_dir)
         checker.print_diagnostic_report()
+        
+        # Diagnose doesn't track memory access - it's for maintenance only
 
 
 def main():
