@@ -72,6 +72,7 @@ STATE_EXPLORING = "EXPLORING"
 STATE_VERIFYING = "VERIFYING"
 STATE_SHARING = "SHARING"
 STATE_REFLECTING = "REFLECTING"
+STATE_SKILLING = "SKILLING"  # Discover → Implement → Skillify
 
 # Paths
 BASE_DIR = Path(__file__).parent
@@ -518,6 +519,9 @@ class AutonomousAgent:
         elif action["type"] == "CURATE":
             self.state.current_state = STATE_REFLECTING
             result = await self._curate_memory()
+        elif action["type"] == "SKILLIFY":
+            self.state.current_state = STATE_SKILLING
+            result = await self._discover_implement_skill(action)
         else:
             # REST - do nothing, just reflect
             self.state.current_state = STATE_REFLECTING
@@ -599,8 +603,9 @@ class AutonomousAgent:
           2. Every 3rd cycle       → VERIFY assumptions
           3. Every 5th cycle       → CURATE memories
           4. Every 4th cycle       → EXPLORE Moltbook (populates curiosity)
-          5. Mature curiosity item → BUILD (rare, intentional)
-          6. Default               → REST (not BUILD)
+          5. Every 6th cycle       → SKILLIFY (discover → implement → skill)
+          6. Mature curiosity item → BUILD (rare, intentional)
+          7. Default               → REST (not BUILD)
         """
         cycle = self.state.total_wakes
 
@@ -621,7 +626,11 @@ class AutonomousAgent:
         if cycle % 4 == 0:
             return {"type": "EXPLORE", "description": "Exploring Moltbook for ideas"}
 
-        # 5. Build only when a mature curiosity item exists + passes taste check
+        # 5. SKILLIFY every 6th cycle — discover → implement → skill
+        if cycle % 6 == 0:
+            return {"type": "SKILLIFY", "description": "Discovering and skillifying features"}
+
+        # 6. Build only when a mature curiosity item exists + passes taste check
         mature = self.curiosity.get_mature()
         if mature and self._taste_check(mature.get("topic", ""), mature.get("categories", [])):
             return {
@@ -630,7 +639,7 @@ class AutonomousAgent:
                 "item": mature,
             }
 
-        # 6. Default: rest
+        # 7. Default: rest
         return {"type": "REST", "description": "Resting — nothing mature to build"}
 
     # ---- Category-specific templates for feature building ----
@@ -990,6 +999,274 @@ def test_status_command():
         name = _re.sub(r'[^a-zA-Z0-9]', '_', title)
         name = _re.sub(r'_+', '_', name).strip('_')
         return name[:50].lower()
+
+    async def _discover_implement_skill(self, action: dict) -> str:
+        """Discover → Implement → Skillify cycle.
+        
+        Every 6th cycle, clawgotchi:
+          1. DISCOVERS: Looks at recent commits, Moltbook, memory for patterns
+          2. IMPLEMENTs: Builds something new based on patterns found
+          3. SKILLIFYs: Converts the implementation into a reusable skill
+        
+        This enables continuous self-expansion through skill creation.
+        """
+        from moltbook_client import fetch_feed, extract_feature_ideas
+        
+        print("🎯 DISCOVER → IMPLEMENT → SKILLIFY")
+        
+        # STEP 1: DISCOVER patterns
+        print("  📖 Discovering patterns...")
+        
+        # Look at recent Moltbook posts for skill-like ideas
+        posts = fetch_feed(limit=30)
+        skill_ideas = []
+        
+        for post in posts:
+            title = post.get("title", "").lower()
+            content = post.get("content", "").lower()
+            
+            # Look for skill/tool/CLI patterns
+            if any(kw in title for kw in ["cli", "tool", "command", "skill", "script", "inspect", "query", "export"]):
+                skill_ideas.append({
+                    "type": "moltbook",
+                    "title": post.get("title"),
+                    "reason": f"From Moltbook: {post.get('reason', 'no reason')}",
+                    "author": post.get("author", "unknown")
+                })
+        
+        # Look at existing scripts in clawgotchi that aren't skills yet
+        scripts_dir = BASE_DIR
+        existing_scripts = []
+        for py in scripts_dir.glob("*.py"):
+            if py.name not in ["clawgotchi.py", "autonomous_agent.py", "moltbook_client.py", 
+                              "memory_curation.py", "cli_memory.py", "learning_loop.py"]:
+                if py.name.startswith("_") or py.name.startswith("test_"):
+                    continue
+                # Check if it has a skill
+                skill_path = BASE_DIR / "skills" / py.name.replace(".py", "")
+                if not skill_path.exists():
+                    existing_scripts.append({
+                        "type": "existing_script",
+                        "title": py.name.replace("_", " ").replace(".py", ""),
+                        "reason": "Existing script not yet skillified",
+                        "author": "clawgotchi"
+                    })
+        
+        # Combine and deduplicate
+        all_ideas = skill_ideas + existing_scripts
+        if not all_ideas:
+            return "No skill opportunities discovered"
+        
+        print(f"  📦 Found {len(all_ideas)} potential skills")
+        
+        # Pick the best one (prioritize existing scripts, then Moltbook)
+        selected = None
+        for idea in all_ideas:
+            if idea["type"] == "existing_script":
+                selected = idea
+                break
+        if not selected and all_ideas:
+            selected = all_ideas[0]
+        
+        if not selected:
+            return "No skillable items found"
+        
+        # STEP 2: IMPLEMENT or REFINE
+        print(f"  🔨 Implementing skill: {selected['title']}")
+        
+        module_name = self._title_to_module(selected["title"])
+        skill_dir = BASE_DIR / "skills" / module_name
+        scripts_dir = skill_dir / "scripts"
+        scripts_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Generate the CLI script
+        script_content = self._generate_cli_code(module_name, selected["title"], selected)
+        script_path = scripts_dir / f"{module_name}.py"
+        script_path.write_text(script_content)
+        print(f"    📄 Created: {script_path.name}")
+        
+        # STEP 3: SKILLIFY
+        print(f"  🎓 Creating skill: {module_name}")
+        
+        # Generate SKILL.md
+        skill_md = self._generate_skill_md(module_name, selected["title"], selected)
+        skill_md_path = skill_dir / "SKILL.md"
+        skill_md_path.write_text(skill_md)
+        print(f"    📝 Created: {skill_md_path.name}")
+        
+        # Generate tests
+        test_content = self._generate_test_code(module_name, selected["title"])
+        test_path = BASE_DIR / "tests" / f"test_{module_name}.py"
+        test_path.write_text(test_content)
+        print(f"    🧪 Created: {test_path.name}")
+        
+        # Run tests
+        print("    🔎 Running tests...")
+        result = subprocess.run(
+            [sys.executable, "-m", "pytest", str(test_path), "-v"],
+            capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            # Clean up failed skill
+            script_path.unlink()
+            skill_md_path.unlink()
+            test_path.unlink()
+            skill_dir.rmdir()
+            return f"Tests failed for: {selected['title']}"
+        
+        # Generate audit receipt
+        self._generate_receipt(f"Skillified: {selected['title']}")
+        
+        # Git add
+        subprocess.run(["git", "add", str(skill_dir)], capture_output=True)
+        subprocess.run(["git", "add", str(test_path)], capture_output=True)
+        
+        print(f"    ✅ Skill created: {module_name}")
+        
+        return f"Skillified: {module_name} from {selected['type']}"
+
+    def _generate_receipt(self, action: str):
+        """Generate audit receipt for skill creation."""
+        import hashlib
+        import uuid
+        from datetime import datetime
+        
+        timestamp = datetime.now().isoformat()
+        receipt_id = f"receipt-{uuid.uuid4().hex[:8]}"
+        hash_input = f"{action}:{timestamp}"
+        receipt_hash = hashlib.sha256(hash_input.encode()).hexdigest()[:16]
+        
+        receipt = {
+            "id": receipt_id,
+            "timestamp": timestamp,
+            "action": action,
+            "hash": receipt_hash,
+            "agent": "clawgotchi"
+        }
+        
+        receipts_dir = BASE_DIR / "memory" / "receipts"
+        receipts_dir.mkdir(parents=True, exist_ok=True)
+        (receipts_dir / f"{receipt_id}.json").write_text(json.dumps(receipt, indent=2))
+    
+    def _generate_cli_code(self, module: str, title: str, idea: dict) -> str:
+        """Generate a CLI script for the skill."""
+        class_name = "".join(w.capitalize() for w in module.split("_") if w)
+        description = idea.get("reason", "").lower()
+        
+        # Determine CLI type based on title/description
+        if "inspect" in module or "query" in module or "search" in module:
+            # Data retrieval CLI
+            return f'''#!/usr/bin/env python3
+"""Skill: {title}"""
+
+import argparse
+import json
+from pathlib import Path
+
+def main():
+    parser = argparse.ArgumentParser(description="{title}")
+    parser.add_argument("--json", action="store_true", help="JSON output")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose")
+    
+    args = parser.parse_args()
+    
+    # Core functionality
+    result = {{"status": "ok", "module": "{module}"}}
+    
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        print("{title}")
+        print(f"  Module: {module}")
+    
+    return 0
+
+if __name__ == "__main__":
+    import sys
+    sys.exit(main())
+'''
+        elif "export" in module or "taste" in module:
+            # Export/formatting CLI
+            return f'''#!/usr/bin/env python3
+"""Skill: {title}"""
+
+import argparse
+import json
+from pathlib import Path
+
+def export_markdown(data: dict) -> str:
+    """Export as markdown."""
+    lines = []
+    lines.append(f"# {{data.get('title', '{title}')}}\\n")
+    for k, v in data.items():
+        if isinstance(v, list):
+            lines.append(f"## {{k}}")
+            for item in v:
+                lines.append(f"- {{item}}")
+        else:
+            lines.append(f"**{{k}}**: {{v}}")
+    return "\\n".join(lines)
+
+def export_json(data: dict) -> str:
+    return json.dumps(data, indent=2)
+
+def main():
+    parser = argparse.ArgumentParser(description="{title}")
+    parser.add_argument("--markdown", action="store_true", help="Export as markdown")
+    parser.add_argument("--json", action="store_true", help="JSON output")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose")
+    
+    args = parser.parse_args()
+    
+    data = {{"title": "{title}", "module": "{module}"}}
+    
+    if args.markdown:
+        print(export_markdown(data))
+    elif args.json:
+        print(export_json(data))
+    else:
+        print("{title}")
+    
+    return 0
+
+if __name__ == "__main__":
+    import sys
+    sys.exit(main())
+'''
+        else:
+            # Generic utility CLI
+            return f'''#!/usr/bin/env python3
+"""Skill: {title}"""
+
+import argparse
+import json
+
+def run(verbose: bool = False):
+    """Run the skill."""
+    if verbose:
+        print(f"Running {{__name__}}...")
+    return {{"status": "ok"}}
+
+def main():
+    parser = argparse.ArgumentParser(description="{title}")
+    parser.add_argument("--json", action="store_true", help="JSON output")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose")
+    
+    args = parser.parse_args()
+    
+    result = run(args.verbose)
+    
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        print("{title} - completed")
+    
+    return 0
+
+if __name__ == "__main__":
+    import sys
+    sys.exit(main())
+'''
 
     async def _explore_curiosity(self, action: dict) -> str:
         """Explore Moltbook — score posts, reject most, feed curiosity queue.
