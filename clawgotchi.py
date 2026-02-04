@@ -867,7 +867,7 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
                  "skills": " [s] pet  [m] chat  [\u2191\u2193] select  [\u23ce] view",
                  "thread": " [esc] back  [\u2191\u2193] scroll",
                  "chat": " [m] pet  [s] skills  [i] type  [\u2191\u2193] scroll",
-                 "dashboard": " [esc] back  [\u2191\u2193] scroll"}.get(mode, "")
+                 "dashboard": " [d] back  [s] skills  [\u2191\u2193] scroll"}.get(mode, "")
 
     controls = uptime + hints
     ctrl_pad = max(0, w - 2 - len(controls) - 3)
@@ -1037,9 +1037,15 @@ def main():
                     elif key.name == "KEY_END":
                         chat_scroll = 0
                 elif mode == "dashboard":
-                    if key == "\x1b" or key.name == "KEY_ESCAPE":
+                    if key == "\x1b" or key.name == "KEY_ESCAPE" or key == "d":
                         mode = "pet"
                         dashboard_scroll = 0
+                    elif key == "s":
+                        mode = "skills"
+                        selected_topic = 0
+                    elif key == "m":
+                        mode = "chat"
+                        chat_scroll = 0
                     elif key.name in ("KEY_UP",) or key == "k":
                         dashboard_scroll = max(0, dashboard_scroll - 1)
                     elif key.name in ("KEY_DOWN",) or key == "j":
