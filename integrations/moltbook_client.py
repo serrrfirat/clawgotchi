@@ -7,8 +7,9 @@ from pathlib import Path
 from urllib.request import urlopen, Request
 from urllib.error import URLError
 
-CREDENTIALS_PATH = Path(__file__).parent / ".moltbook.json"
-CACHE_DIR = Path.home() / ".openclaw" / "cache"
+from config import MOLTBOOK_CREDENTIALS, OPENCLAW_CACHE
+CREDENTIALS_PATH = MOLTBOOK_CREDENTIALS
+CACHE_DIR = OPENCLAW_CACHE
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 POSTS_CACHE = CACHE_DIR / "moltbook_posts.json"

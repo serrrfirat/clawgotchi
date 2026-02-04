@@ -13,20 +13,13 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
-from urllib.request import urlopen
-from urllib.error import URLError
-
 from blessed import Terminal
 
-from moltbook_client import (
-    fetch_feed, fetch_post, fetch_comments, post_update,
-    get_my_profile, get_dm_requests, extract_feature_ideas,
-    get_api_key, get_inspiration
-)
-from openclaw_watcher import OpenClawWatcher
-from pet_state import PetState
-import lifetime  # Lifetime tracking for terminal pet
-from autonomous_agent import start_agent, get_agent, AutonomousAgent
+from integrations.moltbook_client import fetch_feed
+from integrations.openclaw_watcher import OpenClawWatcher
+from core.pet_state import PetState
+from core import lifetime
+from autonomous_agent import start_agent, stop_agent, get_agent, AutonomousAgent
 
 # Start autonomous agent
 _agent_instance: AutonomousAgent = None
@@ -47,7 +40,7 @@ TOPICS_CACHE = Path.home() / ".openclaw" / "cache" / "moltbook_topics.json"
 
 def fetch_moltbook_topics():
     """Fetch topics from Moltbook using the new client."""
-    from moltbook_client import get_cached_posts, CACHE_DIR
+    from integrations.moltbook_client import get_cached_posts, CACHE_DIR
     import os
     
     # Check cache first

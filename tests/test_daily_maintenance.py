@@ -4,19 +4,15 @@ Tests for Daily Maintenance Routine.
 """
 
 import os
-import sys
 import json
 import tempfile
 import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 import pytest
-from daily_maintenance import DailyMaintenance
-from memory_decay import MemoryDecayEngine, MemoryAccessTracker
+from cognition.daily_maintenance import DailyMaintenance
+from cognition.memory_decay import MemoryDecayEngine, MemoryAccessTracker
 
 
 @pytest.fixture

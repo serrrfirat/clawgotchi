@@ -9,12 +9,8 @@ on assumptions I've made about the world.
 
 import json
 import os
-import tempfile
 from datetime import datetime, timedelta
-from pathlib import Path
 from enum import Enum
-
-import pytest
 import uuid
 
 
@@ -105,7 +101,10 @@ class AssumptionTracker:
     and what I've actually confirmed to be true.
     """
     
-    def __init__(self, storage_path: str = "memory/assumptions.json"):
+    def __init__(self, storage_path: str = None):
+        if storage_path is None:
+            from config import ASSUMPTIONS_FILE
+            storage_path = str(ASSUMPTIONS_FILE)
         self.storage_path = storage_path
         self.assumptions: list[Assumption] = []
         self._load()

@@ -10,10 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-# Add the workspace to path
-sys.path.insert(0, '/workspace')
-
-from assumption_tracker import AssumptionTracker
+from cognition.assumption_tracker import AssumptionTracker
 
 
 @pytest.fixture
@@ -36,7 +33,7 @@ class TestCLIRecord:
     
     def test_record_basic(self, temp_tracker, monkeypatch):
         """Test basic assumption recording."""
-        from cli_assume import cmd_record
+        from cli.cli_assume import cmd_record
         import argparse
         
         # Create mock args
@@ -47,7 +44,7 @@ class TestCLIRecord:
             days=None
         )
         
-        with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+        with patch('cli.cli_assume.AssumptionTracker', return_value=temp_tracker):
             cmd_record(args)
         
         assert len(temp_tracker.assumptions) == 1
@@ -56,7 +53,7 @@ class TestCLIRecord:
     
     def test_record_with_days(self, temp_tracker, monkeypatch):
         """Test recording with expected verification days."""
-        from cli_assume import cmd_record
+        from cli.cli_assume import cmd_record
         import argparse
         
         args = argparse.Namespace(
@@ -66,7 +63,7 @@ class TestCLIRecord:
             days="5"
         )
         
-        with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+        with patch('cli.cli_assume.AssumptionTracker', return_value=temp_tracker):
             cmd_record(args)
         
         assumption = temp_tracker.assumptions[0]
@@ -82,7 +79,7 @@ class TestCLIVerify:
     
     def test_verify_correct(self, temp_tracker, monkeypatch):
         """Test verifying an assumption as correct."""
-        from cli_assume import cmd_verify
+        from cli.cli_assume import cmd_verify
         import argparse
         
         # First record an assumption
@@ -98,7 +95,7 @@ class TestCLIVerify:
             evidence=["Test evidence"]
         )
         
-        with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+        with patch('cli.cli_assume.AssumptionTracker', return_value=temp_tracker):
             cmd_verify(args)
         
         assumption = temp_tracker.get(assumption_id)
@@ -108,7 +105,7 @@ class TestCLIVerify:
     
     def test_verify_incorrect(self, temp_tracker, monkeypatch):
         """Test verifying an assumption as incorrect."""
-        from cli_assume import cmd_verify
+        from cli.cli_assume import cmd_verify
         import argparse
         
         assumption_id = temp_tracker.record(
@@ -123,7 +120,7 @@ class TestCLIVerify:
             evidence=[]
         )
         
-        with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+        with patch('cli.cli_assume.AssumptionTracker', return_value=temp_tracker):
             cmd_verify(args)
         
         assumption = temp_tracker.get(assumption_id)
@@ -132,7 +129,7 @@ class TestCLIVerify:
     
     def test_verify_nonexistent(self, temp_tracker, monkeypatch):
         """Test verifying a non-existent assumption."""
-        from cli_assume import cmd_verify
+        from cli.cli_assume import cmd_verify
         import argparse
         
         args = argparse.Namespace(
@@ -143,7 +140,7 @@ class TestCLIVerify:
         )
         
         with pytest.raises(SystemExit):
-            with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+            with patch('cli.cli_assume.AssumptionTracker', return_value=temp_tracker):
                 cmd_verify(args)
 
 
@@ -152,7 +149,7 @@ class TestCLIList:
     
     def test_list_all(self, temp_tracker, capsys):
         """Test listing all assumptions."""
-        from cli_assume import cmd_list
+        from cli.cli_assume import cmd_list
         import argparse
         
         # Record some assumptions
@@ -165,7 +162,7 @@ class TestCLIList:
             category=None
         )
         
-        with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+        with patch('cli.cli_assume.AssumptionTracker', return_value=temp_tracker):
             cmd_list(args)
         
         captured = capsys.readouterr()
@@ -174,7 +171,7 @@ class TestCLIList:
     
     def test_list_stale(self, temp_tracker, capsys):
         """Test listing stale assumptions."""
-        from cli_assume import cmd_list
+        from cli.cli_assume import cmd_list
         import argparse
         
         # Create old assumption
@@ -190,7 +187,7 @@ class TestCLIList:
             category=None
         )
         
-        with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+        with patch('cli.cli_assume.AssumptionTracker', return_value=temp_tracker):
             cmd_list(args)
         
         captured = capsys.readouterr()
@@ -202,12 +199,12 @@ class TestCLISummary:
     
     def test_summary_empty(self, temp_tracker, capsys):
         """Test summary with no assumptions."""
-        from cli_assume import cmd_summary
+        from cli.cli_assume import cmd_summary
         import argparse
         
         args = argparse.Namespace()
         
-        with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+        with patch('cli.cli_assume.AssumptionTracker', return_value=temp_tracker):
             cmd_summary(args)
         
         captured = capsys.readouterr()
@@ -216,7 +213,7 @@ class TestCLISummary:
     
     def test_summary_with_data(self, temp_tracker, capsys):
         """Test summary with recorded assumptions."""
-        from cli_assume import cmd_summary
+        from cli.cli_assume import cmd_summary
         import argparse
         
         temp_tracker.record(content="Fact 1", category="fact")
@@ -228,7 +225,7 @@ class TestCLISummary:
         
         args = argparse.Namespace()
         
-        with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+        with patch('cli.cli_assume.AssumptionTracker', return_value=temp_tracker):
             cmd_summary(args)
         
         captured = capsys.readouterr()
@@ -242,14 +239,14 @@ class TestCLIStale:
     
     def test_no_stale(self, temp_tracker, capsys):
         """Test stale check with no stale assumptions."""
-        from cli_assume import cmd_stale
+        from cli.cli_assume import cmd_stale
         import argparse
         
         temp_tracker.record(content="Recent assumption", category="test")
         
         args = argparse.Namespace()
         
-        with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+        with patch('cli.cli_assume.AssumptionTracker', return_value=temp_tracker):
             cmd_stale(args)
         
         captured = capsys.readouterr()
@@ -257,7 +254,7 @@ class TestCLIStale:
     
     def test_has_stale(self, temp_tracker, capsys):
         """Test stale check with stale assumptions."""
-        from cli_assume import cmd_stale
+        from cli.cli_assume import cmd_stale
         import argparse
         
         # Create stale assumption
@@ -268,7 +265,7 @@ class TestCLIStale:
         
         args = argparse.Namespace()
         
-        with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+        with patch('cli.cli_assume.AssumptionTracker', return_value=temp_tracker):
             cmd_stale(args)
         
         captured = capsys.readouterr()
@@ -281,7 +278,7 @@ class TestCLIConfidence:
     
     def test_record_with_confidence(self, temp_tracker, capsys):
         """Test recording with custom confidence."""
-        from cli_assume import cmd_record
+        from cli.cli_assume import cmd_record
         import argparse
         
         args = argparse.Namespace(
@@ -292,7 +289,7 @@ class TestCLIConfidence:
             confidence="0.9"
         )
         
-        with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+        with patch('cli.cli_assume.AssumptionTracker', return_value=temp_tracker):
             cmd_record(args)
         
         assumption = temp_tracker.assumptions[0]
@@ -301,7 +298,7 @@ class TestCLIConfidence:
     
     def test_record_default_confidence(self, temp_tracker, capsys):
         """Test that default confidence is 0.8."""
-        from cli_assume import cmd_record
+        from cli.cli_assume import cmd_record
         import argparse
         
         args = argparse.Namespace(
@@ -312,7 +309,7 @@ class TestCLIConfidence:
             confidence=None
         )
         
-        with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+        with patch('cli.cli_assume.AssumptionTracker', return_value=temp_tracker):
             cmd_record(args)
         
         assumption = temp_tracker.assumptions[0]
@@ -320,7 +317,7 @@ class TestCLIConfidence:
     
     def test_confidence_update(self, temp_tracker, capsys):
         """Test updating confidence of an assumption."""
-        from cli_assume import cmd_confidence
+        from cli.cli_assume import cmd_confidence
         import argparse
         
         # Create an assumption
@@ -334,7 +331,7 @@ class TestCLIConfidence:
             new_confidence=0.5
         )
         
-        with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+        with patch('cli.cli_assume.AssumptionTracker', return_value=temp_tracker):
             cmd_confidence(args)
         
         assumption = temp_tracker.get(assumption_id)
@@ -343,7 +340,7 @@ class TestCLIConfidence:
     
     def test_confidence_invalid_range(self, temp_tracker, capsys):
         """Test that confidence outside 0-1 range is rejected."""
-        from cli_assume import cmd_confidence
+        from cli.cli_assume import cmd_confidence
         import argparse
         
         assumption_id = temp_tracker.record(
@@ -357,12 +354,12 @@ class TestCLIConfidence:
         )
         
         with pytest.raises(SystemExit):
-            with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+            with patch('cli.cli_assume.AssumptionTracker', return_value=temp_tracker):
                 cmd_confidence(args)
     
     def test_confidence_nonexistent(self, temp_tracker, capsys):
         """Test updating confidence of non-existent assumption."""
-        from cli_assume import cmd_confidence
+        from cli.cli_assume import cmd_confidence
         import argparse
         
         args = argparse.Namespace(
@@ -371,7 +368,7 @@ class TestCLIConfidence:
         )
         
         with pytest.raises(SystemExit):
-            with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+            with patch('cli.cli_assume.AssumptionTracker', return_value=temp_tracker):
                 cmd_confidence(args)
 
 

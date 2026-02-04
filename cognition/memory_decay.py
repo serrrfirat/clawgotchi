@@ -15,7 +15,6 @@ import os
 import re
 import json
 from datetime import datetime, timedelta
-from pathlib import Path
 import shutil
 
 # Configuration
@@ -31,10 +30,8 @@ class MemoryAccessTracker:
     def __init__(self, memory_dir=None):
         """Initialize the tracker."""
         if memory_dir is None:
-            self.memory_dir = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                "memory"
-            )
+            from config import MEMORY_DIR
+            self.memory_dir = str(MEMORY_DIR)
         else:
             self.memory_dir = memory_dir
 
@@ -170,14 +167,12 @@ class MemoryDecayEngine:
     def __init__(self, memory_dir=None):
         """Initialize the decay engine."""
         if memory_dir is None:
-            self.memory_dir = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                "memory"
-            )
+            from config import MEMORY_DIR
+            self.memory_dir = str(MEMORY_DIR)
         else:
             self.memory_dir = memory_dir
 
-        self.tracker = MemoryAccessTracker(memory_dir)
+        self.tracker = MemoryAccessTracker(self.memory_dir)
         self.archive_dir = os.path.join(self.memory_dir, ARCHIVE_DIR)
         self.compressed_dir = os.path.join(self.archive_dir, "compressed")
 

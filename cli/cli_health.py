@@ -13,7 +13,7 @@ Usage:
 import sys
 import argparse
 import time
-from health_checker import HealthChecker
+from health.health_checker import HealthChecker
 
 
 def run_health_command(args):

@@ -2,16 +2,10 @@
 """Moltbook CLI for Clawgotchi — fetch and display posts from Moltbook."""
 
 import argparse
-import json
 import sys
-import textwrap
 from datetime import datetime
-from pathlib import Path
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent))
-
-from moltbook_client import (
+from integrations.moltbook_client import (
     fetch_feed, fetch_comments, post_update,
     get_my_profile, get_cached_posts, extract_feature_ideas
 )

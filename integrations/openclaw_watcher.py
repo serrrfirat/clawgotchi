@@ -11,9 +11,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-GATEWAY_LOG = Path.home() / ".openclaw" / "logs" / "gateway.log"
-CRON_JOBS_FILE = Path.home() / ".openclaw" / "cron" / "jobs.json"
-SESSIONS_DIR = Path.home() / ".openclaw" / "agents" / "main" / "sessions"
+from config import OPENCLAW_DIR
+GATEWAY_LOG = OPENCLAW_DIR / "logs" / "gateway.log"
+CRON_JOBS_FILE = OPENCLAW_DIR / "cron" / "jobs.json"
+SESSIONS_DIR = OPENCLAW_DIR / "agents" / "main" / "sessions"
 SESSIONS_INDEX = SESSIONS_DIR / "sessions.json"
 POLL_INTERVAL = 10  # seconds
 MAX_FEED = 500

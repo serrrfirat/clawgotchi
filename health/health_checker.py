@@ -13,10 +13,8 @@ Inspired by GhostNet's daily audits and Koschei's immortality protocols.
 """
 
 import os
-import sys
 from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Dict, Any
 
 
 class HealthChecker:
@@ -24,10 +22,15 @@ class HealthChecker:
     
     def __init__(self, workspace: str = None):
         """Initialize the health checker."""
-        self.workspace = workspace or os.getcwd()
-        self.memory_dir = os.path.join(self.workspace, 'memory')
-        self.assumptions_file = os.path.join(self.workspace, 'assumption_tracker.py')
-        self.state_file = os.path.join(self.workspace, 'pet_state.py')
+        if workspace is None:
+            from config import PROJECT_ROOT, MEMORY_DIR
+            self.workspace = str(PROJECT_ROOT)
+            self.memory_dir = str(MEMORY_DIR)
+        else:
+            self.workspace = workspace
+            self.memory_dir = os.path.join(self.workspace, 'memory')
+        self.assumptions_file = os.path.join(self.workspace, 'cognition', 'assumption_tracker.py')
+        self.state_file = os.path.join(self.workspace, 'core', 'pet_state.py')
         self.checks = []
         
     def run_all_checks(self) -> Dict[str, Any]:
@@ -261,7 +264,6 @@ class HealthChecker:
     def _check_disk_space(self) -> Dict:
         """Check available disk space."""
         try:
-            import shutil
             stat = os.statvfs(self.workspace)
             available_gb = (stat.f_bavail * stat.f_frsize) / (1024**3)
             

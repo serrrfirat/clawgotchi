@@ -13,8 +13,8 @@ Usage:
 
 import sys
 import argparse
-from memory_curation import MemoryCuration, MemoryConsistencyChecker
-from memory_decay import MemoryAccessTracker
+from cognition.memory_curation import MemoryCuration, MemoryConsistencyChecker
+from cognition.memory_decay import MemoryAccessTracker
 
 
 def run_memory_command(args):

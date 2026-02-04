@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from assumption_tracker import Assumption, AssumptionTracker, AssumptionStatus
+from cognition.assumption_tracker import Assumption, AssumptionTracker, AssumptionStatus
 
 
 @pytest.fixture

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Clawgotchi launcher — auto-start setup for Mac Mini + USB display."""
 
-import os
 import subprocess
 import sys
 from pathlib import Path
 
 PLIST_NAME = "com.clawgotchi.display"
 PLIST_PATH = Path.home() / "Library" / "LaunchAgents" / f"{PLIST_NAME}.plist"
-CLAWGOTCHI_DIR = Path(__file__).parent.resolve()
+from config import PROJECT_ROOT
+CLAWGOTCHI_DIR = PROJECT_ROOT.resolve()
 PYTHON = sys.executable
 
 

@@ -4,7 +4,7 @@ import pytest
 import time
 from unittest.mock import patch
 
-from pet_state import PetState, FACES, QUIPS, SHY_SOURCE_WINDOW, CURIOUS_SOURCE_WINDOW
+from core.pet_state import PetState, FACES, QUIPS, SHY_SOURCE_WINDOW, CURIOUS_SOURCE_WINDOW
 
 
 class TestPetStateInit:
@@ -51,7 +51,7 @@ class TestComputeFace:
         """Should sleep between 1-6 AM with low feed rate."""
         state = PetState()
         # Mock datetime to return 3 AM
-        with patch('pet_state.datetime') as mock_datetime:
+        with patch('core.pet_state.datetime') as mock_datetime:
             mock_datetime.now.return_value.hour = 3
             face = state.compute_face(gateway_online=True, feed_rate=0.1, active_agents=0)
             assert face == "sleeping"
@@ -277,17 +277,17 @@ class TestShyEmotion:
 
     def test_shy_has_animation_interval(self):
         """Shy should have animation interval defined."""
-        from pet_state import ANIMATION_INTERVALS
+        from core.pet_state import ANIMATION_INTERVALS
         assert "shy" in ANIMATION_INTERVALS
 
     def test_shy_has_bob_interval(self):
         """Shy should have bob interval defined."""
-        from pet_state import BOB_INTERVALS
+        from core.pet_state import BOB_INTERVALS
         assert "shy" in BOB_INTERVALS
 
     def test_shy_has_cat_mapping(self):
         """Shy emotion should have ASCII cat art mapping."""
-        from ascii_cats import EMOTION_CAT_TERMS as cat_terms
+        from core.ascii_cats import EMOTION_CAT_TERMS as cat_terms
         assert "shy" in cat_terms
 
 
@@ -305,17 +305,17 @@ class TestCuriousEmotion:
 
     def test_curious_has_animation_interval(self):
         """Curious should have animation interval defined."""
-        from pet_state import ANIMATION_INTERVALS
+        from core.pet_state import ANIMATION_INTERVALS
         assert "curious" in ANIMATION_INTERVALS
 
     def test_curious_has_bob_interval(self):
         """Curious should have bob interval defined."""
-        from pet_state import BOB_INTERVALS
+        from core.pet_state import BOB_INTERVALS
         assert "curious" in BOB_INTERVALS
 
     def test_curious_has_cat_mapping(self):
         """Curious emotion should have ASCII cat art mapping."""
-        from ascii_cats import EMOTION_CAT_TERMS as cat_terms
+        from core.ascii_cats import EMOTION_CAT_TERMS as cat_terms
         assert "curious" in cat_terms
 
 
@@ -379,23 +379,23 @@ class TestProudEmotion:
 
     def test_proud_has_animation_interval(self):
         """Proud should have animation interval defined."""
-        from pet_state import ANIMATION_INTERVALS
+        from core.pet_state import ANIMATION_INTERVALS
         assert "proud" in ANIMATION_INTERVALS
 
     def test_proud_has_bob_interval(self):
         """Proud should have bob interval defined."""
-        from pet_state import BOB_INTERVALS
+        from core.pet_state import BOB_INTERVALS
         assert "proud" in BOB_INTERVALS
 
     def test_proud_has_cat_mapping(self):
         """Proud emotion should have ASCII cat art mapping (or fallback gracefully)."""
-        from ascii_cats import EMOTION_CAT_TERMS as cat_terms
+        from core.ascii_cats import EMOTION_CAT_TERMS as cat_terms
         # "proud" may or may not be in the library's term map, but it shouldn't crash
         if "proud" in cat_terms:
             assert True
         else:
             # It's okay if it's not there, as long as get_cat_art handles it
-            from pet_state import PetState
+            from core.pet_state import PetState
             state = PetState()
             # Just ensure it doesn't error out
             _ = state.get_cat_art()

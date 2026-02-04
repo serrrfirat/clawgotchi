@@ -10,9 +10,7 @@ from unittest.mock import patch, mock_open
 import pytest
 
 # Module under test
-import sys
-sys.path.insert(0, str(Path(__file__).parent.parent))
-import lifetime
+from core import lifetime
 
 
 class TestLifetime:

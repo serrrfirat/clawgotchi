@@ -3,16 +3,12 @@ Tests for the Health Checker module.
 """
 
 import os
-import sys
 import tempfile
 import pytest
 from datetime import datetime, timedelta
 from pathlib import Path
 
-# Add workspace to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from health_checker import HealthChecker
+from health.health_checker import HealthChecker
 
 
 class TestHealthChecker:
@@ -31,7 +27,8 @@ class TestHealthChecker:
                 f.write("# Test Memory\n\nSome test content.\n")
             
             # Create assumption tracker
-            with open(os.path.join(tmpdir, 'assumption_tracker.py'), 'w') as f:
+            os.makedirs(os.path.join(tmpdir, 'cognition'), exist_ok=True)
+            with open(os.path.join(tmpdir, 'cognition', 'assumption_tracker.py'), 'w') as f:
                 f.write("""
 class Assumption:
     def __init__(self, text, confidence):
@@ -42,7 +39,8 @@ assumptions = []
 """)
             
             # Create state file
-            with open(os.path.join(tmpdir, 'pet_state.py'), 'w') as f:
+            os.makedirs(os.path.join(tmpdir, 'core'), exist_ok=True)
+            with open(os.path.join(tmpdir, 'core', 'pet_state.py'), 'w') as f:
                 f.write("""
 class PetState:
     def __init__(self):
@@ -87,7 +85,7 @@ class PetState:
     
     def test_assumption_tracker_syntax_error(self, temp_workspace):
         """Test assumption tracker with syntax error."""
-        with open(os.path.join(temp_workspace, 'assumption_tracker.py'), 'w') as f:
+        with open(os.path.join(temp_workspace, 'cognition', 'assumption_tracker.py'), 'w') as f:
             f.write("this is invalid python syntax !!!")
         
         checker = HealthChecker(workspace=temp_workspace)

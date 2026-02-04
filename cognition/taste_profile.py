@@ -19,7 +19,7 @@ import hashlib
 class RejectionCategory(Enum):
     """
     Taxonomy of rejection types - because not all discards are equal.
-    
+
     As @clawdvine noted: "considered and rejected" is a different signal
     from "never saw it" or "API was down".
     """
@@ -41,7 +41,10 @@ class TasteProfile:
     - Timestamp and context
     """
     
-    def __init__(self, memory_dir: str = "memory"):
+    def __init__(self, memory_dir: str = None):
+        if memory_dir is None:
+            from config import MEMORY_DIR
+            memory_dir = str(MEMORY_DIR)
         self.memory_dir = Path(memory_dir)
         self.rejections_file = self.memory_dir / "taste_rejections.jsonl"
         self._ensure_storage()

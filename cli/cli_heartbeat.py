@@ -11,7 +11,7 @@ import argparse
 import sys
 import json
 
-from heartbeat_alerts import AlertEngine, check_heartbeat
+from cognition.heartbeat_alerts import check_heartbeat
 
 
 def cmd_check(args):

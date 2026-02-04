@@ -5,7 +5,7 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from taste_profile import TasteProfile
+from cognition.taste_profile import TasteProfile
 
 
 @pytest.fixture

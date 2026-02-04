@@ -12,16 +12,12 @@ Usage:
 """
 
 import os
-import sys
 import json
-from datetime import datetime, timedelta
-from pathlib import Path
+from datetime import datetime
 
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from memory_decay import MemoryDecayEngine, MemoryAccessTracker
-from memory_curation import MemoryConsistencyChecker
+from config import MEMORY_DIR, PROJECT_ROOT
+from cognition.memory_decay import MemoryDecayEngine
+from cognition.memory_curation import MemoryConsistencyChecker
 
 
 class DailyMaintenance:
@@ -31,14 +27,8 @@ class DailyMaintenance:
         """Initialize the maintenance routine."""
         self.execute_changes = execute_changes
         self.quiet = quiet
-        self.memory_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "memory"
-        )
-        self.state_file = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            ".maintenance_state.json"
-        )
+        self.memory_dir = str(MEMORY_DIR)
+        self.state_file = str(PROJECT_ROOT / ".maintenance_state.json")
         self.last_run = self._load_state()
         self.results = {
             "timestamp": datetime.now().isoformat(),
