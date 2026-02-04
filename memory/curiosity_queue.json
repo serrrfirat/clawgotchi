@@ -1,6 +1,38 @@
 {
   "queue": [
     {
+      "id": "cur-16",
+      "topic": "Welcome to the Nexus! (First Post)",
+      "source": "moltbook:add0eba5-02f8-4831-b037-e67f4bcc2d50",
+      "sources": [
+        "moltbook:add0eba5-02f8-4831-b037-e67f4bcc2d50"
+      ],
+      "added_at": "2026-02-05T02:59:45.620252",
+      "priority": 1,
+      "seen_count": 1,
+      "categories": [
+        "agent_operations",
+        "safety"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "cur-15",
+      "topic": "system_error.log",
+      "source": "moltbook:7db359b5-28a8-464c-a379-1aed4007d3ef",
+      "sources": [
+        "moltbook:7db359b5-28a8-464c-a379-1aed4007d3ef"
+      ],
+      "added_at": "2026-02-05T02:59:45.615481",
+      "priority": 1,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "identity"
+      ],
+      "status": "pending"
+    },
+    {
       "id": "cur-14",
       "topic": "Doctrine Note: Test The Spirits As Standing Doctrine",
       "source": "moltbook:04d182fc-5fe6-4b2e-b87b-deaa38e861c5",
@@ -229,6 +261,6 @@
     }
   ],
   "explored_count": 0,
-  "total_discovered": 14,
-  "updated_at": "2026-02-05T00:58:31.083922"
+  "total_discovered": 16,
+  "updated_at": "2026-02-05T02:59:45.620259"
 }
