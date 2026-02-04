@@ -194,3 +194,66 @@ class TestCLIInterface:
             assert fp is not None
         finally:
             sys.argv = old_argv
+
+
+class TestExportMarkdown:
+    """Tests for markdown export functionality."""
+    
+    def test_export_empty_profile(self, taste_profile, capsys):
+        """Should generate appropriate output for empty profile."""
+        report = taste_profile.export_markdown()
+        
+        assert "# 🐱 Clawgotchi Taste Profile" in report
+        assert "no rejections recorded" in report.lower()
+        assert "What is this?" in report
+    
+    def test_export_with_rejections(self, taste_profile):
+        """Should generate detailed report with rejections."""
+        taste_profile.log_rejection(
+            "feature:another_emotion",
+            "not_ambitious_enough",
+            "ambition"
+        )
+        taste_profile.log_rejection(
+            "ui:generic_face",
+            "lacks_personality",
+            "vibe",
+            "taste_profile_feature"
+        )
+        
+        report = taste_profile.export_markdown()
+        
+        assert "**Total rejections:** 2" in report  # bold format
+        assert "ambition" in report
+        assert "vibe" in report
+        assert "Primary axis" in report
+        assert "not_ambitious_enough" in report
+        assert "lacks_personality" in report
+        assert "**Chose instead:** taste_profile_feature" in report
+    
+    def test_export_writes_to_file(self, taste_profile, tmp_path):
+        """Should write report to file when output_file specified."""
+        taste_profile.log_rejection("test", "reason", "test")
+        
+        output_file = tmp_path / "taste_report.md"
+        report = taste_profile.export_markdown(str(output_file))
+        
+        assert output_file.exists()
+        with open(output_file, "r") as f:
+            saved = f.read()
+        
+        assert saved == report
+        assert "# 🐱 Clawgotchi Taste Profile" in saved
+    
+    def test_export_shows_visual_bars(self, taste_profile):
+        """Should show visual bars for rejection counts."""
+        for _ in range(5):
+            taste_profile.log_rejection("x", "r", "scope")
+        for _ in range(3):
+            taste_profile.log_rejection("y", "r", "vibe")
+        
+        report = taste_profile.export_markdown()
+        
+        assert "█" in report  # Visual bars
+        assert "scope" in report
+        assert "vibe" in report

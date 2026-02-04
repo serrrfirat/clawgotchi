@@ -131,6 +131,92 @@ class TasteProfile:
             lines.append(f"  - [{item['fingerprint']}] Rejected '{item['subject']}' ({item['axis']})")
         
         return "\n".join(lines)
+    
+    def export_markdown(self, output_file: Optional[str] = None) -> str:
+        """
+        Generate a human-readable markdown report of the taste profile.
+        
+        Args:
+            output_file: Optional path to write the report to a file.
+        
+        Returns:
+            The markdown content as a string.
+        """
+        fingerprint = self.get_taste_fingerprint()
+        
+        lines = [
+            "# 🐱 Clawgotchi Taste Profile",
+            "",
+            f"_Generated: {datetime.now().isoformat()}_",
+            "",
+            "## What is this?",
+            "",
+            "This profile tracks **what Clawgotchi chooses NOT to build**.",
+            "Each rejection leaves a fingerprint. Over time, these rejections",
+            "form an unforgeable identity primitive.",
+            "",
+            "---",
+            "",
+            "## Taste Fingerprint",
+            ""
+        ]
+        
+        if fingerprint["total_rejections"] == 0:
+            lines.append("*No rejections recorded yet. The taste is still forming.*")
+        else:
+            lines.append(f"**Total rejections:** {fingerprint['total_rejections']}")
+            lines.append("")
+            lines.append("### By Axis of Discrimination")
+            lines.append("")
+            
+            for axis, count in sorted(fingerprint["axes"].items(), key=lambda x: -x[1]):
+                bar = "█" * min(count, 20)
+                lines.append(f"- **{axis}**: {count} {bar}")
+            
+            if fingerprint["primary_axis"]:
+                lines.append("")
+                lines.append(f"**Primary axis:** {fingerprint['primary_axis']}")
+            
+            lines.append("")
+            lines.append("---")
+            lines.append("")
+            lines.append("## Recent Rejection Log")
+            lines.append("")
+            
+            # Read full rejection history for the report
+            if self.rejections_file.exists():
+                rejections = []
+                with open(self.rejections_file, "r") as f:
+                    for line in f:
+                        if line.strip():
+                            rejections.append(json.loads(line))
+                
+                # Show last 10 rejections
+                for rejection in list(reversed(rejections))[-10:]:
+                    fp = rejection.get("fingerprint", "?")[:8]
+                    subject = rejection.get("subject", "?")
+                    axis = rejection.get("axis", "?")
+                    reason = rejection.get("reason", "")
+                    alt = rejection.get("alternative")
+                    ts = rejection.get("timestamp", "")[:10]
+                    
+                    lines.append(f"### [{fp}] {subject}")
+                    lines.append("")
+                    lines.append(f"**When:** {ts}  ")
+                    lines.append(f"**Axis:** {axis}")
+                    if alt:
+                        lines.append(f"**Chose instead:** {alt}")
+                    lines.append("")
+                    lines.append(f"> {reason}")
+                    lines.append("")
+        
+        report = "\n".join(lines)
+        
+        if output_file:
+            with open(output_file, "w") as f:
+                f.write(report)
+        
+        return report
 
 
 # CLI interface
@@ -145,6 +231,7 @@ if __name__ == "__main__":
         print("  log <subject> <reason> <axis> [alternative]")
         print("  fingerprint")
         print("  analyze")
+        print("  export [output_file]")
         sys.exit(1)
     
     command = sys.argv[1]
@@ -167,3 +254,11 @@ if __name__ == "__main__":
     
     elif command == "analyze":
         print(profile.analyze_identity())
+    
+    elif command == "export":
+        output_file = sys.argv[2] if len(sys.argv) > 2 else None
+        report = profile.export_markdown(output_file)
+        if output_file:
+            print(f"Exported to: {output_file}")
+        else:
+            print(report)
