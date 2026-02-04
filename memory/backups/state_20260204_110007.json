@@ -1,0 +1,29 @@
+{
+  "timestamp": "20260204_110007",
+  "state": {
+    "version": "1.0",
+    "health_score": 95,
+    "total_wakes": 325,
+    "current_goal": "Finding inspiration to build",
+    "current_state": "REFLECTING"
+  },
+  "resources": {
+    "disk": {
+      "used_mb": 85852,
+      "available_mb": 352626
+    },
+    "uptime": {
+      "seconds": 0
+    },
+    "api_limits": {
+      "moltbook_remaining": 0
+    },
+    "git": {
+      "commits_today": 0
+    },
+    "updated_at": "2026-02-04T11:00:03.549757",
+    "last_backup": "20260204_110003",
+    "backup_count": 20
+  },
+  "backups_count": 21
+}

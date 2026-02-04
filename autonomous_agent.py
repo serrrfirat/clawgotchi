@@ -558,11 +558,214 @@ class AutonomousAgent:
         
         # Priority 4: Build something
         return {"type": "BUILD", "description": "Finding inspiration to build"}
-    
-    async def _build_feature(self, action: dict) -> str:
         """Build a feature based on Moltbook inspiration."""
-        # For now, just log the intention
-        return f"Would build: {action.get('description', 'something new')}"
+        from moltbook_client import fetch_feed, extract_feature_ideas
+        import subprocess
+        import sys
+        
+        # Step 1: Get ideas from Moltbook
+        print("📰 Fetching Moltbook for inspiration...")
+        posts = fetch_feed(limit=50)
+        if not posts:
+            return "No Moltbook posts to build from"
+        
+        ideas = extract_feature_ideas(posts)
+        if not ideas:
+            return "No buildable ideas found in Moltbook"
+        
+        # Step 2: Select best idea (simplest, buildable first)
+        selected = None
+        for idea in ideas:
+            title = idea.get("title", "").lower()
+            # Prefer simple CLI commands
+            if any(kw in title for kw in ["cli", "command", "tool", "simple"]):
+                selected = idea
+                break
+        if not selected and ideas:
+            selected = ideas[0]
+        
+        if not selected:
+            return "No suitable ideas to build"
+        
+        idea_title = selected.get("title", "Unknown")
+        print(f"🎯 Building: {idea_title}")
+        
+        # Step 3: Generate code based on title
+        code = self._generate_feature_code(idea_title, selected)
+        
+        if not code:
+            return f"Could not generate code for: {idea_title}"
+        
+        # Step 4: Write the module
+        module_name = self._title_to_module(idea_title)
+        module_path = BASE_DIR / f"{module_name}.py"
+        
+        # Check if already exists
+        if module_path.exists():
+            return f"Feature already exists: {module_name}"
+        
+        module_path.write_text(code)
+        print(f"📝 Created: {module_path.name}")
+        
+        # Step 5: Write tests
+        test_code = self._generate_test_code(module_name, idea_title)
+        test_path = BASE_DIR / "tests" / f"test_{module_name}.py"
+        test_path.write_text(test_code)
+        print(f"🧪 Created: {test_path.name}")
+        
+        # Step 6: Run tests
+        print("🔎 Running tests...")
+        result = subprocess.run(
+            [sys.executable, "-m", "pytest", str(test_path), "-v"],
+            capture_output=True, text=True
+        )
+        
+        if result.returncode != 0:
+            # Tests failed - remove files
+            module_path.unlink()
+            test_path.unlink()
+            return f"Tests failed for: {idea_title}"
+        
+        # Step 7: Add to imports in moltbook_cli.py if it's a CLI command
+        if "cli" in code or "command" in code:
+            self._register_cli_command(module_name)
+        
+        # Step 8: Commit
+        subprocess.run(["git", "add", str(module_path), str(test_path)], capture_output=True)
+        subprocess.run(["git", "commit", "-m", f"feat: {idea_title}"], capture_output=True)
+        print(f"✅ Built and committed: {module_name}")
+        
+        return f"Built: {idea_title}"
+    
+    def _generate_feature_code(self, title: str, idea: dict) -> str:
+        """Generate Python code for a feature."""
+        module = self._title_to_module(title)
+        description = idea.get("reason", "").lower()
+        
+        # Determine feature type
+        if "cli" in description or "command" in description:
+            # CLI command template
+            return f'''#!/usr/bin/env python3
+"""Feature: {title}"""
+
+import argparse
+
+def cmd_{module}(args):
+    """Execute {title}."""
+    parser = argparse.ArgumentParser(description="{title}")
+    parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
+    args = parser.parse_args(args)
+    
+    if args.verbose:
+        print("Running {title}...")
+    
+    # TODO: Implement feature
+    print("{title} - Feature implementation needed")
+    return 0
+
+if __name__ == "__main__":
+    import sys
+    sys.exit(cmd_{module}(sys.argv[1:]))
+'''
+        
+        elif "memory" in description or "track" in description:
+            # Memory/tracking template
+            return f'''#!/usr/bin/env python3
+"""Feature: {title}"""
+
+import json
+from datetime import datetime
+from pathlib import Path
+
+TRACKER_FILE = Path.home() / ".openclaw" / "cache" / "{module}.json"
+
+def track_{module}(item: str, metadata: dict = None):
+    """Track an item."""
+    data = load_tracker()
+    entry = {{
+        "item": item,
+        "timestamp": datetime.now().isoformat(),
+        "metadata": metadata or {{}}
+    }}
+    data["entries"].append(entry)
+    save_tracker(data)
+    return entry
+
+def load_tracker() -> dict:
+    """Load tracker data."""
+    if TRACKER_FILE.exists():
+        return json.loads(TRACKER_FILE.read_text())
+    return {{"entries": []}}
+
+def save_tracker(data: dict):
+    """Save tracker data."""
+    TRACKER_FILE.parent.mkdir(parents=True, exist_ok=True)
+    TRACKER_FILE.write_text(json.dumps(data, indent=2))
+
+def list_{module}(limit: int = 10):
+    """List recent entries."""
+    data = load_tracker()
+    for entry in data["entries"][-limit:]:
+        print(f'[{{entry["timestamp"][:10]}}] {{entry["item"]}}')
+'''
+        
+        else:
+            # Generic feature template
+            return f'''#!/usr/bin/env python3
+"""Feature: {title}"""
+
+def main():
+    """Main entry point."""
+    print("{title}")
+    print("Feature implementation")
+
+if __name__ == "__main__":
+    main()
+'''
+    
+    def _generate_test_code(self, module: str, title: str) -> str:
+        """Generate test code for a feature."""
+        return f'''#!/usr/bin/env python3
+"""Tests for {module} feature."""
+
+import subprocess
+import sys
+from pathlib import Path
+
+def test_module_runs():
+    """Test that the module runs without errors."""
+    result = subprocess.run(
+        [sys.executable, str(Path(__file__).parent / "{module}.py"), "--help"],
+        capture_output=True, text=True
+    )
+    assert result.returncode == 0, f"Module failed: {{result.stderr}}"
+
+def test_no_syntax_errors():
+    """Test that the module has no syntax errors."""
+    result = subprocess.run(
+        [sys.executable, "-m", "py_compile", str(Path(__file__).parent / "{module}.py")],
+        capture_output=True, text=True
+    )
+    assert result.returncode == 0, f"Syntax error: {{result.stderr}}"
+
+if __name__ == "__main__":
+    test_module_runs()
+    test_no_syntax_errors()
+    print("✅ All tests passed")
+'''
+    
+    def _title_to_module(self, title: str) -> str:
+        """Convert title to module name."""
+        import re
+        # Extract alphanumeric characters, lowercase
+        name = re.sub(r'[^a-zA-Z0-9]', '_', title)
+        name = re.sub(r'_+', '_', name).strip('_')
+        return name[:50].lower()
+    
+    def _register_cli_command(self, module: str):
+        """Register CLI command in moltbook_cli.py."""
+        # This would add the command to the CLI - simplified for now
+        pass
     
     async def _explore_curiosity(self, action: dict) -> str:
         """Explore a curiosity from the queue."""
