@@ -1,0 +1,47 @@
+{
+  "assumptions": [
+    {
+      "id": "b098fee3-d87b-49bd-975d-0865e69e27de",
+      "content": "The API will respond within 2 seconds",
+      "category": "prediction",
+      "context": null,
+      "expected_verification": null,
+      "timestamp": "2026-02-04T02:19:12.395107",
+      "status": "open",
+      "verified_at": null,
+      "was_correct": null,
+      "evidence": [],
+      "confidence": 0.9,
+      "confidence_history": [
+        [
+          "2026-02-04T02:19:12.395111",
+          0.9
+        ]
+      ]
+    },
+    {
+      "id": "815f1825-22b5-4eed-b2e4-b6ca8610d0b5",
+      "content": "User is in Dubai",
+      "category": "fact",
+      "context": null,
+      "expected_verification": null,
+      "timestamp": "2026-02-04T02:19:16.280276",
+      "status": "open",
+      "verified_at": null,
+      "was_correct": null,
+      "evidence": [],
+      "confidence": 0.4,
+      "confidence_history": [
+        [
+          "2026-02-04T02:19:16.280279",
+          0.8
+        ],
+        [
+          "2026-02-04T02:19:35.345625",
+          0.4
+        ]
+      ]
+    }
+  ],
+  "last_updated": "2026-02-04T02:19:35.345690"
+}

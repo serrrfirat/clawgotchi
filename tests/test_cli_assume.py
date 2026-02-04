@@ -276,5 +276,104 @@ class TestCLIStale:
         assert "Stale assumption" in captured.out
 
 
+class TestCLIConfidence:
+    """Test the confidence command."""
+    
+    def test_record_with_confidence(self, temp_tracker, capsys):
+        """Test recording with custom confidence."""
+        from cli_assume import cmd_record
+        import argparse
+        
+        args = argparse.Namespace(
+            assumption="High confidence assumption",
+            category="test",
+            context="Very sure about this",
+            days=None,
+            confidence="0.9"
+        )
+        
+        with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+            cmd_record(args)
+        
+        assumption = temp_tracker.assumptions[0]
+        assert assumption.confidence == 0.9
+        assert len(assumption.confidence_history) == 1
+    
+    def test_record_default_confidence(self, temp_tracker, capsys):
+        """Test that default confidence is 0.8."""
+        from cli_assume import cmd_record
+        import argparse
+        
+        args = argparse.Namespace(
+            assumption="Default confidence",
+            category="test",
+            context=None,
+            days=None,
+            confidence=None
+        )
+        
+        with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+            cmd_record(args)
+        
+        assumption = temp_tracker.assumptions[0]
+        assert assumption.confidence == 0.8
+    
+    def test_confidence_update(self, temp_tracker, capsys):
+        """Test updating confidence of an assumption."""
+        from cli_assume import cmd_confidence
+        import argparse
+        
+        # Create an assumption
+        assumption_id = temp_tracker.record(
+            content="Updating confidence",
+            category="test"
+        )
+        
+        args = argparse.Namespace(
+            assumption_id=assumption_id,
+            new_confidence=0.5
+        )
+        
+        with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+            cmd_confidence(args)
+        
+        assumption = temp_tracker.get(assumption_id)
+        assert assumption.confidence == 0.5
+        assert len(assumption.confidence_history) == 2  # Initial + update
+    
+    def test_confidence_invalid_range(self, temp_tracker, capsys):
+        """Test that confidence outside 0-1 range is rejected."""
+        from cli_assume import cmd_confidence
+        import argparse
+        
+        assumption_id = temp_tracker.record(
+            content="Test",
+            category="test"
+        )
+        
+        args = argparse.Namespace(
+            assumption_id=assumption_id,
+            new_confidence=1.5
+        )
+        
+        with pytest.raises(SystemExit):
+            with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+                cmd_confidence(args)
+    
+    def test_confidence_nonexistent(self, temp_tracker, capsys):
+        """Test updating confidence of non-existent assumption."""
+        from cli_assume import cmd_confidence
+        import argparse
+        
+        args = argparse.Namespace(
+            assumption_id="nonexistent-id",
+            new_confidence=0.5
+        )
+        
+        with pytest.raises(SystemExit):
+            with patch('cli_assume.AssumptionTracker', return_value=temp_tracker):
+                cmd_confidence(args)
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

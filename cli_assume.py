@@ -27,6 +27,20 @@ def cmd_record(args):
     # Parse context from args
     context = getattr(args, 'context', None)
     
+    # Parse confidence
+    confidence = getattr(args, 'confidence', None)
+    if confidence is not None:
+        try:
+            confidence = float(confidence)
+            if not 0.0 <= confidence <= 1.0:
+                print("Error: Confidence must be between 0.0 and 1.0")
+                sys.exit(1)
+        except ValueError:
+            print("Error: Confidence must be a number between 0.0 and 1.0")
+            sys.exit(1)
+    else:
+        confidence = 0.8  # Default confidence
+    
     # Parse expected verification date
     expected = None
     if getattr(args, 'days', None):
@@ -37,11 +51,14 @@ def cmd_record(args):
         content=args.assumption,
         category=category,
         context=context,
-        expected_verification=expected
+        expected_verification=expected,
+        confidence=confidence
     )
     
+    conf_bar = "█" * int(confidence * 10) + "░" * (10 - int(confidence * 10))
     print(f"✓ Recorded assumption: {assumption_id[:8]}...")
     print(f"  Category: {category}")
+    print(f"  Confidence: [{conf_bar}] {confidence:.0%}")
     if context:
         print(f"  Context: {context}")
 
@@ -141,14 +158,33 @@ def cmd_stale(args):
         print()
 
 
+def cmd_confidence(args):
+    """Update confidence of an assumption."""
+    tracker = AssumptionTracker()
+    
+    new_confidence = args.new_confidence
+    if not 0.0 <= new_confidence <= 1.0:
+        print("Error: Confidence must be between 0.0 and 1.0")
+        sys.exit(1)
+    
+    try:
+        tracker.update_confidence(args.assumption_id, new_confidence)
+        conf_bar = "█" * int(new_confidence * 10) + "░" * (10 - int(new_confidence * 10))
+        print(f"✓ Updated confidence to [{conf_bar}] {new_confidence:.0%}")
+    except ValueError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Clawgotchi Assumption Tracker CLI",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  clawgotchi assume "API will respond in < 1s" --category prediction
+  clawgotchi assume "API will respond in < 1s" --category prediction --confidence 0.7
   clawgotchi assume verify abc123 --correct --evidence "Response: 892ms"
+  clawgotchi assume confidence abc123 0.5
   clawgotchi assume list --stale
   clawgotchi assume summary
         """
@@ -162,6 +198,7 @@ Examples:
     record_parser.add_argument("--category", "-c", default="general", help="Category (default: general)")
     record_parser.add_argument("--context", "-x", default=None, help="Context or reasoning")
     record_parser.add_argument("--days", "-d", default=None, help="Days until expected verification")
+    record_parser.add_argument("--confidence", "-C", default=None, help="Initial confidence 0.0-1.0 (default: 0.8)")
     
     # Verify command
     verify_parser = subparsers.add_parser("verify", help="Verify an assumption")
@@ -182,6 +219,11 @@ Examples:
     # Stale command
     subparsers.add_parser("stale", help="Check for stale assumptions")
     
+    # Confidence command
+    confidence_parser = subparsers.add_parser("confidence", help="Update confidence of an assumption")
+    confidence_parser.add_argument("assumption_id", help="The assumption ID")
+    confidence_parser.add_argument("new_confidence", type=float, help="New confidence value (0.0-1.0)")
+    
     # Default: show help
     if len(sys.argv) == 1:
         parser.print_help()
@@ -201,6 +243,8 @@ Examples:
         cmd_summary(args)
     elif args.command == "stale":
         cmd_stale(args)
+    elif args.command == "confidence":
+        cmd_confidence(args)
     else:
         parser.print_help()
 

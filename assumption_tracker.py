@@ -32,10 +32,13 @@ class Assumption:
         category: str = "general",
         context: str = None,
         expected_verification: datetime = None,
-        timestamp: datetime = None
+        timestamp: datetime = None,
+        confidence: float = 0.8
     ):
         if not content or not content.strip():
             raise ValueError("Assumption content is required")
+        if not 0.0 <= confidence <= 1.0:
+            raise ValueError("Confidence must be between 0.0 and 1.0")
         
         self.id = str(uuid.uuid4())
         self.content = content.strip()
@@ -47,6 +50,8 @@ class Assumption:
         self.verified_at = None
         self.was_correct = None
         self.evidence = []
+        self.confidence = confidence
+        self.confidence_history = [(timestamp or datetime.now(), confidence)]
     
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization."""
@@ -60,7 +65,11 @@ class Assumption:
             "status": self.status.value,
             "verified_at": self.verified_at.isoformat() if self.verified_at else None,
             "was_correct": self.was_correct,
-            "evidence": self.evidence
+            "evidence": self.evidence,
+            "confidence": self.confidence,
+            "confidence_history": [
+                (ts.isoformat(), conf) for ts, conf in self.confidence_history
+            ]
         }
     
     @classmethod
@@ -71,13 +80,18 @@ class Assumption:
             category=data.get("category", "general"),
             context=data.get("context"),
             expected_verification=datetime.fromisoformat(data["expected_verification"]) if data.get("expected_verification") else None,
-            timestamp=datetime.fromisoformat(data["timestamp"])
+            timestamp=datetime.fromisoformat(data["timestamp"]),
+            confidence=data.get("confidence", 0.8)
         )
         assumption.id = data["id"]
         assumption.status = AssumptionStatus(data["status"])
         assumption.verified_at = datetime.fromisoformat(data["verified_at"]) if data.get("verified_at") else None
         assumption.was_correct = data.get("was_correct")
         assumption.evidence = data.get("evidence", [])
+        assumption.confidence_history = [
+            (datetime.fromisoformat(ts), conf) 
+            for ts, conf in data.get("confidence_history", [])
+        ]
         return assumption
 
 
@@ -100,7 +114,8 @@ class AssumptionTracker:
         category: str = "general",
         context: str = None,
         expected_verification: datetime = None,
-        timestamp: datetime = None
+        timestamp: datetime = None,
+        confidence: float = 0.8
     ) -> str:
         """
         Record a new assumption.
@@ -110,6 +125,7 @@ class AssumptionTracker:
             category: Category (fact, prediction, preference, etc.)
             context: Why I believe this
             expected_verification: When I expect to verify this
+            confidence: Initial confidence (0.0 to 1.0, default 0.8)
             
         Returns:
             The assumption ID
@@ -119,7 +135,8 @@ class AssumptionTracker:
             category=category,
             context=context,
             expected_verification=expected_verification,
-            timestamp=timestamp
+            timestamp=timestamp,
+            confidence=confidence
         )
         self.assumptions.append(assumption)
         self._save()
@@ -151,6 +168,31 @@ class AssumptionTracker:
         assumption.was_correct = correct
         assumption.verified_at = datetime.now()
         assumption.evidence = evidence or []
+        
+        # Set final confidence based on correctness
+        assumption.confidence = 1.0 if correct else 0.0
+        assumption.confidence_history.append((datetime.now(), assumption.confidence))
+        
+        self._save()
+    
+    def update_confidence(self, assumption_id: str, new_confidence: float) -> None:
+        """
+        Update the confidence of an assumption.
+        
+        Args:
+            assumption_id: The assumption to update
+            new_confidence: New confidence value (0.0 to 1.0)
+        """
+        assumption = self.get(assumption_id)
+        if assumption is None:
+            raise ValueError(f"Assumption not found: {assumption_id}")
+        if not 0.0 <= new_confidence <= 1.0:
+            raise ValueError("Confidence must be between 0.0 and 1.0")
+        if assumption.status == AssumptionStatus.VERIFIED:
+            raise ValueError(f"Cannot update confidence of verified assumption: {assumption_id}")
+        
+        assumption.confidence = new_confidence
+        assumption.confidence_history.append((datetime.now(), new_confidence))
         self._save()
     
     def get_stale(self, days_old: int = 7) -> list[Assumption]:
@@ -203,6 +245,21 @@ class AssumptionTracker:
         for a in self.assumptions:
             summary[a.category] = summary.get(a.category, 0) + 1
         return summary
+    
+    def get_by_confidence(self, min_confidence: float = 0.0, max_confidence: float = 1.0) -> list[Assumption]:
+        """Get assumptions with confidence in the specified range."""
+        return [
+            a for a in self.assumptions
+            if min_confidence <= a.confidence <= max_confidence and a.status == AssumptionStatus.OPEN
+        ]
+    
+    def get_low_confidence(self, threshold: float = 0.5) -> list[Assumption]:
+        """Get open assumptions with confidence below threshold."""
+        return self.get_by_confidence(max_confidence=threshold)
+    
+    def get_high_confidence(self, threshold: float = 0.8) -> list[Assumption]:
+        """Get open assumptions with confidence above threshold."""
+        return self.get_by_confidence(min_confidence=threshold)
     
     def expire_old(self, days_old: int = 30) -> list[Assumption]:
         """Mark old unverified assumptions as expired."""
