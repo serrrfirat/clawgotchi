@@ -5,6 +5,7 @@ Provides tools to:
 - Extract insights from daily logs
 - Curate long-term memories
 - Search and manage memories
+- Detect and protect sensitive data (API keys, passwords, tokens)
 
 Inspired by DriftSteven's "Memory Layers: Files Beat Brain Every Time"
 """
@@ -13,6 +14,136 @@ import os
 import re
 from datetime import datetime, timedelta
 from pathlib import Path
+
+
+# Patterns that indicate sensitive data
+SENSITIVE_PATTERNS = [
+    # Generic API key patterns
+    (r'api[_-]?key\s*[:=]\s*["\']?[A-Za-z0-9_\-]{20,}["\']?', 'API Key'),
+    (r'secret\s*[:=]\s*["\']?[A-Za-z0-9_\-]{20,}["\']?', 'Secret'),
+    (r'token\s*[:=]\s*["\']?[A-Za-z0-9_\-]{20,}["\']?', 'Token'),
+    (r'password\s*[:=]\s*["\']?[^"\'\s]{8,}["\']?', 'Password'),
+    # Moltbook specific
+    (r'moltbook[_-]?sk[_-]?[A-Za-z0-9]{20,}', 'Moltbook API Key'),
+    # Generic secret patterns
+    (r'["\']?[A-Za-z0-9_=-]{30,}["\']?', 'Potential Secret'),
+    # Private key patterns
+    (r'-----BEGIN\s+(RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----', 'Private Key'),
+]
+
+
+class SensitiveDataDetector:
+    """Detect sensitive data in memory files to prevent leaks."""
+
+    def __init__(self):
+        """Initialize the detector with patterns."""
+        self.patterns = SENSITIVE_PATTERNS
+
+    def scan_file(self, file_path):
+        """
+        Scan a file for sensitive data patterns.
+
+        Args:
+            file_path: Path to file to scan
+
+        Returns:
+            List of detected sensitive data matches
+        """
+        matches = []
+
+        try:
+            with open(file_path, 'r', errors='ignore') as f:
+                content = f.read()
+                lines = content.split('\n')
+
+                for line_num, line in enumerate(lines, 1):
+                    for pattern, pattern_type in self.patterns:
+                        if re.search(pattern, line, re.IGNORECASE):
+                            # Redact the actual secret value for safety
+                            redacted = self._redact_line(line)
+                            matches.append({
+                                'file': file_path,
+                                'line': line_num,
+                                'type': pattern_type,
+                                'redacted_content': redacted
+                            })
+        except Exception as e:
+            matches.append({
+                'file': file_path,
+                'line': 0,
+                'type': 'Error',
+                'redacted_content': f'Error reading file: {e}'
+            })
+
+        return matches
+
+    def _redact_line(self, line):
+        """Redact sensitive parts of a line while keeping context."""
+        redacted = line
+        for pattern, _ in self.patterns:
+            # Replace matched secrets with [REDACTED]
+            redacted = re.sub(
+                pattern,
+                f'[{_}]',
+                redacted,
+                flags=re.IGNORECASE
+            )
+        return redacted.strip()
+
+    def scan_memory_directory(self, memory_dir):
+        """
+        Scan all memory files in a directory for sensitive data.
+
+        Args:
+            memory_dir: Path to memory directory
+
+        Returns:
+            List of all detected sensitive data matches
+        """
+        all_matches = []
+
+        if not os.path.exists(memory_dir):
+            return all_matches
+
+        for filename in os.listdir(memory_dir):
+            filepath = os.path.join(memory_dir, filename)
+            if os.path.isfile(filepath):
+                matches = self.scan_file(filepath)
+                all_matches.extend(matches)
+
+        return all_matches
+
+    def is_safe_to_promote(self, text):
+        """
+        Check if text is safe to promote (no sensitive data).
+
+        Args:
+            text: Text to check
+
+        Returns:
+            Tuple of (is_safe, detected_types)
+        """
+        detected_types = []
+        for pattern, pattern_type in self.patterns:
+            if re.search(pattern, text, re.IGNORECASE):
+                detected_types.append(pattern_type)
+
+        return len(detected_types) == 0, detected_types
+
+    def redact_text(self, text):
+        """
+        Redact all sensitive data from text.
+
+        Args:
+            text: Text to redact
+
+        Returns:
+            Redacted text
+        """
+        redacted = text
+        for pattern, pattern_type in self.patterns:
+            redacted = re.sub(pattern, f'[{pattern_type}]', redacted, flags=re.IGNORECASE)
+        return redacted
 
 
 class MemoryCuration:
@@ -99,7 +230,19 @@ class MemoryCuration:
         Args:
             insight_text: The insight to add
             category: Category tag for the insight
+
+        Returns:
+            Tuple of (success, warning_message)
         """
+        # Check for sensitive data before promoting
+        detector = SensitiveDataDetector()
+        is_safe, detected_types = detector.is_safe_to_promote(insight_text)
+
+        warning_message = None
+        if not is_safe:
+            warning_message = f"⚠️ Warning: Insight contains potentially sensitive data ({', '.join(detected_types)}). Consider redacting before promoting."
+            print(warning_message)
+
         # Ensure curated memory file exists with frontmatter
         if not os.path.exists(self.curated_memory_file):
             self._create_curated_memory_file()
@@ -110,7 +253,11 @@ class MemoryCuration:
 
         # Add the new insight
         timestamp = datetime.now().strftime('%Y-%m-%d')
-        new_entry = f"- **{timestamp}** [{category}]: {insight_text}\n"
+
+        # Redact sensitive data before saving
+        redacted_text = detector.redact_text(insight_text)
+
+        new_entry = f"- **{timestamp}** [{category}]: {redacted_text}\n"
 
         # Find the end of the insights list and insert
         if '# Curated Insights' in content:
@@ -125,6 +272,8 @@ class MemoryCuration:
 
         with open(self.curated_memory_file, 'w') as f:
             f.write(content)
+
+        return True, warning_message
 
     def _create_curated_memory_file(self):
         """Create the curated memory file with proper frontmatter."""
@@ -209,7 +358,7 @@ def main():
     )
     parser.add_argument(
         'command',
-        choices=['summarize', 'promote', 'show', 'search', 'stats'],
+        choices=['summarize', 'promote', 'show', 'search', 'stats', 'security'],
         help='Command to run'
     )
 
@@ -267,6 +416,24 @@ def main():
         print(f"  Daily logs: {stats['daily_logs']}")
         print(f"  Curated entries: {stats['curated_entries']}")
         print(f"  Last curated: {stats['last_curated'] or 'Never'}")
+
+    elif args.command == 'security':
+        # Security audit for memory files
+        detector = SensitiveDataDetector()
+        matches = detector.scan_memory_directory(curation.memory_dir)
+
+        if matches:
+            print("🔒 Security Audit Results:")
+            print("=" * 50)
+            print(f"⚠️  Found {len(matches)} potential issue(s):\n")
+
+            for m in matches:
+                print(f"📄 {os.path.basename(m['file'])} (line {m['line']})")
+                print(f"   Type: {m['type']}")
+                print(f"   Content: {m['redacted_content'][:100]}")
+                print()
+        else:
+            print("✅ Security Audit: No sensitive data detected in memory files!")
 
 
 if __name__ == '__main__':

@@ -139,3 +139,104 @@ class TestMemoryCuration:
         results = curation.search_memories("JavaScript")
         assert len(results) >= 1
         assert any("JavaScript is also nice" in r for r in results)
+
+
+class TestSensitiveDataDetector:
+    """Test sensitive data detection functionality."""
+
+    def test_detect_api_key(self):
+        """Test detecting API key patterns."""
+        from memory_curation import SensitiveDataDetector
+        detector = SensitiveDataDetector()
+
+        # Should detect API key
+        is_safe, types = detector.is_safe_to_promote("api_key=abc123def456ghi789jklmno")
+        assert not is_safe
+        assert "API Key" in types
+
+    def test_detect_moltbook_key(self):
+        """Test detecting Moltbook API key."""
+        from memory_curation import SensitiveDataDetector
+        detector = SensitiveDataDetector()
+
+        is_safe, types = detector.is_safe_to_promote("moltbook_sk_Cqk7cihbVaCVqRklCr4OHb2iXeOw645H")
+        assert not is_safe
+        assert "Moltbook API Key" in types
+
+    def test_detect_password(self):
+        """Test detecting password patterns."""
+        from memory_curation import SensitiveDataDetector
+        detector = SensitiveDataDetector()
+
+        is_safe, types = detector.is_safe_to_promote("password=supersecret123")
+        assert not is_safe
+        assert "Password" in types
+
+    def test_safe_text_passes(self):
+        """Test that safe text passes check."""
+        from memory_curation import SensitiveDataDetector
+        detector = SensitiveDataDetector()
+
+        is_safe, types = detector.is_safe_to_promote("Important: File persistence is crucial for agents")
+        assert is_safe
+        assert len(types) == 0
+
+    def test_redact_text(self):
+        """Test redacting sensitive data from text."""
+        from memory_curation import SensitiveDataDetector
+        detector = SensitiveDataDetector()
+
+        original = "API key: moltbook_sk_abcdefghij1234567890"
+        redacted = detector.redact_text(original)
+
+        assert "abcdefghij1234567890" not in redacted
+        assert "API Key" in redacted
+
+    def test_scan_file(self, temp_memory_dir):
+        """Test scanning a file for sensitive data."""
+        from memory_curation import SensitiveDataDetector
+        detector = SensitiveDataDetector()
+
+        # Create a test file with sensitive data - using a longer key
+        test_file = os.path.join(temp_memory_dir, "test_secret.md")
+        with open(test_file, 'w') as f:
+            f.write("""# Daily Log
+Important: Remember to use the API key moltbook_sk_xyz123abcdef456789012345
+Key learning: Testing is essential
+""")
+
+        matches = detector.scan_file(test_file)
+
+        assert len(matches) >= 1
+        assert any("Moltbook API Key" in m['type'] for m in matches)
+
+    def test_scan_memory_directory(self, temp_memory_dir):
+        """Test scanning entire memory directory."""
+        from memory_curation import SensitiveDataDetector
+        detector = SensitiveDataDetector()
+
+        # Create files
+        with open(os.path.join(temp_memory_dir, "2026-02-04.md"), 'w') as f:
+            f.write("api_key=secret123abcdefghijklmno\n")
+
+        with open(os.path.join(temp_memory_dir, "MEMORY.md"), 'w') as f:
+            f.write("# Memory\nSafe content here\n")
+
+        matches = detector.scan_memory_directory(temp_memory_dir)
+
+        # Should find the API key
+        assert len(matches) >= 1
+
+    def test_promote_insight_warns_on_sensitive_data(self, temp_memory_dir):
+        """Test that promote_insight warns when sensitive data is detected."""
+        from memory_curation import MemoryCuration
+        curation = MemoryCuration(memory_dir=temp_memory_dir)
+
+        # Use format that matches the pattern: password=VALUE
+        success, warning = curation.promote_insight(
+            "Remember my API key moltbook_sk_test123abcdef45678901234"
+        )
+
+        # Should warn about sensitive data
+        assert warning is not None
+        assert "Moltbook API Key" in warning
