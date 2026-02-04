@@ -24,6 +24,164 @@ from autonomous_agent import start_agent, stop_agent, get_agent, AutonomousAgent
 # Start autonomous agent
 _agent_instance: AutonomousAgent = None
 
+
+# ── Data-fetching helpers (safe, never crash the TUI) ──────────────
+
+
+def get_vitals_data() -> dict:
+    """Fetch compact vitals for the pet view strip.
+
+    Returns dict with keys: health, trend, curiosity_count,
+    taste_rejections, assumption_accuracy, goal, thought.
+    All values have safe defaults so callers never need try/except.
+    """
+    data = {
+        "health": 0, "trend": "→", "curiosity_count": 0,
+        "taste_rejections": 0, "assumption_accuracy": None,
+        "goal": "", "thought": "",
+    }
+    try:
+        agent = get_autonomous_agent()
+        status = agent.get_status()
+        data["health"] = status.get("health", 0)
+        data["goal"] = status.get("goal", "")
+        data["thought"] = status.get("thought", "")
+        data["curiosity_count"] = status.get("curiosity_count", 0)
+        data["trend"] = agent.get_health_trend()
+    except Exception:
+        pass
+    try:
+        from cognition.taste_profile import TasteProfile
+        tp = TasteProfile()
+        fp = tp.get_taste_fingerprint()
+        data["taste_rejections"] = fp.get("total_rejections", 0)
+    except Exception:
+        pass
+    try:
+        from cognition.assumption_tracker import AssumptionTracker
+        tracker = AssumptionTracker()
+        summary = tracker.get_summary()
+        data["assumption_accuracy"] = summary.get("accuracy")
+    except Exception:
+        pass
+    return data
+
+
+def get_dashboard_data() -> dict:
+    """Fetch full data for the dashboard view.
+
+    Returns dict with sections: vitals, identity, curiosity,
+    assumptions, memory.  Each section has safe defaults.
+    """
+    data = {
+        "vitals": {},
+        "identity": {"total_rejections": 0, "axes": {}},
+        "curiosity": {"pending": [], "mature": None, "explored_count": 0,
+                       "total_discovered": 0},
+        "assumptions": {"open": 0, "verified": 0, "accuracy": None},
+        "memory": {"curated_entries": 0, "daily_logs": 0},
+    }
+
+    # Vitals
+    try:
+        agent = get_autonomous_agent()
+        status = agent.get_status()
+        resources = agent.get_resource_usage()
+        data["vitals"] = {
+            "health": status.get("health", 0),
+            "trend": agent.get_health_trend(),
+            "total_wakes": status.get("total_wakes", 0),
+            "goal": status.get("goal", ""),
+            "thought": status.get("thought", ""),
+            "git_status": getattr(agent.state, "git_status", "unknown"),
+            "disk_avail_mb": resources.get("disk_avail_mb", 0),
+            "commits_today": resources.get("commits_today", 0),
+        }
+    except Exception:
+        pass
+
+    # Lifetime
+    try:
+        stats = lifetime.get_stats()
+        born = stats.get("born_at")
+        if born:
+            born_dt = datetime.fromisoformat(born)
+            age = datetime.now() - born_dt
+            data["vitals"]["born_age"] = f"{age.days}d ago"
+        data["vitals"]["total_wakeups_lifetime"] = stats.get("total_wakeups", 0)
+    except Exception:
+        pass
+
+    # Identity (Taste Profile)
+    try:
+        from cognition.taste_profile import TasteProfile
+        tp = TasteProfile()
+        fp = tp.get_taste_fingerprint()
+        data["identity"] = {
+            "total_rejections": fp.get("total_rejections", 0),
+            "axes": fp.get("axes", {}),
+        }
+    except Exception:
+        pass
+
+    # Curiosity
+    try:
+        agent = get_autonomous_agent()
+        pending = [c for c in agent.curiosity.queue
+                   if c.get("status") == "pending"]
+        # Sort by priority descending
+        pending.sort(key=lambda x: x.get("priority", 0), reverse=True)
+
+        now = datetime.now()
+        items = []
+        for c in pending[:8]:
+            seen = c.get("seen_count", 1)
+            try:
+                added = datetime.fromisoformat(c["added_at"])
+                age_h = (now - added).total_seconds() / 3600
+            except Exception:
+                age_h = 0
+            mature = seen >= 2 or age_h >= 12
+            items.append({
+                "topic": c.get("topic", "?"),
+                "seen": seen,
+                "age_h": age_h,
+                "mature": mature,
+            })
+
+        mature_item = agent.curiosity.get_mature()
+        data["curiosity"] = {
+            "pending": items,
+            "mature": mature_item,
+            "explored_count": agent.curiosity.explored_count,
+            "total_discovered": agent.curiosity.total_discovered,
+        }
+    except Exception:
+        pass
+
+    # Assumptions
+    try:
+        from cognition.assumption_tracker import AssumptionTracker
+        tracker = AssumptionTracker()
+        summary = tracker.get_summary()
+        data["assumptions"] = {
+            "open": summary.get("open", 0),
+            "verified": summary.get("verified", 0),
+            "accuracy": summary.get("accuracy"),
+        }
+    except Exception:
+        pass
+
+    # Memory
+    try:
+        from cognition.memory_curation import MemoryCuration
+        mc = MemoryCuration()
+        data["memory"] = mc.get_memory_stats()
+    except Exception:
+        pass
+
+    return data
+
 def get_autonomous_agent():
     """Get or create the autonomous agent instance."""
     global _agent_instance
@@ -207,11 +365,57 @@ def build_mood_meter(term: Terminal, pet: PetState, max_len: int) -> str:
     return term.grey70 + " " + label + " " + bar + term.normal
 
 
+def build_vitals_strip(term: Terminal, w: int) -> str:
+    """Build a separator line with inline vitals metrics.
+
+    Format: ├ 💚 92%↑ │ 🧠 3 │ 👅 12 │ ✅ 85% ──────┤
+    Falls back to a plain separator when data is unavailable.
+    """
+    plain = term.grey50 + "\u251c" + "\u2500" * (w - 2) + "\u2524"
+    try:
+        v = get_vitals_data()
+    except Exception:
+        return plain
+
+    health = v.get("health", 0)
+    trend = v.get("trend", "→")
+    curiosity = v.get("curiosity_count", 0)
+    taste = v.get("taste_rejections", 0)
+    accuracy = v.get("assumption_accuracy")
+
+    if health >= 80:
+        h_icon = "\U0001f49a"   # 💚
+    elif health >= 50:
+        h_icon = "\U0001f49b"   # 💛
+    else:
+        h_icon = "\u2764\ufe0f"  # ❤️
+
+    parts = [f"{h_icon} {health}%{trend}"]
+    parts.append(f"\U0001f9e0 {curiosity}")   # 🧠
+    parts.append(f"\U0001f445 {taste}")        # 👅
+    if accuracy is not None:
+        parts.append(f"\u2705 {int(accuracy * 100)}%")  # ✅
+    else:
+        parts.append("\u2705 --")
+
+    inner = " \u2502 ".join(parts)
+    inner_vis = len(re.sub(r"\x1b\[[0-9;]*m", "", inner))
+    # Account for emoji widths (each emoji ≈ 2 cells)
+    emoji_count = inner.count("\U0001f49a") + inner.count("\U0001f49b") + inner.count("\u2764") + \
+                  inner.count("\U0001f9e0") + inner.count("\U0001f445") + inner.count("\u2705")
+    vis_len = inner_vis + emoji_count  # emojis take extra cell
+
+    fill = max(0, w - 4 - vis_len)
+    return (term.grey50 + "\u251c " + term.normal + inner +
+            term.grey50 + " " + "\u2500" * fill + "\u2524")
+
+
 def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
          scroll_offset: int, mode: str = "pet", selected_topic: int = 0,
          current_thread: dict = None, thread_scroll: int = 0,
-         chat_input: str = None, chat_scroll: int = 0):
-    """Modes: pet, topics, thread, chat"""
+         chat_input: str = None, chat_scroll: int = 0,
+         dashboard_scroll: int = 0):
+    """Modes: pet, topics, thread, chat, dashboard"""
     w = term.width
     h = term.height
     out = []
@@ -220,8 +424,8 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
     out.append(term.move(0, 0) + term.grey50 + "\u250c" + "\u2500" * (w - 2) + "\u2510")
 
     # Title
-    mode_icon = {"pet": "", "topics": " 🔥", "thread": " 📖", "chat": " 💬",
-                 "status": " 📊", "backup": " 💾", "curiosity": " 🧠"}[mode]
+    mode_icon = {"pet": "", "topics": " \U0001f525", "thread": " \U0001f4d6",
+                 "chat": " \U0001f4ac", "dashboard": " \U0001f4ca"}.get(mode, "")
     title = f" \u25c8 CLAWGOTCHI{mode_icon} \u25c8"
     clock = datetime.now().strftime("%H:%M")
     content_width = max(0, w - 2)
@@ -374,118 +578,128 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
         else:
             out.append(term.move(h - 4, 0) + term.grey50 + "\u251c" + "\u2500" * (w - 2) + "\u2524")
 
-    elif mode == "status":
-        # Status view - agent health, resources, thoughts
+    elif mode == "dashboard":
+        # Scrollable dashboard — replaces status/backup/curiosity modes
         content_start = 3
         content_end = h - 4
+        content_height = content_end - content_start
         inner_w = max(20, w - 4)
-        
-        # Get agent status
-        try:
-            agent = get_autonomous_agent()
-            status = agent.get_status()
-            health = status.get("health", 0)
-            goal = status.get("goal", "")
-            thought = status.get("thought", "")
-            total_wakes = status.get("total_wakes", 0)
-            curiosity = status.get("curiosity_count", 0)
-            insights = status.get("insights_count", 0)
-            trend = agent.get_health_trend()
-            resources = agent.get_resource_usage()
-        except:
-            health, goal, thought, total_wakes, curiosity, insights, trend = 50, "", "", 0, 0, 0
-            resources = {"disk_avail_mb": 0, "commits_today": 0, "backups": 0}
-        
-        # Health section
-        if health >= 80:
-            health_color = term.green
-            health_icon = "💚"
-        elif health >= 50:
-            health_color = term.yellow
-            health_icon = "💛"
-        else:
-            health_color = term.red
-            health_icon = "❤️"
-        
-        lines = []
-        lines.append(term.bold + f"{health_icon} HEALTH: {health}% {trend}")
-        lines.append(f"   Uptime cycles: {total_wakes}")
+
+        dd = get_dashboard_data()
+        vt = dd.get("vitals", {})
+        ident = dd.get("identity", {})
+        cur = dd.get("curiosity", {})
+        assum = dd.get("assumptions", {})
+        mem = dd.get("memory", {})
+
+        lines = []  # list of (str) — already colored
+
+        # ── VITALS ──
+        lines.append(term.bold + term.cyan + " VITALS" + term.normal)
+        health = vt.get("health", 0)
+        trend = vt.get("trend", "\u2192")
+        h_icon = "\U0001f49a" if health >= 80 else ("\U0001f49b" if health >= 50 else "\u2764\ufe0f")
+        lines.append(f"   {h_icon} Health: {health}% {trend}    Born: {vt.get('born_age', '?')}")
+        lines.append(f"   Wakes: {vt.get('total_wakeups_lifetime', vt.get('total_wakes', 0))}"
+                     f"        Git: {vt.get('git_status', '?')}")
+        disk_gb = round(vt.get("disk_avail_mb", 0) / 1024, 1)
+        lines.append(f"   Disk: {disk_gb}GB      Commits today: {vt.get('commits_today', 0)}")
         lines.append("")
-        
-        # Resources
-        lines.append(term.cyan + "📊 RESOURCES:")
-        lines.append(f"   Disk: {resources.get('disk_avail_mb', 0)}MB avail")
-        lines.append(f"   Commits today: {resources.get('commits_today', 0)}")
-        lines.append(f"   Backups: {resources.get('backups', 0)}")
-        lines.append("")
-        
-        # Progress
-        lines.append(term.cyan + "📈 PROGRESS:")
-        lines.append(f"   🧠 Curiosities queued: {curiosity}")
-        lines.append(f"   📚 Insights: {insights}")
-        lines.append("")
-        
-        # Current
+
+        # ── MIND ──
+        lines.append(term.bold + term.cyan + " MIND" + term.normal)
+        goal = vt.get("goal", "")
+        thought = vt.get("thought", "")
         if goal:
-            lines.append(term.cyan + "🎯 GOAL:")
-            for wrapped in textwrap.wrap(goal, width=inner_w - 4):
-                lines.append(f"   {wrapped}")
-            lines.append("")
-        
+            for gl in textwrap.wrap(f"\U0001f3af {goal}", width=inner_w - 3):
+                lines.append(f"   {gl}")
+        else:
+            lines.append("   \U0001f3af (no current goal)")
         if thought:
-            lines.append(term.cyan + "💭 THOUGHT:")
-            for wrapped in textwrap.wrap(thought, width=inner_w - 4):
-                lines.append(f"   {wrapped}")
-        
-        # Display
-        for i in range(content_start, content_end):
-            row = i - content_start
-            if row < len(lines):
-                out.append(term.move(row, 0) + pad_row(term, lines[row], w))
+            for tl in textwrap.wrap(f"\U0001f4ad {thought}", width=inner_w - 3):
+                lines.append(f"   {tl}")
+        lines.append("")
+
+        # ── IDENTITY ──
+        total_rej = ident.get("total_rejections", 0)
+        axes = ident.get("axes", {})
+        lines.append(term.bold + term.cyan + f" IDENTITY ({total_rej} rejections)" + term.normal)
+        if axes:
+            sorted_axes = sorted(axes.items(), key=lambda x: -x[1])[:6]
+            max_count = sorted_axes[0][1] if sorted_axes else 1
+            bar_w = min(10, inner_w - 20)
+            for axis, count in sorted_axes:
+                filled = max(1, int((count / max_count) * bar_w)) if max_count > 0 else 0
+                bar = "\u2588" * filled + "\u2591" * (bar_w - filled)
+                lines.append(f"   {axis[:10]:10} {bar} {count}")
+        else:
+            lines.append("   (no rejections yet)")
+        lines.append("")
+
+        # ── CURIOSITY ──
+        pending = cur.get("pending", [])
+        mature_count = sum(1 for p in pending if p.get("mature"))
+        lines.append(term.bold + term.cyan +
+                     f" CURIOSITY ({len(pending)} pending, {mature_count} mature)" + term.normal)
+        if pending:
+            for item in pending[:6]:
+                star = "\u2605" if item.get("mature") else "\u00b7"
+                topic = item.get("topic", "?")[:inner_w - 22]
+                seen = item.get("seen", 1)
+                age = item.get("age_h", 0)
+                age_str = f"{int(age)}h" if age < 48 else f"{int(age / 24)}d"
+                lines.append(f"   {star} {topic}  seen:{seen}  {age_str}")
+        else:
+            lines.append("   (none)")
+        lines.append("")
+
+        # ── ASSUMPTIONS ──
+        a_open = assum.get("open", 0)
+        a_verified = assum.get("verified", 0)
+        a_acc = assum.get("accuracy")
+        acc_str = f"{int(a_acc * 100)}%" if a_acc is not None else "--"
+        lines.append(term.bold + term.cyan + " ASSUMPTIONS" + term.normal)
+        lines.append(f"   Open: {a_open}   Verified: {a_verified}   Accuracy: {acc_str}")
+        lines.append("")
+
+        # ── MEMORY ──
+        lines.append(term.bold + term.cyan + " MEMORY" + term.normal)
+        lines.append(f"   Curated: {mem.get('curated_entries', 0)}"
+                     f"   Daily logs: {mem.get('daily_logs', 0)}")
+
+        # Render with scroll
+        total_lines = len(lines)
+        clamped = min(dashboard_scroll, max(0, total_lines - content_height))
+        visible = lines[clamped:clamped + content_height]
+
+        for i in range(content_height):
+            row = content_start + i
+            if i < len(visible):
+                out.append(term.move(row, 0) + pad_row(term, " " + visible[i], w))
             else:
                 out.append(term.move(row, 0) + pad_row(term, "", w))
 
-    elif mode == "backup":
-        # Backup status view
-        content_start = 3
-        content_end = h - 4
-        inner_w = max(20, w - 4)
-        
-        try:
-            agent = get_autonomous_agent()
-            backup_status = agent.get_backup_status()
-        except:
-            backup_status = {"last_backup": "Never", "backup_count": 0, "emergency_mode": False}
-        
-        lines = []
-        lines.append(term.bold + "💾 BACKUP STATUS")
-        lines.append("")
-        lines.append(f"Last backup: {backup_status.get('last_backup', 'Never')}")
-        lines.append(f"Total backups: {backup_status.get('backup_count', 0)}")
-        lines.append(f"Recovery log: {'Exists' if backup_status.get('recovery_log_exists') else 'None'}")
-        lines.append("")
-        
-        if backup_status.get("emergency_mode"):
-            lines.append(term.red + "⚠️ EMERGENCY MODE ACTIVE")
-            lines.append("Health below 30% - limited operations")
-        else:
-            lines.append(term.green + "✅ System Normal")
-        
-        for i in range(content_start, content_end):
-            row = i - content_start
-            if row < len(lines):
-                out.append(term.move(row, 0) + pad_row(term, lines[row], w))
-            else:
-                out.append(term.move(row, 0) + pad_row(term, "", w))
+        out.append(term.move(h - 4, 0) + term.grey50 + "\u251c" + "\u2500" * (w - 2) + "\u2524")
 
     else:
-        # Pet mode - big face with chat history below
+        # Pet mode — face + vitals strip + goal/thought + activity feed
         face = pet.get_face()
         fc = term.light_salmon if pet.face_key in ("happy", "cool", "grateful", "excited", "intense") else term.grey70
 
-        # Big face (rows 3 to h-7)
+        # Layout:  face area → vitals strip → goal+thought (2 lines) → sep → feed → sep
+        #   rows 3 .. h-11  face
+        #   row  h-10       vitals strip (separator with inline data)
+        #   rows h-9, h-8   goal + thought
+        #   row  h-7        separator
+        #   rows h-6 .. h-3 activity feed (4 lines)
+        #   row  h-3        separator (bottom of feed — drawn below)
+
         face_start = 3
-        face_end = h - 7
+        face_end = h - 11
+
+        # Guard against very small terminals
+        if face_end <= face_start:
+            face_end = face_start + 1
 
         face_mid = face_start + (face_end - face_start) // 2
         bob = pet.get_bob_offset()
@@ -514,77 +728,57 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
             if i not in (face_mid, face_mid + 1) and i != spark_row:
                 out.append(term.move(i, 0) + pad_row(term, "", w))
 
-        # Separator
-        out.append(term.move(h - 6, 0) + term.grey50 + "\u251c" + "\u2500" * (w - 2) + "\u2524")
+        # Vitals strip (h-10)
+        out.append(term.move(h - 10, 0) + build_vitals_strip(term, w))
 
-        # Chat history (h-5 to h-3) - max 3 lines
-        chat_start = h - 5
-        max_text = max(10, w - 16)
-        for i, msg in enumerate(chat_history[-3:]):
-            row = chat_start + i
-            source = msg.get("source", "?")[:10]
-            text = msg.get("text", "")[:max_text]
-            line = f"{source}: {text}"
-            color = term.light_salmon if source != "Clawd" else term.cyan
-            out.append(term.move(row, 0) + pad_row(term, color + line + term.normal, w))
+        # Goal + Thought (h-9, h-8)
+        vitals = get_vitals_data()
+        goal_text = vitals.get("goal", "")
+        thought_text = vitals.get("thought", "")
+        max_text_w = max(10, w - 6)
+
+        goal_line = f" \U0001f3af {goal_text[:max_text_w]}" if goal_text else ""
+        thought_line = f" \U0001f4ad {thought_text[:max_text_w]}" if thought_text else ""
+        out.append(term.move(h - 9, 0) + pad_row(term, term.cyan + goal_line + term.normal, w))
+        out.append(term.move(h - 8, 0) + pad_row(term, term.grey70 + thought_line + term.normal, w))
+
+        # Separator
+        out.append(term.move(h - 7, 0) + term.grey50 + "\u251c" + "\u2500" * (w - 2) + "\u2524")
+
+        # Activity feed (h-6 to h-3) — 4 lines
+        feed_start = h - 6
+        feed_lines = 4
+        max_feed_text = max(10, w - 16)
+        recent = chat_history[-(feed_lines):]
+        for i in range(feed_lines):
+            row = feed_start + i
+            if i < len(recent):
+                msg = recent[i]
+                source = msg.get("source", "?")[:10]
+                text = msg.get("text", "")[:max_feed_text]
+                line = f"{source}: {text}"
+                color = term.light_salmon if source != "Clawd" else term.cyan
+                out.append(term.move(row, 0) + pad_row(term, color + line + term.normal, w))
+            else:
+                out.append(term.move(row, 0) + pad_row(term, "", w))
 
         out.append(term.move(h - 3, 0) + term.grey50 + "\u251c" + "\u2500" * (w - 2) + "\u2524")
 
-    # Controls with agent status
+    # Controls
     uptime = f"UP {pet.get_uptime()}"
-    
-    # Get agent status for display
-    agent_status = ""
-    try:
-        agent = get_autonomous_agent()
-        status = agent.get_status()
-        health = status.get("health", 0)
-        curiosity = status.get("curiosity_count", 0)
-        insights = status.get("insights_count", 0)
-        goal = status.get("goal", "")[:30]
-        
-        # Health indicator
-        if health >= 80:
-            health_icon = "💚"
-        elif health >= 50:
-            health_icon = "💛"
-        else:
-            health_icon = "❤️"
-        
-        agent_status = f"{health_icon} {health}% | 🧠 {curiosity} | 📚 {insights} | 🎯 {goal}"
-    except Exception:
-        agent_status = ""
-    
+
     if mode == "chat" and chat_input is not None:
-        hints = " [esc] cancel  [⏎] send"
+        hints = " [esc] cancel  [\u23ce] send"
     else:
-        hints = {"pet": " [t] topics  [m] chat  [s] status  [b] backup  [q] curiosities",
-                 "topics": " [t] pet  [m] chat  [↑↓] select  [⏎] read",
-                 "thread": " [esc] back  [↑↓] scroll",
-                 "chat": " [m] pet  [t] topics  [i] type  [↑↓] scroll",
-                 "status": " [esc] back  [b] backup  [q] curiosities",
-                 "backup": " [esc] back  [s] status",
-                 "curiosity": " [esc] back  [s] status  [b] backup"}[mode]
-    
-    # Build control line
-    if agent_status:
-        # Split: left = agent status, right = controls
-        agent_part = term.cyan + agent_status + term.normal
-        ctrl_part = term.grey50 + uptime + hints
-        available = w - 4
-        agent_len = len(agent_status)
-        ctrl_len = len(uptime) + len(hints)
-        
-        if agent_len + ctrl_len < available - 2:
-            padding = " " * (available - agent_len - ctrl_len)
-            ctrl_line = " " + agent_part + padding + ctrl_part + " " + term.grey50 + "│"
-        else:
-            # Just show agent status if tight
-            ctrl_line = " " + agent_part + " " * (w - 2 - agent_len) + term.grey50 + "│"
-    else:
-        controls = uptime + hints
-        ctrl_pad = max(0, w - 2 - len(controls) - 3)
-        ctrl_line = " " + term.grey50 + controls + " " * ctrl_pad + term.grey50 + "│"
+        hints = {"pet": " [t] topics  [m] chat  [d] dash  [p] pet",
+                 "topics": " [t] pet  [m] chat  [\u2191\u2193] select  [\u23ce] read",
+                 "thread": " [esc] back  [\u2191\u2193] scroll",
+                 "chat": " [m] pet  [t] topics  [i] type  [\u2191\u2193] scroll",
+                 "dashboard": " [esc] back  [\u2191\u2193] scroll"}.get(mode, "")
+
+    controls = uptime + hints
+    ctrl_pad = max(0, w - 2 - len(controls) - 3)
+    ctrl_line = " " + term.grey50 + controls + " " * ctrl_pad + term.grey50 + "\u2502"
     out.append(term.move(h - 2, 0) + pad_row(term, ctrl_line, w))
 
     out.append(term.move(h - 1, 0) + term.grey50 + "\u2514" + "\u2500" * (w - 2) + "\u2518")
@@ -604,7 +798,7 @@ def main():
     agent = get_autonomous_agent()
 
     scroll_offset = 0
-    mode = "pet"  # pet, topics, thread, chat
+    mode = "pet"  # pet, topics, thread, chat, dashboard
     chat_mode = False
     chat_input = ""
     topics = []
@@ -614,6 +808,7 @@ def main():
     current_thread = None
     thread_scroll = 0
     chat_scroll = 0
+    dashboard_scroll = 0
 
     def cleanup(*_):
         watcher.stop()
@@ -740,10 +935,23 @@ def main():
                         chat_scroll = 999999
                     elif key.name == "KEY_END":
                         chat_scroll = 0
-                elif mode in ("status", "backup", "curiosity"):
-                    # Special modes - escape goes back to pet
-                    if key in ("\x1b", "q", "s", "b") or key.name == "KEY_ESCAPE":
+                elif mode == "dashboard":
+                    # Dashboard mode input
+                    if key == "\x1b" or key.name == "KEY_ESCAPE":
                         mode = "pet"
+                        dashboard_scroll = 0
+                    elif key.name in ("KEY_UP", "k"):
+                        dashboard_scroll = max(0, dashboard_scroll - 1)
+                    elif key.name in ("KEY_DOWN", "j"):
+                        dashboard_scroll += 1
+                    elif key.name == "KEY_PGUP":
+                        dashboard_scroll = max(0, dashboard_scroll - (h - 8))
+                    elif key.name == "KEY_PGDOWN":
+                        dashboard_scroll += h - 8
+                    elif key.name == "KEY_HOME":
+                        dashboard_scroll = 0
+                    elif key.name == "KEY_END":
+                        dashboard_scroll = 999
                 else:
                     # pet mode
                     if key == "p":
@@ -754,17 +962,9 @@ def main():
                     elif key == "m":
                         mode = "chat"
                         chat_scroll = 0
-                    elif key == "s":
-                        mode = "status"
-                    elif key == "b":
-                        mode = "backup"
-                    elif key == "q":
-                        mode = "curiosity"
-                    elif key == "r":
-                        # Manual reload
-                        print(term.normal + term.clear)
-                        print(term.cyan + "🔄 Reloading..." + term.normal)
-                        os.execv(sys.executable, [sys.executable] + sys.argv)
+                    elif key == "d":
+                        mode = "dashboard"
+                        dashboard_scroll = 0
 
             pet.update(dt=dt, gateway_online=watcher.state.online,
                       feed_rate=watcher.feed_rate(), active_agents=watcher.state.active_agents)
@@ -775,7 +975,8 @@ def main():
                  current_thread=current_thread,
                  thread_scroll=thread_scroll,
                  chat_input=chat_input if chat_mode else None,
-                 chat_scroll=chat_scroll)
+                 chat_scroll=chat_scroll,
+                 dashboard_scroll=dashboard_scroll)
 
 
 if __name__ == "__main__":

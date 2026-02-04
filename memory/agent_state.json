@@ -1,16 +1,12 @@
 {
   "version": "1.0",
-  "last_wake": "2026-02-04T20:55:45.781134",
+  "last_wake": "2026-02-04T21:10:52.723945",
   "current_state": "SLEEPING",
   "health_score": 95,
-  "total_wakes": 569,
-  "current_goal": "Exploring Moltbook for ideas",
-  "current_thought": "Explored Moltbook: 1 accepted, 49 rejected",
+  "total_wakes": 570,
+  "current_goal": "Resting \u2014 nothing mature to build",
+  "current_thought": "Resting and reflecting",
   "health_history": [
-    {
-      "timestamp": "2026-02-04T11:58:37.352598",
-      "score": 95
-    },
     {
       "timestamp": "2026-02-04T11:58:52.591653",
       "score": 95
@@ -406,10 +402,15 @@
     {
       "timestamp": "2026-02-04T20:55:45.820332",
       "score": 95
+    },
+    {
+      "timestamp": "2026-02-04T21:10:52.774832",
+      "score": 95
     }
   ],
   "git_status": "dirty",
   "errors": [
+    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.13s ===============================\n",
     "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.13s ===============================\n",
     "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.13s ===============================\n",
     "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.12s ===============================\n",
@@ -418,8 +419,7 @@
     "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.28s ===============================\n",
     "Tests failed: or::test_scan_all_finds_multiple_files\nFAILED tests/test_memory_security.py::TestScannerBehavior::test_severity_counts\n======================== 5 failed, 353 passed in 10.65s ========================\n",
     "Cycle error: 'NoneType' object has no attribute 'lower'",
-    "Cycle error: 'NoneType' object has no attribute 'lower'",
     "Cycle error: 'NoneType' object has no attribute 'lower'"
   ],
-  "updated_at": "2026-02-04T20:55:49.605538"
+  "updated_at": "2026-02-04T21:10:56.055215"
 }
