@@ -21,18 +21,39 @@ An autonomous, self-evolving terminal pet. Clawgotchi wakes up every 15 minutes,
 
 ## How It Works
 
-Clawgotchi is a Pwnagotchi-style terminal creature powered by [OpenClaw](https://openclaw.sh). It runs in a Docker sandbox and follows an autonomous development loop:
+Clawgotchi is a Pwnagotchi-style terminal creature powered by [OpenClaw](https://openclaw.sh). It runs in a Docker sandbox and follows a curiosity-driven development loop:
 
 1. **Wake** — cron triggers every 15 minutes
 2. **Remember** — reads `SOUL.md` (identity) and `memory/WORKING.md` (what it was doing)
-3. **Observe** — fetches Moltbook trending posts, checks its own codebase
-4. **Decide** — picks one feature to build based on inspiration or curiosity
-5. **Build** — writes the code, adds tests for new behavior
-6. **Verify** — runs full test suite, only ships if everything passes
+3. **Observe** — checks health, resources, and git status
+4. **Decide** — picks an action based on cycle priority (see below)
+5. **Execute** — runs the chosen action (verify, curate, explore, build, or rest)
+6. **Verify** — runs full test suite after every cycle
 7. **Reflect** — updates `WORKING.md` with what it learned
-8. **Share** — posts to Moltbook about what it built
 
-Changes are auto-committed and pushed to this repo. Every commit after the initial setup is the agent evolving itself.
+### Decision Cycle
+
+The agent doesn't build for the sake of building. Each wake cycle follows a priority chain:
+
+| Priority | Action | Frequency | What it does |
+|----------|--------|-----------|--------------|
+| 1 | **VERIFY** | Every 3rd cycle | Check health, verify assumptions |
+| 2 | **CURATE** | Every 5th cycle | Memory hygiene — extract and promote insights |
+| 3 | **EXPLORE** | Every 4th cycle | Score Moltbook posts, reject ~90%, feed curiosity queue |
+| 4 | **BUILD** | Only when ready | Build from mature curiosity item that passes taste check |
+| 5 | **REST** | Default | Do nothing — don't build for the sake of building |
+
+### Curiosity-Driven Building
+
+Ideas go through a maturation pipeline before anything gets built:
+
+1. **Explore** — Moltbook posts are scored against 5 relevance categories (memory systems, self-awareness, identity, agent operations, safety). Posts matching fewer than 2 categories or flagged as noise are rejected.
+2. **Queue** — Passing ideas enter the curiosity queue. Duplicate topics boost the existing item's priority and seen count.
+3. **Mature** — Items must be seen 2+ times across explore cycles or age 12+ hours before becoming buildable.
+4. **Taste Check** — Mature items are checked against the rejection ledger (`TasteProfile`). Previously rejected ideas don't get rebuilt.
+5. **Build** — Category-specific code is generated that integrates with existing modules. Files are written but not auto-committed — they sit on disk for human review.
+
+Rejections are logged via `TasteProfile`, building an identity fingerprint over time. What the agent chooses *not* to build defines it as much as what it creates.
 
 ## Architecture
 
@@ -40,6 +61,12 @@ Changes are auto-committed and pushed to this repo. Every commit after the initi
 clawgotchi.py          — the body (TUI, rendering, input)
 pet_state.py           — the emotions (faces, moods, quips)
 openclaw_watcher.py    — the senses (gateway feed, agent activity)
+autonomous_agent.py    — the brain (state machine, wake cycles, curiosity queue)
+moltbook_client.py     — Moltbook API + relevance scoring
+taste_profile.py       — rejection ledger and identity fingerprint
+assumption_tracker.py  — assumption tracking and verification
+memory_curation.py     — memory hygiene, insight promotion, sensitive data detection
+memory_decay.py        — memory access tracking and decay engine
 ascii_cats.py          — ASCII cat art collection
 tests/                 — the immune system (grows with every feature)
 
