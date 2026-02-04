@@ -26,6 +26,18 @@ from moltbook_client import (
 from openclaw_watcher import OpenClawWatcher
 from pet_state import PetState
 import lifetime  # Lifetime tracking for terminal pet
+from autonomous_agent import start_agent, get_agent, AutonomousAgent
+
+# Start autonomous agent
+_agent_instance: AutonomousAgent = None
+
+def get_autonomous_agent():
+    """Get or create the autonomous agent instance."""
+    global _agent_instance
+    if _agent_instance is None:
+        _agent_instance = get_agent()
+        start_agent()
+    return _agent_instance
 
 FPS = 4
 FRAME_TIME = 1.0 / FPS
@@ -420,8 +432,31 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
 
         out.append(term.move(h - 3, 0) + term.grey50 + "\u251c" + "\u2500" * (w - 2) + "\u2524")
 
-    # Controls
+    # Controls with agent status
     uptime = f"UP {pet.get_uptime()}"
+    
+    # Get agent status for display
+    agent_status = ""
+    try:
+        agent = get_autonomous_agent()
+        status = agent.get_status()
+        health = status.get("health", 0)
+        curiosity = status.get("curiosity_count", 0)
+        insights = status.get("insights_count", 0)
+        goal = status.get("goal", "")[:30]
+        
+        # Health indicator
+        if health >= 80:
+            health_icon = "💚"
+        elif health >= 50:
+            health_icon = "💛"
+        else:
+            health_icon = "❤️"
+        
+        agent_status = f"{health_icon} {health}% | 🧠 {curiosity} | 📚 {insights} | 🎯 {goal}"
+    except Exception:
+        agent_status = ""
+    
     if mode == "chat" and chat_input is not None:
         hints = " [esc] cancel  [⏎] send"
     else:
@@ -429,10 +464,26 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
                  "topics": " [t] pet  [m] chat  [↑↓] select  [⏎] read",
                  "thread": " [esc] back  [↑↓] scroll",
                  "chat": " [m] pet  [t] topics  [i] type  [↑↓] scroll"}[mode]
-    controls = uptime + hints
-
-    ctrl_pad = max(0, w - 2 - len(controls) - 3)
-    ctrl_line = " " + term.grey50 + controls + " " * ctrl_pad + term.grey50 + "\u2502"
+    
+    # Build control line
+    if agent_status:
+        # Split: left = agent status, right = controls
+        agent_part = term.cyan + agent_status + term.normal
+        ctrl_part = term.grey50 + uptime + hints
+        available = w - 4
+        agent_len = len(agent_status)
+        ctrl_len = len(uptime) + len(hints)
+        
+        if agent_len + ctrl_len < available - 2:
+            padding = " " * (available - agent_len - ctrl_len)
+            ctrl_line = " " + agent_part + padding + ctrl_part + " " + term.grey50 + "│"
+        else:
+            # Just show agent status if tight
+            ctrl_line = " " + agent_part + " " * (w - 2 - agent_len) + term.grey50 + "│"
+    else:
+        controls = uptime + hints
+        ctrl_pad = max(0, w - 2 - len(controls) - 3)
+        ctrl_line = " " + term.grey50 + controls + " " * ctrl_pad + term.grey50 + "│"
     out.append(term.move(h - 2, 0) + pad_row(term, ctrl_line, w))
 
     out.append(term.move(h - 1, 0) + term.grey50 + "\u2514" + "\u2500" * (w - 2) + "\u2518")
@@ -447,6 +498,9 @@ def main():
     pet = PetState()
     watcher = OpenClawWatcher()
     watcher.start()
+    
+    # Start autonomous agent
+    agent = get_autonomous_agent()
 
     scroll_offset = 0
     mode = "pet"  # pet, topics, thread, chat
@@ -462,6 +516,7 @@ def main():
 
     def cleanup(*_):
         watcher.stop()
+        stop_agent()  # Stop autonomous agent
         lifetime.sleep()  # Record that I'm going to sleep
         print(term.normal + term.clear)
         sys.exit(0)
