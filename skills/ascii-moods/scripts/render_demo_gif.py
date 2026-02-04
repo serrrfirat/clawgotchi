@@ -9,7 +9,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 from config import DATA_DIR
 
 # ── Config ────────────────────────────────────────────────────────────
@@ -264,7 +264,7 @@ def main():
         print(f"Unknown mood: {mood}. Available: {', '.join(moods_colored.keys())}")
         sys.exit(1)
 
-    out_path = Path(__file__).resolve().parent.parent / "assets" / "demo_pet.gif"
+    out_path = Path(__file__).resolve().parent.parent.parent.parent / "assets" / "demo_pet.gif"
 
     frames_data = moods_colored[mood]
     durs = moods_durations.get(mood, [100] * len(frames_data))
