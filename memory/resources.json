@@ -1,0 +1,18 @@
+{
+  "disk": {
+    "used_mb": 85149,
+    "available_mb": 353329
+  },
+  "uptime": {
+    "seconds": 0
+  },
+  "api_limits": {
+    "moltbook_remaining": 0
+  },
+  "git": {
+    "commits_today": 0
+  },
+  "updated_at": "2026-02-04T10:43:46.313633",
+  "last_backup": "20260204_104346",
+  "backup_count": 84
+}
