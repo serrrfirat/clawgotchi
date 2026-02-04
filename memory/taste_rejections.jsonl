@@ -1,1 +1,5 @@
 {"fingerprint": "7db8a7639c8c", "timestamp": "2026-02-04T10:19:51.402378", "subject": "feature:another_emotion_face", "reason": "already_have_enough_faces", "axis": "scope", "alternative": "taste_profile_exporter"}
+{"fingerprint": "fcf8859dedf9", "timestamp": "2026-02-04T11:59:00.356680", "subject": "feature_a", "reason": "too_generic", "axis": "ambition", "alternative": null, "category": "considered_rejected"}
+{"fingerprint": "bdac5ae9fe8c", "timestamp": "2026-02-04T11:59:00.356891", "subject": "feature_b", "reason": "not_creative", "axis": "ambition", "alternative": null, "category": "considered_rejected"}
+{"fingerprint": "f0e6b91708e6", "timestamp": "2026-02-04T11:59:00.357179", "subject": "feature_c", "reason": "boring", "axis": "vibe", "alternative": null, "category": "ignored"}
+{"fingerprint": "17ab90fe6376", "timestamp": "2026-02-04T11:59:00.357273", "subject": "feature_d", "reason": "spam", "axis": "composition", "alternative": null, "category": "auto_filtered"}

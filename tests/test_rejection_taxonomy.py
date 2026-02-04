@@ -215,3 +215,55 @@ class TestTaxonomyCLI:
         # The taxonomy view should be accessible
         fp = taste_profile.get_taste_fingerprint()
         assert "by_category" in fp
+
+
+class TestTasteSignature:
+    """Tests for taste signature ASCII generation."""
+    
+    def test_signature_exists(self, taste_profile):
+        """Should have get_signature method."""
+        sig = taste_profile.get_signature()
+        assert sig is not None
+        assert isinstance(sig, str)
+    
+    def test_signature_empty_profile(self, taste_profile):
+        """Empty profile should show placeholder."""
+        sig = taste_profile.get_signature()
+        assert "Empty" in sig or "still forming" in sig
+    
+    def test_signature_with_rejections(self, taste_profile):
+        """Signature should reflect rejection counts."""
+        taste_profile.log_rejection("f1", "r1", "ambition", category=RejectionCategory.considered_rejected)
+        taste_profile.log_rejection("f2", "r2", "ambition", category=RejectionCategory.considered_rejected)
+        taste_profile.log_rejection("f3", "r3", "scope", category=RejectionCategory.ignored)
+        
+        sig = taste_profile.get_signature()
+        assert sig is not None
+        assert len(sig) > 0
+        # Should contain bars representing the axes
+        assert "█" in sig or "░" in sig
+    
+    def test_signature_shows_top_axes(self, taste_profile):
+        """Signature should show top axes first."""
+        # Add more rejections for different axes
+        taste_profile.log_rejection("f1", "r1", "ambition", category=RejectionCategory.considered_rejected)
+        taste_profile.log_rejection("f2", "r2", "ambition", category=RejectionCategory.considered_rejected)
+        taste_profile.log_rejection("f3", "r3", "ambition", category=RejectionCategory.considered_rejected)
+        taste_profile.log_rejection("f4", "r4", "scope", category=RejectionCategory.ignored)
+        taste_profile.log_rejection("f5", "r5", "vibe", category=RejectionCategory.auto_filtered)
+        
+        sig = taste_profile.get_signature(max_axes=3)
+        # Should show ambition first (most rejections)
+        assert "ambition" in sig
+    
+    def test_signature_cli_command(self, taste_profile, capsys):
+        """Should have 'signature' CLI command."""
+        import sys
+        
+        old_argv = sys.argv
+        try:
+            sys.argv = ["taste_profile.py", "signature"]
+            sig = taste_profile.get_signature()
+            assert sig is not None
+        finally:
+            sys.argv = old_argv

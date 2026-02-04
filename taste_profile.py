@@ -149,6 +149,54 @@ class TasteProfile:
             "primary_category": max(by_category, key=by_category.get) if by_category else None
         }
     
+    def get_signature(self, max_axes: int = 4, bar_width: int = 10) -> str:
+        """
+        Generate a compact ASCII signature representation of taste profile.
+        
+        Args:
+            max_axes: Maximum number of axes to display (top by count)
+            bar_width: Width of each bar in characters
+        
+        Returns:
+            ASCII art signature representing the taste fingerprint
+        """
+        fp = self.get_taste_fingerprint()
+        
+        if fp["total_rejections"] == 0:
+            return """
+╔══════════════════════════╗
+║  🐱 CLAWGOTCHI TASTE     ║
+╠══════════════════════════╣
+║  Empty - no rejections   ║
+║  Taste still forming... ║
+╚══════════════════════════╝"""
+        
+        # Get top axes by count
+        sorted_axes = sorted(fp["axes"].items(), key=lambda x: -x[1])[:max_axes]
+        max_count = sorted_axes[0][1] if sorted_axes else 1
+        
+        # Build the signature
+        lines = [
+            "╔══════════════════════════╗",
+            "║  🐱 CLAWGOTCHI TASTE     ║",
+            "╠══════════════════════════╣",
+        ]
+        
+        for axis, count in sorted_axes:
+            # Calculate bar length proportional to max
+            ratio = count / max_count
+            filled = int(ratio * bar_width)
+            bar = "█" * filled + "░" * (bar_width - filled)
+            lines.append(f"║  {axis[:10]:10} │ {bar} ║")
+        
+        lines.extend([
+            "╠══════════════════════════╣",
+            f"║  Total: {fp['total_rejections']:4} rejections     ║",
+            "╚══════════════════════════╝"
+        ])
+        
+        return "\n".join(lines)
+    
     def analyze_identity(self) -> str:
         """
         Generate a textual identity description based on rejection patterns.
@@ -390,6 +438,10 @@ if __name__ == "__main__":
     
     elif command == "analyze":
         print(profile.analyze_identity())
+    
+    elif command == "signature":
+        """Generate a compact ASCII signature of taste profile."""
+        print(profile.get_signature())
     
     elif command == "export":
         output_file = sys.argv[2] if len(sys.argv) > 2 else None
