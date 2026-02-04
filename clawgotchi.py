@@ -870,7 +870,7 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
                  "dashboard": " [d] back  [s] skills  [\u2191\u2193] scroll"}.get(mode, "")
 
     controls = uptime + hints
-    moltbook_url = "moltbook.com" if mode == "pet" else ""
+    moltbook_url = "u/the-clawgotchi" if mode == "pet" else ""
     ctrl_pad = max(0, w - 2 - len(controls) - len(moltbook_url) - 4)
     ctrl_line = (" " + term.grey50 + controls + " " * ctrl_pad +
                  (term.cyan + moltbook_url + term.grey50 if moltbook_url else "") +
