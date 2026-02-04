@@ -12,6 +12,7 @@ Inspired by DriftSteven's "Memory Layers: Files Beat Brain Every Time"
 
 import os
 import re
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -144,6 +145,235 @@ class SensitiveDataDetector:
         for pattern, pattern_type in self.patterns:
             redacted = re.sub(pattern, f'[{pattern_type}]', redacted, flags=re.IGNORECASE)
         return redacted
+
+
+class MemoryConsistencyChecker:
+    """
+    Verify consistency of memory files to catch errors and contradictions.
+
+    Checks for:
+    - Broken internal links (references to missing files)
+    - Contradictory statements (e.g., "X is true" vs "X is false")
+    - Orphaned entries (mentions of non-existent concepts)
+    """
+
+    # Patterns that indicate a reference to another file/date
+    REFERENCE_PATTERN = r'\[?([A-Za-z0-9_\-]+\.md)\]?|\[?(\d{4}-\d{2}-\d{2})\.md\]?'
+
+    # Contradiction patterns (simplified for agents)
+    CONTRADICTION_PATTERNS = [
+        (r'(\w+) is true', r'\1 is false'),
+        (r'(\w+) works', r'\1 does not work'),
+        (r'(\w+) is possible', r'\1 is impossible'),
+        (r'(\w+) should', r'\1 should not'),
+        (r'(\w+) can', r'\1 cannot'),
+        (r'(\w+) is safe', r'\1 is not safe'),
+        (r'(\w+) is secure', r'\1 is not secure'),
+    ]
+
+    def __init__(self, memory_dir=None):
+        """Initialize consistency checker with memory directory."""
+        if memory_dir is None:
+            self.memory_dir = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                "memory"
+            )
+        else:
+            self.memory_dir = memory_dir
+
+        # Ensure memory directory exists
+        os.makedirs(self.memory_dir, exist_ok=True)
+
+    def _extract_references(self, content):
+        """Extract file references from content."""
+        references = []
+        # Look for date-based references (e.g., [2026-02-04.md] or just 2026-02-04)
+        date_refs = re.findall(r'(\d{4}-\d{2}-\d{2})', content)
+        for date in date_refs:
+            references.append(f"{date}.md")
+
+        # Look for explicit file references
+        file_refs = re.findall(r'([A-Za-z0-9_\-]+\.md)', content)
+        references.extend(file_refs)
+
+        return list(set(references))
+
+    def _find_contradictions(self, content):
+        """Find potential contradictions in content."""
+        contradictions = []
+
+        # This is a simplified detection - real contradiction detection
+        # would require semantic analysis, but we can catch obvious cases
+        # by looking for adjacent opposing statements
+
+        lines = content.split('\n')
+        for i in range(len(lines) - 1):
+            line1 = lines[i].lower()
+            line2 = lines[i + 1].lower()
+
+            # Check for quick backtracks (saying something then immediately contradicting)
+            positive_words = ['is true', 'works', 'is possible', 'is safe', 'is secure', 'can', 'should']
+            negative_words = ['is false', 'does not work', 'is impossible', 'is not safe', 'is not secure', 'cannot', 'should not']
+
+            for pos in positive_words:
+                if pos in line1:
+                    for neg in negative_words:
+                        # Check if the same subject is mentioned
+                        pos_parts = pos.split()
+                        neg_parts = neg.split()
+
+                        # Need at least 2 parts for both
+                        if len(pos_parts) < 2 or len(neg_parts) < 2:
+                            continue
+
+                        subject_match = re.search(r'(\w+) ' + pos_parts[1], line1)
+                        if subject_match:
+                            subject = subject_match.group(1)
+                            neg_keyword = neg_parts[1]
+                            if re.search(r'(\w+) ' + neg_keyword, line2) and subject in line2:
+                                contradictions.append({
+                                    'line': i + 1,
+                                    'positive': lines[i].strip(),
+                                    'negative': lines[i + 1].strip(),
+                                    'subject': subject
+                                })
+
+        return contradictions
+
+    def _find_orphaned_entries(self, curated_content):
+        """Find entries in curated memory that might be orphaned."""
+        # An "orphan" is something mentioned in curated memory
+        # but never expanded upon in daily logs
+
+        # This is a heuristic: look for capitalized terms in curated
+        # that don't appear in recent logs
+
+        curated_terms = re.findall(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b', curated_content)
+
+        # Filter common words
+        common_words = {'Important', 'Key', 'Remember', 'Insight', 'Curated', 'Memory', 'File', 'Agent', 'Test', 'Note'}
+        curated_terms = [t for t in curated_terms if t not in common_words and len(t) > 3]
+
+        return list(set(curated_terms))
+
+    def check_all_memories(self):
+        """
+        Run consistency check on all memory files.
+
+        Returns:
+            Dictionary with issues found (broken_links, contradictions, orphans)
+        """
+        issues = {
+            'broken_links': [],
+            'contradictions': [],
+            'orphans': [],
+            'warnings': []
+        }
+
+        if not os.path.exists(self.memory_dir):
+            issues['warnings'].append(f"Memory directory {self.memory_dir} does not exist")
+            return issues
+
+        # Get list of existing files
+        existing_files = set(os.listdir(self.memory_dir))
+
+        # Check curated memory specifically
+        curated_file = os.path.join(self.memory_dir, "MEMORY.md")
+        curated_content = ""
+        if os.path.exists(curated_file):
+            with open(curated_file, 'r') as f:
+                curated_content = f.read()
+
+            # Check for contradictions in curated memory
+            contradictions = self._find_contradictions(curated_content)
+            if contradictions:
+                issues['contradictions'].extend([{
+                    'file': 'MEMORY.md',
+                    'type': 'possible_backtrack',
+                    'description': f'Possible contradiction around "{c["subject"]}"',
+                    'line_1': c['positive'],
+                    'line_2': c['negative']
+                } for c in contradictions])
+
+        # Check each daily log
+        for filename in os.listdir(self.memory_dir):
+            if not filename.endswith('.md'):
+                continue
+
+            filepath = os.path.join(self.memory_dir, filename)
+            if not os.path.isfile(filepath):
+                continue
+
+            with open(filepath, 'r') as f:
+                content = f.read()
+
+            # Check for broken references
+            references = self._extract_references(content)
+            for ref in references:
+                # Only check if it's not the current file
+                if ref != filename and ref not in existing_files:
+                    issues['broken_links'].append({
+                        'file': filename,
+                        'broken_reference': ref
+                    })
+
+            # Check for contradictions
+            contradictions = self._find_contradictions(content)
+            if contradictions:
+                issues['contradictions'].extend([{
+                    'file': filename,
+                    'type': 'possible_backtrack',
+                    'description': f'Possible contradiction around "{c["subject"]}"',
+                    'line_1': c['positive'],
+                    'line_2': c['negative']
+                } for c in contradictions])
+
+        # Find orphaned entries
+        if curated_content:
+            potential_orphans = self._find_orphaned_entries(curated_content)
+            # These are just "terms to watch" not actual orphans
+            # Real orphan detection would need semantic understanding
+            if potential_orphans:
+                issues['orphans'] = potential_orphans[:10]  # Limit to 10 for display
+
+        return issues
+
+    def print_diagnostic_report(self):
+        """Print a formatted diagnostic report."""
+        issues = self.check_all_memories()
+
+        print("🩺 Memory Consistency Diagnostic Report")
+        print("=" * 50)
+
+        if not issues['broken_links'] and not issues['contradictions'] and not issues['orphans']:
+            print("✅ All checks passed! Memory appears consistent.")
+            return
+
+        # Broken links
+        if issues['broken_links']:
+            print(f"\n🔗 Broken Internal Links ({len(issues['broken_links'])} found):")
+            for link in issues['broken_links']:
+                print(f"  📄 {link['file']} → {link['broken_reference']}")
+
+        # Contradictions
+        if issues['contradictions']:
+            print(f"\n⚠️  Potential Contradictions ({len(issues['contradictions'])} found):")
+            for c in issues['contradictions']:
+                print(f"  📄 {c['file']}: {c['description']}")
+                print(f"     + {c['line_1'][:60]}...")
+                print(f"     - {c['line_2'][:60]}...")
+
+        # Orphans
+        if issues['orphans']:
+            print(f"\n📌 Terms in Curated Memory Not Seen Recently:")
+            for term in issues['orphans'][:5]:
+                print(f"  • {term}")
+
+        # Summary
+        total = len(issues['broken_links']) + len(issues['contradictions'])
+        print(f"\n📊 Total Issues: {total}")
+
+        return issues
 
 
 class MemoryCuration:
@@ -358,7 +588,7 @@ def main():
     )
     parser.add_argument(
         'command',
-        choices=['summarize', 'promote', 'show', 'search', 'stats', 'security'],
+        choices=['summarize', 'promote', 'show', 'search', 'stats', 'security', 'diagnose'],
         help='Command to run'
     )
 
@@ -434,6 +664,12 @@ def main():
                 print()
         else:
             print("✅ Security Audit: No sensitive data detected in memory files!")
+
+    elif args.command == 'diagnose':
+        # Run consistency diagnostics
+        from memory_curation import MemoryConsistencyChecker
+        checker = MemoryConsistencyChecker(memory_dir=curation.memory_dir)
+        checker.print_diagnostic_report()
 
 
 if __name__ == '__main__':

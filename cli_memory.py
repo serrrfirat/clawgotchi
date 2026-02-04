@@ -8,11 +8,12 @@ Usage:
     clawgotchi memory show
     clawgotchi memory search <query>
     clawgotchi memory stats
+    clawgotchi memory diagnose
 """
 
 import sys
 import argparse
-from memory_curation import MemoryCuration
+from memory_curation import MemoryCuration, MemoryConsistencyChecker
 
 
 def run_memory_command(args):
@@ -56,6 +57,10 @@ def run_memory_command(args):
         print(f"  Daily logs: {stats['daily_logs']}")
         print(f"  Curated entries: {stats['curated_entries']}")
         print(f"  Last curated: {stats['last_curated'] or 'Never'}")
+
+    elif args.command == 'diagnose':
+        checker = MemoryConsistencyChecker(memory_dir=curation.memory_dir)
+        checker.print_diagnostic_report()
 
 
 def main():
@@ -119,6 +124,12 @@ def main():
     subparsers.add_parser(
         'stats',
         help='Show memory statistics'
+    )
+
+    # clawgotchi memory diagnose
+    subparsers.add_parser(
+        'diagnose',
+        help='Run consistency diagnostics on memory files'
     )
 
     # Default: show help
