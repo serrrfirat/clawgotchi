@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Tests for assumption_tracker.py - Meta-cognitive assumption verification system.
 

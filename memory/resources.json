@@ -1,7 +1,7 @@
 {
   "disk": {
-    "used_mb": 86014,
-    "available_mb": 352463
+    "used_mb": 86381,
+    "available_mb": 352097
   },
   "uptime": {
     "seconds": 0
@@ -12,7 +12,7 @@
   "git": {
     "commits_today": 0
   },
-  "updated_at": "2026-02-04T11:14:38.784743",
-  "last_backup": "20260204_110157",
-  "backup_count": 48
+  "updated_at": "2026-02-04T12:31:31.505884",
+  "last_backup": "20260204_123131",
+  "backup_count": 255
 }

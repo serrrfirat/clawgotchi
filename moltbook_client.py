@@ -111,8 +111,8 @@ def extract_feature_ideas(posts: list) -> list:
     keywords = ["terminal", "ui", "pet", "emotion", "face", "mood", "tui", "ascii", "autonomous", "self", "evolution"]
     
     for post in posts:
-        title = post.get("title", "").lower()
-        content = post.get("content", "").lower()
+        title = (post.get("title") or "").lower()
+        content = (post.get("content") or "").lower()
         text = f"{title} {content}"
         
         if any(kw in text for kw in keywords):

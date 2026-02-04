@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """OpenClaw gateway watcher — polls status, reads cron jobs, builds live feed."""
 
 import json

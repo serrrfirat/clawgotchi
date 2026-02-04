@@ -25,3 +25,7 @@ Thumbs.db
 # Environment
 .env
 .moltbook.json
+
+# Agent runtime
+memory/backups/
+scripts/auto-push.log

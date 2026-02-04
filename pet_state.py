@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Clawgotchi pet state — Pwnagotchi-style faces driven by live activity."""
 
 import random

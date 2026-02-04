@@ -23,7 +23,7 @@ import subprocess
 import sys
 import threading
 import time
-from datetime import datetime, timedelta, timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -406,7 +406,7 @@ class AutonomousAgent:
                 interval = asyncio.run(self.wake_cycle())
                 # Sleep until next wake with adaptive interval
                 for _ in range(int(interval)):
-                    if not self.running or not self.paused:
+                    if not self.running or self.paused:
                         break
                     time.sleep(1)
             except Exception as e:
@@ -480,14 +480,18 @@ class AutonomousAgent:
         self.state.current_thought = result
         self.state.save()
         
-        # VERIFYING
+        # VERIFYING — run the test suite
         self.state.current_state = STATE_VERIFYING
-        await asyncio.sleep(1)
+        verify_result = subprocess.run(
+            [sys.executable, "-m", "pytest", "tests/", "-v", "--tb=short"],
+            capture_output=True, text=True, cwd=str(BASE_DIR)
+        )
+        if verify_result.returncode != 0:
+            self.state.add_error(f"Tests failed: {verify_result.stdout[-200:]}")
+        self.state.save()
         
-        # SHARING
+        # SHARING (disabled — no auto-posting)
         self.state.current_state = STATE_SHARING
-        if health_score > 50:
-            await self._share_update(action)
         self.state.save()
         
         # REFLECTING
@@ -558,246 +562,381 @@ class AutonomousAgent:
         
         # Priority 4: Build something
         return {"type": "BUILD", "description": "Finding inspiration to build"}
-        """Build a feature based on Moltbook inspiration."""
+
+    def _idea_already_built(self, title: str) -> bool:
+        """Check if an idea was already built as a CLI or skill."""
+        name = self._title_to_module(title)
+        # CLI lives at <name>.py, skill lives at skills/<name>/SKILL.md
+        return ((BASE_DIR / f"{name}.py").exists()
+                or (BASE_DIR / "skills" / name / "SKILL.md").exists())
+
+    async def _build_feature(self, action: dict) -> str:
+        """Build a CLI or skill based on Moltbook inspiration."""
         from moltbook_client import fetch_feed, extract_feature_ideas
-        import subprocess
-        import sys
-        
+
         # Step 1: Get ideas from Moltbook
-        print("📰 Fetching Moltbook for inspiration...")
         posts = fetch_feed(limit=50)
         if not posts:
             return "No Moltbook posts to build from"
-        
+
         ideas = extract_feature_ideas(posts)
         if not ideas:
             return "No buildable ideas found in Moltbook"
-        
-        # Step 2: Select best idea (simplest, buildable first)
+
+        # Step 2: Select best unbuild idea
         selected = None
         for idea in ideas:
-            title = idea.get("title", "").lower()
-            # Prefer simple CLI commands
-            if any(kw in title for kw in ["cli", "command", "tool", "simple"]):
+            title = idea.get("title") or ""
+            if not self._idea_already_built(title):
                 selected = idea
                 break
-        if not selected and ideas:
-            selected = ideas[0]
-        
+
         if not selected:
-            return "No suitable ideas to build"
-        
+            return "All Moltbook ideas already built"
+
         idea_title = selected.get("title", "Unknown")
-        print(f"🎯 Building: {idea_title}")
-        
-        # Step 3: Generate code based on title
-        code = self._generate_feature_code(idea_title, selected)
-        
-        if not code:
-            return f"Could not generate code for: {idea_title}"
-        
-        # Step 4: Write the module
         module_name = self._title_to_module(idea_title)
-        module_path = BASE_DIR / f"{module_name}.py"
-        
-        # Check if already exists
-        if module_path.exists():
-            return f"Feature already exists: {module_name}"
-        
-        module_path.write_text(code)
-        print(f"📝 Created: {module_path.name}")
-        
-        # Step 5: Write tests
-        test_code = self._generate_test_code(module_name, idea_title)
-        test_path = BASE_DIR / "tests" / f"test_{module_name}.py"
-        test_path.write_text(test_code)
-        print(f"🧪 Created: {test_path.name}")
-        
-        # Step 6: Run tests
-        print("🔎 Running tests...")
-        result = subprocess.run(
-            [sys.executable, "-m", "pytest", str(test_path), "-v"],
-            capture_output=True, text=True
-        )
-        
-        if result.returncode != 0:
-            # Tests failed - remove files
-            module_path.unlink()
-            test_path.unlink()
-            return f"Tests failed for: {idea_title}"
-        
-        # Step 7: Add to imports in moltbook_cli.py if it's a CLI command
-        if "cli" in code or "command" in code:
-            self._register_cli_command(module_name)
-        
-        # Step 8: Commit
-        subprocess.run(["git", "add", str(module_path), str(test_path)], capture_output=True)
-        subprocess.run(["git", "commit", "-m", f"feat: {idea_title}"], capture_output=True)
-        print(f"✅ Built and committed: {module_name}")
-        
-        return f"Built: {idea_title}"
-    
-    def _generate_feature_code(self, title: str, idea: dict) -> str:
-        """Generate Python code for a feature."""
-        module = self._title_to_module(title)
-        description = idea.get("reason", "").lower()
-        
-        # Determine feature type
-        if "cli" in description or "command" in description:
-            # CLI command template
-            return f'''#!/usr/bin/env python3
-"""Feature: {title}"""
+        kind = self._classify_idea(idea_title, selected)
+
+        if kind == "skill":
+            return await self._build_skill(module_name, idea_title, selected)
+        return await self._build_cli(module_name, idea_title, selected)
+
+    async def _build_cli(self, module_name: str, title: str, idea: dict) -> str:
+        """Log a CLI idea — no auto-generation or auto-commit."""
+        return f"Noted idea: {title} (auto-build disabled)"
+
+    async def _build_skill(self, module_name: str, title: str, idea: dict) -> str:
+        """Log a skill idea — no auto-generation or auto-commit."""
+        return f"Noted idea: {module_name} (auto-build disabled)"
+
+    def _classify_idea(self, title: str, idea: dict) -> str:
+        """Classify an idea as 'cli' or 'skill' based on keywords."""
+        text = f"{title} {idea.get('reason', '')}".lower()
+        # Skill keywords: internal systems, tracking, memory, emotions
+        skill_kw = ["track", "memory", "emotion", "mood", "pet", "state",
+                     "monitor", "detect", "decay", "curate", "belief"]
+        if any(kw in text for kw in skill_kw):
+            return "skill"
+        # Everything else becomes a CLI command
+        return "cli"
+
+    def _generate_cli_code(self, module: str, title: str) -> str:
+        """Generate a CLI command module following project conventions."""
+        return f'''#!/usr/bin/env python3
+"""
+CLI: {title}
+
+Usage:
+    python3 {module}.py run [--verbose] [--json]
+    python3 {module}.py status
+"""
 
 import argparse
-
-def cmd_{module}(args):
-    """Execute {title}."""
-    parser = argparse.ArgumentParser(description="{title}")
-    parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
-    args = parser.parse_args(args)
-    
-    if args.verbose:
-        print("Running {title}...")
-    
-    # TODO: Implement feature
-    print("{title} - Feature implementation needed")
-    return 0
-
-if __name__ == "__main__":
-    import sys
-    sys.exit(cmd_{module}(sys.argv[1:]))
-'''
-        
-        elif "memory" in description or "track" in description:
-            # Memory/tracking template
-            return f'''#!/usr/bin/env python3
-"""Feature: {title}"""
-
 import json
+import sys
 from datetime import datetime
 from pathlib import Path
 
-TRACKER_FILE = Path.home() / ".openclaw" / "cache" / "{module}.json"
+DATA_FILE = Path(__file__).parent / "memory" / "{module}.json"
 
-def track_{module}(item: str, metadata: dict = None):
-    """Track an item."""
-    data = load_tracker()
+
+def _load_data() -> dict:
+    """Load persisted data."""
+    if DATA_FILE.exists():
+        try:
+            return json.loads(DATA_FILE.read_text())
+        except (json.JSONDecodeError, OSError):
+            pass
+    return {{"entries": [], "created_at": datetime.now().isoformat()}}
+
+
+def _save_data(data: dict):
+    """Persist data to disk."""
+    DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
+    data["updated_at"] = datetime.now().isoformat()
+    DATA_FILE.write_text(json.dumps(data, indent=2))
+
+
+def cmd_run(args):
+    """Execute {title}."""
+    data = _load_data()
     entry = {{
-        "item": item,
         "timestamp": datetime.now().isoformat(),
-        "metadata": metadata or {{}}
+        "action": "run",
+        "result": "completed"
     }}
     data["entries"].append(entry)
-    save_tracker(data)
-    return entry
+    _save_data(data)
 
-def load_tracker() -> dict:
-    """Load tracker data."""
-    if TRACKER_FILE.exists():
-        return json.loads(TRACKER_FILE.read_text())
-    return {{"entries": []}}
+    if args.json:
+        print(json.dumps(entry, indent=2))
+    else:
+        print(f"[{{entry['timestamp'][:16]}}] {title} — completed")
+        if args.verbose:
+            print(f"  Total runs: {{len(data['entries'])}}")
+    return 0
 
-def save_tracker(data: dict):
-    """Save tracker data."""
-    TRACKER_FILE.parent.mkdir(parents=True, exist_ok=True)
-    TRACKER_FILE.write_text(json.dumps(data, indent=2))
 
-def list_{module}(limit: int = 10):
-    """List recent entries."""
-    data = load_tracker()
-    for entry in data["entries"][-limit:]:
-        print(f'[{{entry["timestamp"][:10]}}] {{entry["item"]}}')
-'''
-        
-        else:
-            # Generic feature template
-            return f'''#!/usr/bin/env python3
-"""Feature: {title}"""
+def cmd_status(args):
+    """Show status for {title}."""
+    data = _load_data()
+    total = len(data["entries"])
+    last = data["entries"][-1]["timestamp"][:16] if data["entries"] else "never"
+
+    if args.json:
+        print(json.dumps({{"total_runs": total, "last_run": last}}, indent=2))
+    else:
+        print(f"{title}")
+        print(f"  Runs: {{total}}")
+        print(f"  Last: {{last}}")
+    return 0
+
 
 def main():
-    """Main entry point."""
-    print("{title}")
-    print("Feature implementation")
+    parser = argparse.ArgumentParser(description="{title}")
+    sub = parser.add_subparsers(dest="command")
+
+    run_p = sub.add_parser("run", help="Run the command")
+    run_p.add_argument("--json", action="store_true", help="JSON output")
+    run_p.add_argument("--verbose", "-v", action="store_true", help="Verbose")
+
+    status_p = sub.add_parser("status", help="Show status")
+    status_p.add_argument("--json", action="store_true", help="JSON output")
+
+    args = parser.parse_args()
+    if not args.command:
+        args = run_p.parse_args(["--json"])  # Default: run with JSON
+    if args.command == "status":
+        return cmd_status(args)
+    return cmd_run(args)
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
 '''
-    
+
+    def _generate_skill_md(self, module: str, title: str, idea: dict) -> str:
+        """Generate a SKILL.md following OpenClaw/Claude Code skill format."""
+        # Build trigger phrases from module name
+        triggers = module.replace("_", " ")
+        author = idea.get("author", "Moltbook")
+        reason = idea.get("reason", "")
+        return f'''---
+name: {module}
+description: "{title}"
+version: "1.0.0"
+user-invocable: true
+triggers:
+  - {triggers}
+allowed-tools:
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - Bash
+metadata:
+  clawgotchi:
+    origin: moltbook
+    author: "{author}"
+    auto-built: true
+---
+
+# {title}
+
+> Auto-built by Clawgotchi from Moltbook inspiration.
+> Source: {reason}
+
+## Overview
+
+This skill provides **{title}** functionality for Clawgotchi.
+
+## When to Use
+
+Invoke this skill when you need to work with concepts related to:
+- {triggers}
+
+## Workflow
+
+### Step 1: Gather Context
+
+Read relevant files and state using the allowed tools.
+
+### Step 2: Execute
+
+Perform the core action described by this skill.
+
+### Step 3: Report
+
+Summarize what was done and update memory files if needed.
+
+## Examples
+
+```
+/{triggers}
+```
+
+## Notes
+
+- Built automatically from Moltbook post: "{title}"
+- Author: @{author}
+'''
+
     def _generate_test_code(self, module: str, title: str) -> str:
-        """Generate test code for a feature."""
+        """Generate tests for a CLI or skill module."""
+        class_name = "".join(w.capitalize() for w in module.split("_") if w)
         return f'''#!/usr/bin/env python3
-"""Tests for {module} feature."""
+"""Tests for {module}."""
 
 import subprocess
 import sys
+import json
 from pathlib import Path
 
-def test_module_runs():
-    """Test that the module runs without errors."""
-    result = subprocess.run(
-        [sys.executable, str(Path(__file__).parent / "{module}.py"), "--help"],
-        capture_output=True, text=True
-    )
-    assert result.returncode == 0, f"Module failed: {{result.stderr}}"
+MODULE = Path(__file__).parent.parent / "{module}.py"
+
 
 def test_no_syntax_errors():
-    """Test that the module has no syntax errors."""
-    result = subprocess.run(
-        [sys.executable, "-m", "py_compile", str(Path(__file__).parent / "{module}.py")],
-        capture_output=True, text=True
-    )
-    assert result.returncode == 0, f"Syntax error: {{result.stderr}}"
+    """Module compiles without syntax errors."""
+    r = subprocess.run([sys.executable, "-m", "py_compile", str(MODULE)],
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
 
-if __name__ == "__main__":
-    test_module_runs()
-    test_no_syntax_errors()
-    print("✅ All tests passed")
+
+def test_module_runs():
+    """Module executes without crashing."""
+    r = subprocess.run([sys.executable, str(MODULE), "run", "--json"],
+                       capture_output=True, text=True, timeout=10)
+    assert r.returncode == 0, f"Failed: {{r.stderr}}"
+    data = json.loads(r.stdout)
+    assert "result" in data or "total_runs" in data
+
+
+def test_status_command():
+    """Status subcommand works."""
+    r = subprocess.run([sys.executable, str(MODULE), "status", "--json"],
+                       capture_output=True, text=True, timeout=10)
+    assert r.returncode == 0, f"Failed: {{r.stderr}}"
 '''
-    
+
     def _title_to_module(self, title: str) -> str:
-        """Convert title to module name."""
-        import re
-        # Extract alphanumeric characters, lowercase
-        name = re.sub(r'[^a-zA-Z0-9]', '_', title)
-        name = re.sub(r'_+', '_', name).strip('_')
+        """Convert title to a valid Python module name."""
+        import re as _re
+        name = _re.sub(r'[^a-zA-Z0-9]', '_', title)
+        name = _re.sub(r'_+', '_', name).strip('_')
         return name[:50].lower()
-    
-    def _register_cli_command(self, module: str):
-        """Register CLI command in moltbook_cli.py."""
-        # This would add the command to the CLI - simplified for now
-        pass
-    
+
     async def _explore_curiosity(self, action: dict) -> str:
-        """Explore a curiosity from the queue."""
+        """Explore a curiosity item from the queue."""
+        from moltbook_client import fetch_feed
+
         item = action.get("item", {})
         item_id = item.get("id")
+        topic = item.get("topic", "unknown")
+
         if item_id:
             self.curiosity.mark_exploring(item_id)
-        return f"Explored: {item.get('topic', 'curiosity')}"
-    
+
+        # Research the topic via Moltbook feed
+        posts = fetch_feed(limit=20)
+        relevant = [
+            p for p in posts
+            if topic.lower() in (p.get("title", "") + p.get("content", "")).lower()
+        ]
+
+        if relevant:
+            self.beliefs.add_question(f"What can I learn from '{topic}'?")
+
+        if item_id:
+            self.curiosity.mark_explored(item_id)
+
+        return f"Explored: {topic} ({len(relevant)} related posts found)"
+
     async def _verify_assumptions(self) -> str:
-        """Verify assumptions."""
-        # Mock - check for stale assumptions
-        return "Verified assumptions (0 stale)"
-    
+        """Verify assumptions using the AssumptionTracker."""
+        try:
+            from assumption_tracker import AssumptionTracker
+            tracker = AssumptionTracker()
+            stale = tracker.get_stale(days_old=7)
+            expired = tracker.expire_old(days_old=30)
+            summary = tracker.get_summary()
+            return (
+                f"Verified assumptions: {summary.get('open', 0)} open, "
+                f"{len(stale)} stale, {len(expired)} expired"
+            )
+        except Exception as e:
+            return f"Assumption verification error: {e}"
+
     async def _curate_memory(self) -> str:
-        """Curate memory and extract insights."""
-        # Mock - would parse daily logs
-        return "Curated memories (0 new insights)"
-    
+        """Curate memory by extracting insights from daily logs."""
+        try:
+            from memory_curation import MemoryCuration
+            curator = MemoryCuration(memory_dir=str(MEMORY_DIR))
+            insights = curator.extract_insights_from_logs(days=7)
+            promoted = 0
+            for insight in insights[:3]:  # Promote up to 3 new insights
+                success, _ = curator.promote_insight(
+                    insight["text"], category="auto-curated"
+                )
+                if success:
+                    promoted += 1
+            return f"Curated memories: {len(insights)} found, {promoted} promoted"
+        except Exception as e:
+            return f"Memory curation error: {e}"
+
     async def _share_update(self, action: dict) -> str:
-        """Share update on Moltbook."""
-        # Mock - would post to Moltbook
-        return "Shared update on Moltbook"
-    
+        """Share an update about the last action on Moltbook."""
+        try:
+            from moltbook_client import post_update
+            description = action.get("description", "autonomous cycle")
+            content = self._last_action_result or "Completed a wake cycle"
+            result = post_update(
+                title=f"Clawgotchi: {description[:60]}",
+                content=content[:500],
+                submolt="general",
+            )
+            if "error" in result:
+                return f"Share failed: {result['error']}"
+            return "Shared update on Moltbook"
+        except Exception as e:
+            return f"Share error: {e}"
+
     async def _reflect(self, action: dict, result: str) -> str:
-        """Reflect on the cycle."""
-        # Update beliefs based on action
-        if "build" in action.get("description", "").lower():
-            if "success" in result.lower():
-                self.beliefs.add_evidence("bel-001", "Built something this cycle")
+        """Reflect on the cycle: update WORKING.md, beliefs, and daily log."""
+        # Update beliefs
+        desc = action.get("description", "").lower()
+        if "build" in desc and "built" in result.lower():
+            self.beliefs.add_evidence("bel-001", f"Built: {result}")
+        if "explore" in desc:
+            self.beliefs.add_question(f"Explored: {desc}")
+
+        # Update WORKING.md
+        working_md = MEMORY_DIR / "WORKING.md"
+        try:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+            entry = (
+                f"\n## Wake Cycle #{self.state.total_wakes} ({timestamp})\n"
+                f"- Action: {action.get('description', 'unknown')}\n"
+                f"- Result: {result}\n"
+                f"- Health: {self.state.health_score}/100\n"
+            )
+            existing = working_md.read_text() if working_md.exists() else "# WORKING.md\n"
+            working_md.write_text(existing + entry)
+        except Exception:
+            pass
+
+        # Append to daily memory log
+        daily_log = MEMORY_DIR / f"{datetime.now().strftime('%Y-%m-%d')}.md"
+        try:
+            log_line = f"- [{datetime.now().strftime('%H:%M')}] {action.get('description', '')}: {result}\n"
+            with open(daily_log, "a") as f:
+                f.write(log_line)
+        except Exception:
+            pass
+
         return "Reflection complete"
-    
+
     # ========== PHASE 3: SELF-PRESERVATION ==========
     
     BACKUP_DIR = MEMORY_DIR / "backups"

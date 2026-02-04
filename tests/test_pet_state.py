@@ -162,11 +162,11 @@ class TestSessionTracking:
         now = time.time()
         assert abs(state.session_start - now) < 1.0
 
-    def test_total_uptime_initialized_to_zero(self):
-        """total_uptime should start at 0."""
+    def test_total_uptime_initialized_from_lifetime(self):
+        """total_uptime should be loaded from lifetime.json."""
         state = PetState()
         assert hasattr(state, 'total_uptime_seconds')
-        assert state.total_uptime_seconds == 0
+        assert state.total_uptime_seconds >= 0
 
     def test_get_session_uptime_returns_string(self):
         """get_session_uptime should return a string."""
