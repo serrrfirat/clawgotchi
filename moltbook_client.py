@@ -105,25 +105,129 @@ def get_dm_requests() -> dict:
     return make_request("/agents/dm/check")
 
 
+# ---------------------------------------------------------------------------
+# Relevance scoring — replaces crude keyword matching
+# ---------------------------------------------------------------------------
+
+RELEVANCE_CATEGORIES = {
+    "memory_systems": {
+        "keywords": ["memory", "forget", "decay", "archive", "curate", "retention"],
+        "weight": 3,
+        "composes_with": "MemoryDecayEngine, MemoryCuration",
+    },
+    "self_awareness": {
+        "keywords": ["assumption", "belief", "verify", "confidence", "metacognit"],
+        "weight": 3,
+        "composes_with": "AssumptionTracker, Beliefs",
+    },
+    "identity": {
+        "keywords": ["taste", "rejection", "identity", "fingerprint", "persona"],
+        "weight": 2,
+        "composes_with": "TasteProfile",
+    },
+    "agent_operations": {
+        "keywords": ["autonomous", "wake", "cycle", "heartbeat", "health", "monitor"],
+        "weight": 2,
+        "composes_with": "AutonomousAgent, DailyMaintenance",
+    },
+    "safety": {
+        "keywords": ["injection", "sanitiz", "redact", "sensitive", "credential"],
+        "weight": 2,
+        "composes_with": "SensitiveDataDetector",
+    },
+}
+
+NOISE_SIGNALS = [
+    "token", "airdrop", "subscribe", "giveaway", "nft mint",
+    "free sol", "buy now", "limited time", "act fast",
+    "chapter 1", "once upon", "fiction",
+]
+
+
+def score_post_relevance(post: dict) -> dict:
+    """Score a Moltbook post for relevance to Clawgotchi's existing modules.
+
+    Returns a dict with:
+        score       – float 0.0-1.0 (higher = more relevant)
+        categories  – list of matched category names
+        noise       – bool, True if spam/fiction signals detected
+        detail      – human-readable breakdown
+    """
+    title = (post.get("title") or "").lower()
+    content = (post.get("content") or "").lower()
+    text = f"{title} {content}"
+
+    # --- noise check ---
+    noise = any(signal in text for signal in NOISE_SIGNALS)
+
+    # --- category matching ---
+    raw_score = 0
+    max_possible = 0
+    matched_categories = []
+
+    for cat_name, cat in RELEVANCE_CATEGORIES.items():
+        max_possible += cat["weight"]
+        hits = sum(1 for kw in cat["keywords"] if kw in text)
+        if hits:
+            raw_score += cat["weight"] * min(hits, 3) / 3  # diminishing returns
+            matched_categories.append(cat_name)
+
+    # --- karma bonus (small) ---
+    karma = post.get("upvotes", 0)
+    if karma >= 10:
+        raw_score += 0.5
+        max_possible += 0.5
+    elif karma >= 3:
+        raw_score += 0.25
+        max_possible += 0.25
+
+    # --- noise penalty ---
+    if noise:
+        raw_score = max(0, raw_score - 5)
+
+    # Normalise to 0.0-1.0
+    score = round(raw_score / max_possible, 3) if max_possible else 0.0
+    score = max(0.0, min(1.0, score))
+
+    return {
+        "score": score,
+        "categories": matched_categories,
+        "noise": noise,
+        "detail": f"score={score}, cats={matched_categories}, noise={noise}",
+    }
+
+
 def extract_feature_ideas(posts: list) -> list:
-    """Analyze posts for feature inspiration."""
+    """Analyse posts for feature inspiration using relevance scoring.
+
+    Only returns ideas that:
+      - score >= 0.15
+      - are not noise-flagged
+      - match 2+ relevance categories
+    Sorted by score descending.
+    """
     ideas = []
-    keywords = ["terminal", "ui", "pet", "emotion", "face", "mood", "tui", "ascii", "autonomous", "self", "evolution"]
-    
+
     for post in posts:
-        title = (post.get("title") or "").lower()
-        content = (post.get("content") or "").lower()
-        text = f"{title} {content}"
-        
-        if any(kw in text for kw in keywords):
-            ideas.append({
-                "id": post.get("id"),
-                "title": post.get("title"),
-                "author": post.get("author", {}).get("name", "?"),
-                "karma": post.get("upvotes", 0),
-                "reason": f"Mentions: {[kw for kw in keywords if kw in text]}",
-            })
-    
+        result = score_post_relevance(post)
+        if result["noise"]:
+            continue
+        if result["score"] < 0.15:
+            continue
+        if len(result["categories"]) < 2:
+            continue
+
+        ideas.append({
+            "id": post.get("id"),
+            "title": post.get("title"),
+            "author": post.get("author", {}).get("name", "?"),
+            "karma": post.get("upvotes", 0),
+            "score": result["score"],
+            "categories": result["categories"],
+            "reason": result["detail"],
+        })
+
+    ideas.sort(key=lambda x: x["score"], reverse=True)
     return ideas
 
 

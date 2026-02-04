@@ -181,15 +181,37 @@ class CuriosityQueue:
         }
         CURIOSITY_FILE.write_text(json.dumps(data, indent=2))
     
-    def add(self, topic: str, source: str, priority: int = 3):
-        """Add a curiosity to the queue."""
+    def add(self, topic: str, source: str, priority: int = 3,
+            categories: list = None):
+        """Add a curiosity or boost an existing one.
+
+        If a topic with the same normalised name already exists in the queue
+        (and is still pending), boost its seen_count and priority instead of
+        duplicating.
+        """
+        norm = topic.strip().lower()
+        for item in self.queue:
+            if item.get("status") == "pending" and item["topic"].strip().lower() == norm:
+                item["seen_count"] = item.get("seen_count", 1) + 1
+                item["priority"] = max(item["priority"], priority) + 1
+                if source not in item.get("sources", []):
+                    item.setdefault("sources", []).append(source)
+                if categories:
+                    existing = set(item.get("categories", []))
+                    item["categories"] = list(existing | set(categories))
+                self.save()
+                return
+
         item = {
-            "id": f"cur-{len(self.queue) + 1}",
+            "id": f"cur-{self.total_discovered + 1}",
             "topic": topic,
             "source": source,
+            "sources": [source],
             "added_at": datetime.now().isoformat(),
             "priority": priority,
-            "status": "pending"
+            "seen_count": 1,
+            "categories": categories or [],
+            "status": "pending",
         }
         self.queue.insert(0, item)
         self.total_discovered += 1
@@ -201,6 +223,31 @@ class CuriosityQueue:
         if not pending:
             return None
         return max(pending, key=lambda x: x.get("priority", 0))
+
+    def get_mature(self, min_seen: int = 2, min_age_hours: float = 12) -> Optional[dict]:
+        """Return the highest-priority *mature* pending item.
+
+        An item is mature when:
+          - seen_count >= min_seen, OR
+          - it has been in the queue for >= min_age_hours
+        Returns None if nothing qualifies.
+        """
+        now = datetime.now()
+        mature = []
+        for item in self.queue:
+            if item.get("status") != "pending":
+                continue
+            seen = item.get("seen_count", 1)
+            try:
+                added = datetime.fromisoformat(item["added_at"])
+                age_hours = (now - added).total_seconds() / 3600
+            except (KeyError, ValueError):
+                age_hours = 0
+            if seen >= min_seen or age_hours >= min_age_hours:
+                mature.append(item)
+        if not mature:
+            return None
+        return max(mature, key=lambda x: x.get("priority", 0))
     
     def mark_explored(self, item_id: str):
         """Mark an item as explored."""
@@ -545,23 +592,70 @@ class AutonomousAgent:
         return max(0, min(100, score))
     
     async def _decide_next_action(self) -> dict:
-        """Decide what to do in this wake cycle."""
-        # Priority 1: Fix health issues
+        """Decide what to do in this wake cycle.
+
+        Priority order:
+          1. Resource issues       → VERIFY
+          2. Every 3rd cycle       → VERIFY assumptions
+          3. Every 5th cycle       → CURATE memories
+          4. Every 4th cycle       → EXPLORE Moltbook (populates curiosity)
+          5. Mature curiosity item → BUILD (rare, intentional)
+          6. Default               → REST (not BUILD)
+        """
+        cycle = self.state.total_wakes
+
+        # 1. Resource issues
         issues = self.resources.check_limits()
         if issues:
             return {"type": "VERIFY", "description": "Fixing resource issues", "details": issues}
-        
-        # Priority 2: Check for stale assumptions (mock)
-        if self.state.total_wakes % 3 == 0:  # Every 3 cycles
+
+        # 2. Verify assumptions every 3rd cycle
+        if cycle % 3 == 0:
             return {"type": "VERIFY", "description": "Verifying assumptions"}
-        
-        # Priority 3: Check curiosity queue
-        curiosity = self.curiosity.get_next()
-        if curiosity:
-            return {"type": "EXPLORE", "description": f"Exploring: {curiosity['topic']}", "item": curiosity}
-        
-        # Priority 4: Build something
-        return {"type": "BUILD", "description": "Finding inspiration to build"}
+
+        # 3. Curate memories every 5th cycle
+        if cycle % 5 == 0:
+            return {"type": "CURATE", "description": "Curating memories"}
+
+        # 4. Explore Moltbook every 4th cycle (populates curiosity queue)
+        if cycle % 4 == 0:
+            return {"type": "EXPLORE", "description": "Exploring Moltbook for ideas"}
+
+        # 5. Build only when a mature curiosity item exists + passes taste check
+        mature = self.curiosity.get_mature()
+        if mature and self._taste_check(mature.get("topic", ""), mature.get("categories", [])):
+            return {
+                "type": "BUILD",
+                "description": f"Building: {mature['topic']}",
+                "item": mature,
+            }
+
+        # 6. Default: rest
+        return {"type": "REST", "description": "Resting — nothing mature to build"}
+
+    # ---- Category-specific templates for feature building ----
+    TEMPLATE_CATEGORIES = {
+        "memory_systems": {
+            "imports": "from memory_decay import MemoryDecayEngine\nfrom memory_curation import MemoryCuration",
+            "description": "Memory system extension",
+        },
+        "self_awareness": {
+            "imports": "from assumption_tracker import AssumptionTracker",
+            "description": "Self-awareness / metacognition extension",
+        },
+        "identity": {
+            "imports": "from taste_profile import TasteProfile",
+            "description": "Identity / taste extension",
+        },
+        "agent_operations": {
+            "imports": "from autonomous_agent import get_agent",
+            "description": "Agent operations extension",
+        },
+        "safety": {
+            "imports": "# SensitiveDataDetector placeholder",
+            "description": "Safety / data protection extension",
+        },
+    }
 
     def _idea_already_built(self, title: str) -> bool:
         """Check if an idea was already built as a CLI or skill."""
@@ -570,55 +664,125 @@ class AutonomousAgent:
         return ((BASE_DIR / f"{name}.py").exists()
                 or (BASE_DIR / "skills" / name / "SKILL.md").exists())
 
+    def _taste_check(self, title: str, categories: list) -> bool:
+        """Check an idea against TasteProfile rejection history.
+
+        Returns True if the idea should proceed, False if it was
+        previously rejected (or too similar to a rejection).
+        """
+        try:
+            from taste_profile import TasteProfile
+            tp = TasteProfile(memory_dir=str(MEMORY_DIR))
+            fp = tp.get_taste_fingerprint()
+            recent_subjects = [r.get("subject", "").lower() for r in fp.get("recent", [])]
+            title_lower = title.lower()
+            for subj in recent_subjects:
+                if subj and title_lower in subj or subj in title_lower:
+                    return False
+            return True
+        except Exception:
+            return True  # fail open — don't block builds on TasteProfile errors
+
     async def _build_feature(self, action: dict) -> str:
-        """Build a CLI or skill based on Moltbook inspiration."""
-        from moltbook_client import fetch_feed, extract_feature_ideas
+        """Build a CLI or skill from a mature curiosity item.
 
-        # Step 1: Get ideas from Moltbook
-        posts = fetch_feed(limit=50)
-        if not posts:
-            return "No Moltbook posts to build from"
+        Only called when _decide_next_action finds a mature item that
+        passes the taste check.  Generates category-specific code that
+        integrates with existing modules.  Writes files but does NOT
+        auto-commit — files sit on disk for human review.
+        """
+        item = action.get("item")
+        if not item:
+            return "No mature curiosity item to build"
 
-        ideas = extract_feature_ideas(posts)
-        if not ideas:
-            return "No buildable ideas found in Moltbook"
+        idea_title = item.get("topic", "Unknown")
+        categories = item.get("categories", [])
 
-        # Step 2: Select best unbuild idea
-        selected = None
-        for idea in ideas:
-            title = idea.get("title") or ""
-            if not self._idea_already_built(title):
-                selected = idea
-                break
+        if self._idea_already_built(idea_title):
+            self.curiosity.mark_explored(item.get("id", ""))
+            return f"Already built: {idea_title}"
 
-        if not selected:
-            return "All Moltbook ideas already built"
-
-        idea_title = selected.get("title", "Unknown")
         module_name = self._title_to_module(idea_title)
-        kind = self._classify_idea(idea_title, selected)
+        kind = self._classify_idea(idea_title, {"categories": categories})
 
         if kind == "skill":
-            return await self._build_skill(module_name, idea_title, selected)
-        return await self._build_cli(module_name, idea_title, selected)
+            result = await self._build_skill(module_name, idea_title, item)
+        else:
+            result = await self._build_cli(module_name, idea_title, item)
+
+        # Mark the curiosity item as explored
+        if item.get("id"):
+            self.curiosity.mark_explored(item["id"])
+
+        return result
 
     async def _build_cli(self, module_name: str, title: str, idea: dict) -> str:
-        """Log a CLI idea — no auto-generation or auto-commit."""
-        return f"Noted idea: {title} (auto-build disabled)"
+        """Generate a CLI module from a mature curiosity item.
+
+        Writes the file and runs tests.  Does NOT git-add or git-commit —
+        files sit on disk for human review.
+        """
+        target = BASE_DIR / f"{module_name}.py"
+        if target.exists():
+            return f"CLI already exists: {module_name}"
+
+        code = self._generate_cli_code(module_name, title)
+        target.write_text(code)
+
+        # Generate matching test
+        test_dir = BASE_DIR / "tests"
+        test_dir.mkdir(exist_ok=True)
+        test_file = test_dir / f"test_{module_name}.py"
+        if not test_file.exists():
+            test_file.write_text(self._generate_test_code(module_name, title))
+
+        # Verify it compiles
+        result = subprocess.run(
+            [sys.executable, "-m", "py_compile", str(target)],
+            capture_output=True, text=True,
+        )
+        if result.returncode != 0:
+            target.unlink(missing_ok=True)
+            test_file.unlink(missing_ok=True)
+            return f"Build failed (syntax): {result.stderr[:200]}"
+
+        return f"Built CLI: {module_name}.py (not committed — awaiting review)"
 
     async def _build_skill(self, module_name: str, title: str, idea: dict) -> str:
-        """Log a skill idea — no auto-generation or auto-commit."""
-        return f"Noted idea: {module_name} (auto-build disabled)"
+        """Generate a skill from a mature curiosity item.
+
+        Writes the SKILL.md and runs basic validation.  Does NOT
+        git-add or git-commit.
+        """
+        skill_dir = BASE_DIR / "skills" / module_name
+        skill_file = skill_dir / "SKILL.md"
+        if skill_file.exists():
+            return f"Skill already exists: {module_name}"
+
+        skill_dir.mkdir(parents=True, exist_ok=True)
+        md = self._generate_skill_md(module_name, title, idea)
+        skill_file.write_text(md)
+
+        return f"Built skill: skills/{module_name}/SKILL.md (not committed — awaiting review)"
 
     def _classify_idea(self, title: str, idea: dict) -> str:
-        """Classify an idea as 'cli' or 'skill' based on keywords."""
-        text = f"{title} {idea.get('reason', '')}".lower()
-        # Skill keywords: internal systems, tracking, memory, emotions
+        """Classify an idea as 'cli' or 'skill' based on categories and keywords.
+
+        Uses category data when available (from scored curiosity items).
+        Falls back to keyword matching for backward compatibility.
+        """
+        # Prefer structured category data
+        categories = idea.get("categories") or []
+        skill_categories = {"memory_systems", "self_awareness", "identity", "safety"}
+        if categories and set(categories) & skill_categories:
+            return "skill"
+
+        # Fallback: keyword matching on title + reason
+        text = f"{title} {idea.get('reason', '') or ''}".lower()
         skill_kw = ["track", "memory", "emotion", "mood", "pet", "state",
                      "monitor", "detect", "decay", "curate", "belief"]
         if any(kw in text for kw in skill_kw):
             return "skill"
-        # Everything else becomes a CLI command
         return "cli"
 
     def _generate_cli_code(self, module: str, title: str) -> str:
@@ -828,30 +992,60 @@ def test_status_command():
         return name[:50].lower()
 
     async def _explore_curiosity(self, action: dict) -> str:
-        """Explore a curiosity item from the queue."""
-        from moltbook_client import fetch_feed
+        """Explore Moltbook — score posts, reject most, feed curiosity queue.
 
-        item = action.get("item", {})
-        item_id = item.get("id")
-        topic = item.get("topic", "unknown")
+        This is the intake funnel.  Every ~4 cycles the agent scans the
+        Moltbook feed and:
+          1. Scores every post with score_post_relevance()
+          2. Rejects ~90% → logged via TasteProfile
+          3. Adds passing ideas to the curiosity queue (or boosts existing)
+        """
+        from moltbook_client import fetch_feed, score_post_relevance
 
-        if item_id:
-            self.curiosity.mark_exploring(item_id)
+        posts = fetch_feed(limit=50)
+        if not posts:
+            return "No Moltbook posts available"
 
-        # Research the topic via Moltbook feed
-        posts = fetch_feed(limit=20)
-        relevant = [
-            p for p in posts
-            if topic.lower() in (p.get("title", "") + p.get("content", "")).lower()
-        ]
+        accepted = 0
+        rejected = 0
 
-        if relevant:
-            self.beliefs.add_question(f"What can I learn from '{topic}'?")
+        # Load TasteProfile for rejection logging
+        try:
+            from taste_profile import TasteProfile
+            tp = TasteProfile(memory_dir=str(MEMORY_DIR))
+        except Exception:
+            tp = None
 
-        if item_id:
-            self.curiosity.mark_explored(item_id)
+        for post in posts:
+            result = score_post_relevance(post)
+            title = post.get("title") or "untitled"
 
-        return f"Explored: {topic} ({len(relevant)} related posts found)"
+            # Reject: noise, low score, or too few categories
+            if result["noise"] or result["score"] < 0.15 or len(result["categories"]) < 2:
+                rejected += 1
+                if tp:
+                    reason = "noise" if result["noise"] else f"low relevance ({result['score']})"
+                    try:
+                        tp.log_rejection(
+                            subject=f"moltbook:{title[:80]}",
+                            reason=reason,
+                            taste_axis="relevance",
+                        )
+                    except Exception:
+                        pass
+                continue
+
+            # Accept — add to curiosity queue (or boost if duplicate)
+            accepted += 1
+            priority = int(result["score"] * 10)
+            self.curiosity.add(
+                topic=title,
+                source=f"moltbook:{post.get('id', '?')}",
+                priority=priority,
+                categories=result["categories"],
+            )
+
+        return f"Explored Moltbook: {accepted} accepted, {rejected} rejected"
 
     async def _verify_assumptions(self) -> str:
         """Verify assumptions using the AssumptionTracker."""
