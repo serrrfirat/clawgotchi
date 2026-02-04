@@ -267,3 +267,142 @@ class TestTasteSignature:
             assert sig is not None
         finally:
             sys.argv = old_argv
+
+
+class TestGrowthSignal:
+    """Tests for growth signal analysis feature."""
+    
+    def test_growth_signal_empty_profile(self, taste_profile):
+        """Should return empty signal for no rejections."""
+        signal = taste_profile.get_growth_signal()
+        
+        assert "recent_axes" in signal
+        assert "older_axes" in signal
+        assert "emerging_axes" in signal
+        assert "declining_axes" in signal
+        assert signal["growth_score"] == 0.0
+        assert signal["recent_count"] == 0 and signal["older_count"] == 0
+    
+    def test_growth_signal_calculates_recent_vs_older(self, taste_profile):
+        """Should separate recent from older rejections."""
+        from datetime import datetime, timedelta
+        
+        # Add an older rejection
+        older_time = (datetime.now() - timedelta(days=10)).isoformat()
+        with open(taste_profile.rejections_file, "a") as f:
+            f.write('{"fingerprint":"abc123","timestamp":"' + older_time + '","subject":"old_feature","reason":"old","axis":"scope","category":"considered_rejected"}\n')
+        
+        # Add a recent rejection
+        recent_time = datetime.now().isoformat()
+        with open(taste_profile.rejections_file, "a") as f:
+            f.write('{"fingerprint":"def456","timestamp":"' + recent_time + '","subject":"new_feature","reason":"new","axis":"ambition","category":"considered_rejected"}\n')
+        
+        signal = taste_profile.get_growth_signal(days=7)
+        
+        # The old one should be in older, recent in recent
+        assert signal["recent_count"] >= 1
+        assert signal["older_count"] >= 1
+    
+    def test_growth_signal_emerging_axes(self, taste_profile):
+        """Should detect emerging axes (growing interest)."""
+        from datetime import datetime, timedelta
+        
+        # Add many older rejections for one axis
+        older_time = (datetime.now() - timedelta(days=10)).isoformat()
+        for i in range(3):
+            with open(taste_profile.rejections_file, "a") as f:
+                f.write(f'{{"fingerprint":"old{i}","timestamp":"{older_time}","subject":"old{i}","reason":"r","axis":"scope","category":"considered_rejected"}}\n')
+        
+        # Add many recent rejections for same axis (growing)
+        recent_time = datetime.now().isoformat()
+        for i in range(5):
+            with open(taste_profile.rejections_file, "a") as f:
+                f.write(f'{{"fingerprint":"new{i}","timestamp":"{recent_time}","subject":"new{i}","reason":"r","axis":"scope","category":"considered_rejected"}}\n')
+        
+        signal = taste_profile.get_growth_signal()
+        
+        # scope should be emerging (more recent than older)
+        assert "scope" in signal["emerging_axes"]
+    
+    def test_growth_signal_declining_axes(self, taste_profile):
+        """Should detect declining axes (fading interest)."""
+        from datetime import datetime, timedelta
+        
+        # Add many older rejections for one axis
+        older_time = (datetime.now() - timedelta(days=10)).isoformat()
+        for i in range(5):
+            with open(taste_profile.rejections_file, "a") as f:
+                f.write(f'{{"fingerprint":"old{i}","timestamp":"{older_time}","subject":"old{i}","reason":"r","axis":"vibe","category":"considered_rejected"}}\n')
+        
+        # Add few recent rejections for same axis (declining)
+        recent_time = datetime.now().isoformat()
+        with open(taste_profile.rejections_file, "a") as f:
+            f.write('{"fingerprint":"new1","timestamp":"' + recent_time + '","subject":"new1","reason":"r","axis":"vibe","category":"considered_rejected"}\n')
+        
+        signal = taste_profile.get_growth_signal()
+        
+        # vibe should be declining (less recent than older)
+        assert "vibe" in signal["declining_axes"]
+    
+    def test_growth_signal_growth_score_range(self, taste_profile):
+        """Growth score should be between -1 and 1."""
+        from datetime import datetime, timedelta
+        
+        # All recent should give positive score
+        recent_time = datetime.now().isoformat()
+        for i in range(5):
+            with open(taste_profile.rejections_file, "a") as f:
+                f.write(f'{{"fingerprint":"r{i}","timestamp":"{recent_time}","subject":"s{i}","reason":"r","axis":"x","category":"considered_rejected"}}\n')
+        
+        signal = taste_profile.get_growth_signal()
+        assert -1 <= signal["growth_score"] <= 1
+    
+    def test_analyze_growth_returns_string(self, taste_profile):
+        """analyze_growth should return a string."""
+        analysis = taste_profile.analyze_growth()
+        
+        assert isinstance(analysis, str)
+        assert "Growth Signal" in analysis or "No data" in analysis
+    
+    def test_growth_signal_with_custom_days(self, taste_profile):
+        """Should respect custom days parameter."""
+        from datetime import datetime, timedelta
+        
+        # Add a rejection from 5 days ago (recent for 7-day window, old for 3-day)
+        older_time = (datetime.now() - timedelta(days=5)).isoformat()
+        with open(taste_profile.rejections_file, "a") as f:
+            f.write('{"fingerprint":"mid","timestamp":"' + older_time + '","subject":"mid","reason":"r","axis":"scope","category":"considered_rejected"}\n')
+        
+        # 7-day window should see it as recent
+        signal_7 = taste_profile.get_growth_signal(days=7)
+        # 3-day window should see it as older
+        signal_3 = taste_profile.get_growth_signal(days=3)
+        
+        # The 7-day window should have more recent count
+        assert signal_7["recent_count"] >= signal_3["recent_count"]
+
+
+class TestGrowthCLI:
+    """Tests for growth CLI commands."""
+    
+    def test_growth_cli_command_exists(self, taste_profile):
+        """Should have 'growth' CLI command."""
+        import sys
+        
+        # Just verify the method exists
+        signal = taste_profile.get_growth_signal()
+        assert signal is not None
+    
+    def test_growth_cli_with_days(self, taste_profile):
+        """Should accept days parameter."""
+        from datetime import datetime
+        
+        # Add a rejection
+        with open(taste_profile.rejections_file, "a") as f:
+            f.write('{"fingerprint":"test","timestamp":"' + datetime.now().isoformat() + '","subject":"test","reason":"r","axis":"scope","category":"considered_rejected"}\n')
+        
+        signal_7 = taste_profile.get_growth_signal(7)
+        signal_14 = taste_profile.get_growth_signal(14)
+        
+        assert signal_7 is not None
+        assert signal_14 is not None

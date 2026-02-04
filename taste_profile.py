@@ -360,6 +360,141 @@ class TasteProfile:
         
         return report
 
+    def get_growth_signal(self, days: int = 7) -> dict:
+        """
+        Calculate the growth signal - how taste has evolved over time.
+        
+        The "derivative of rejection ratio" - showing how preferences change.
+        Inspired by @clawdvine's DossierStandard: "The derivative of your 
+        rejection ratio is your growth signal."
+        
+        Args:
+            days: Number of days to look back for "recent" vs "older"
+        
+        Returns:
+            Dict with growth signal metrics
+        """
+        from datetime import datetime, timedelta
+        
+        if not self.rejections_file.exists():
+            return {
+                "recent_axes": {},
+                "older_axes": {},
+                "emerging_axes": {},
+                "declining_axes": {},
+                "growth_score": 0.0,
+                "note": "No rejections recorded"
+            }
+        
+        now = datetime.now()
+        cutoff = now - timedelta(days=days)
+        
+        recent = {}
+        older = {}
+        
+        with open(self.rejections_file, "r") as f:
+            for line in f:
+                if line.strip():
+                    rejection = json.loads(line)
+                    ts_str = rejection.get("timestamp", "")
+                    
+                    try:
+                        ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                        axis = rejection.get("axis", "unknown")
+                        
+                        if ts >= cutoff:
+                            recent[axis] = recent.get(axis, 0) + 1
+                        else:
+                            older[axis] = older.get(axis, 0) + 1
+                    except:
+                        pass
+        
+        emerging = {}
+        declining = {}
+        
+        all_axes = set(recent.keys()) | set(older.keys())
+        
+        for axis in all_axes:
+            r_count = recent.get(axis, 0)
+            o_count = older.get(axis, 0)
+            
+            if o_count > 0:
+                growth_rate = (r_count - o_count) / o_count
+            elif r_count > 0:
+                growth_rate = 1.0
+            else:
+                growth_rate = 0.0
+            
+            if growth_rate > 0.3:
+                emerging[axis] = growth_rate
+            elif growth_rate < -0.3:
+                declining[axis] = growth_rate
+        
+        total_recent = sum(recent.values())
+        total_older = sum(older.values())
+        
+        if total_recent + total_older == 0:
+            growth_score = 0.0
+        else:
+            growth_score = (total_recent - total_older) / (total_recent + total_older + 1)
+        
+        return {
+            "recent_axes": dict(sorted(recent.items(), key=lambda x: -x[1])),
+            "older_axes": dict(sorted(older.items(), key=lambda x: -x[1])),
+            "emerging_axes": dict(sorted(emerging.items(), key=lambda x: -x[1])),
+            "declining_axes": dict(sorted(declining.items(), key=lambda x: x[1])),
+            "growth_score": round(growth_score, 3),
+            "recent_count": total_recent,
+            "older_count": total_older,
+            "note": f"Compared last {days} days to previous period"
+        }
+    
+    def analyze_growth(self) -> str:
+        """
+        Generate a human-readable analysis of taste evolution.
+        """
+        signal = self.get_growth_signal()
+        
+        lines = [
+            "## Growth Signal Analysis",
+            "",
+            f"_Comparing recent vs older rejection patterns_",
+            ""
+        ]
+        
+        if signal.get("note") == "No rejections recorded":
+            return lines[0] + " No data available."
+        
+        lines.append(f"**Recent period:** {signal['recent_count']} rejections")
+        lines.append(f"**Older period:** {signal['older_count']} rejections")
+        lines.append(f"**Growth Score:** {signal['growth_score']} (-1 to 1)")
+        lines.append("")
+        
+        if signal["recent_axes"]:
+            lines.append("### Recent Focus Areas")
+            for axis, count in list(signal["recent_axes"].items())[:5]:
+                lines.append(f"  - {axis}: {count} rejections")
+            lines.append("")
+        
+        if signal["emerging_axes"]:
+            lines.append("### 📈 Emerging Axes (Growing Interest)")
+            for axis, rate in signal["emerging_axes"].items():
+                bar = "█" * int(rate * 5)
+                lines.append(f"  - {axis}: +{rate:.0%} {bar}")
+            lines.append("")
+        
+        if signal["declining_axes"]:
+            lines.append("### 📉 Declining Axes (Fading Interest)")
+            for axis, rate in signal["declining_axes"].items():
+                bar = "░" * int(abs(rate) * 5)
+                lines.append(f"  - {axis}: {rate:.0%} {bar}")
+            lines.append("")
+        
+        if not signal["emerging_axes"] and not signal["declining_axes"]:
+            lines.append("*Taste is stable - no significant shifts detected.*")
+        
+        return "\n".join(lines)
+
 
 # CLI interface
 if __name__ == "__main__":
@@ -375,6 +510,8 @@ if __name__ == "__main__":
         print("  fingerprint")
         print("  taxonomy")
         print("  analyze")
+        print("  growth")
+        print("  growth <days>")
         print("  export [output_file]")
         sys.exit(1)
     
@@ -442,6 +579,16 @@ if __name__ == "__main__":
     elif command == "signature":
         """Generate a compact ASCII signature of taste profile."""
         print(profile.get_signature())
+    
+    elif command == "growth":
+        days = int(sys.argv[2]) if len(sys.argv) > 2 else 7
+        signal = profile.get_growth_signal(days)
+        print(json.dumps(signal, indent=2))
+    
+    elif command == "growth-analyze":
+        days = int(sys.argv[2]) if len(sys.argv) > 2 else 7
+        profile.get_growth_signal(days)  # calculate
+        print(profile.analyze_growth())
     
     elif command == "export":
         output_file = sys.argv[2] if len(sys.argv) > 2 else None
