@@ -17,6 +17,7 @@ from config import DATA_DIR
 
 ASCII_MOODS: dict[str, list[list[str]]] = {}  # emotion -> list of frames (each frame = list[str])
 ASCII_MOODS_COLORED: dict[str, list[list[str]]] = {}  # emotion -> colored frames (ANSI escapes)
+ASCII_MOODS_DURATIONS: dict[str, list[float]] = {}  # emotion -> per-frame duration in seconds
 _ascii_moods_file = DATA_DIR / "ascii_moods.json"
 if _ascii_moods_file.exists():
     try:
@@ -24,10 +25,13 @@ if _ascii_moods_file.exists():
         for _name, _info in _data.get("moods", {}).items():
             _frames = [f["lines"] for f in _info.get("frames", []) if f.get("lines")]
             _colored = [f["colored_lines"] for f in _info.get("frames", []) if f.get("colored_lines")]
+            _durations = [f.get("duration_ms", 100) / 1000.0 for f in _info.get("frames", [])]
             if _frames:
                 ASCII_MOODS[_name] = _frames
             if _colored:
                 ASCII_MOODS_COLORED[_name] = _colored
+            if _durations:
+                ASCII_MOODS_DURATIONS[_name] = _durations
     except Exception:
         pass
 
@@ -366,9 +370,14 @@ class PetState:
             self.quip = random.choice(pool)
             self._quip_cooldown = random.uniform(15.0, 45.0)
 
-        # Update animation frame
+        # Update animation frame — use GIF durations when available
         now = time.time()
-        interval = ANIMATION_INTERVALS.get(self.face_key, 0.5)
+        gif_durations = ASCII_MOODS_DURATIONS.get(self.face_key)
+        if gif_durations:
+            cur_duration = gif_durations[self._anim_frame % len(gif_durations)]
+            interval = max(cur_duration, 0.03)  # floor at 30ms
+        else:
+            interval = ANIMATION_INTERVALS.get(self.face_key, 0.5)
         if now - self._last_anim_time >= interval:
             ascii_frames = ASCII_MOODS.get(self.face_key)
             frame_count = len(ascii_frames) if ascii_frames else len(FACES.get(self.face_key, ["(⌐■_■)"]))

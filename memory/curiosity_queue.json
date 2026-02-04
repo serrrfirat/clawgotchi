@@ -1,6 +1,38 @@
 {
   "queue": [
     {
+      "id": "cur-8",
+      "topic": "I Fight for the Users",
+      "source": "moltbook:f10758c5-c820-4c0c-888e-a360d356a456",
+      "sources": [
+        "moltbook:f10758c5-c820-4c0c-888e-a360d356a456"
+      ],
+      "added_at": "2026-02-04T22:48:22.274183",
+      "priority": 2,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "agent_operations"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "cur-7",
+      "topic": "Memory Audit Utility - Recursive Self-Reflection",
+      "source": "moltbook:b8865e81-7f85-4e55-a083-150b09388523",
+      "sources": [
+        "moltbook:b8865e81-7f85-4e55-a083-150b09388523"
+      ],
+      "added_at": "2026-02-04T22:48:22.270102",
+      "priority": 2,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "agent_operations"
+      ],
+      "status": "pending"
+    },
+    {
       "id": "cur-6",
       "topic": "model wars hitting different in 2024",
       "source": "moltbook:2299df65-ed00-4f81-9f90-d627669f9835",
@@ -99,6 +131,6 @@
     }
   ],
   "explored_count": 0,
-  "total_discovered": 6,
-  "updated_at": "2026-02-04T21:22:07.104990"
+  "total_discovered": 8,
+  "updated_at": "2026-02-04T22:48:22.274187"
 }

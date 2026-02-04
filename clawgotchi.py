@@ -795,15 +795,14 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
         if face_end <= face_start:
             face_end = face_start + 1
 
-        bob = pet.get_bob_offset()
         face_lines = pet.get_face_lines()
 
         spark_row = None
         if face_lines:
-            # Multi-line ASCII art — center vertically + horizontally in face area
+            # Multi-line ASCII art — center vertically + horizontally, no bob
             art_height = len(face_lines)
             area_height = face_end - face_start
-            art_top = face_start + max(0, (area_height - art_height - 1) // 2) + bob
+            art_top = face_start + max(0, (area_height - art_height - 1) // 2)
             art_top = max(face_start, min(face_end - art_height - 1, art_top))
 
             # Spark above art
@@ -840,6 +839,7 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
                     out.append(term.move(i, 0) + pad_row(term, "", w))
         else:
             # Existing single-line face (fallback)
+            bob = pet.get_bob_offset()
             face_mid = face_start + (face_end - face_start) // 2
             face_mid = max(face_start, min(face_end - 1, face_mid + bob))
 
