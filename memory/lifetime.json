@@ -43,9 +43,14 @@
     },
     {
       "start": "2026-02-04T21:22:03.384254",
+      "end": "2026-02-04T21:29:31.959014",
+      "duration_seconds": 448.57476
+    },
+    {
+      "start": "2026-02-04T21:30:01.389912",
       "end": null,
-      "duration_seconds": 299.201233
+      "duration_seconds": 899.960472
     }
   ],
-  "total_wakeups": 9
+  "total_wakeups": 10
 }

@@ -870,8 +870,11 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
                  "dashboard": " [d] back  [s] skills  [\u2191\u2193] scroll"}.get(mode, "")
 
     controls = uptime + hints
-    ctrl_pad = max(0, w - 2 - len(controls) - 3)
-    ctrl_line = " " + term.grey50 + controls + " " * ctrl_pad + term.grey50 + "\u2502"
+    moltbook_url = "moltbook.com" if mode == "pet" else ""
+    ctrl_pad = max(0, w - 2 - len(controls) - len(moltbook_url) - 4)
+    ctrl_line = (" " + term.grey50 + controls + " " * ctrl_pad +
+                 (term.cyan + moltbook_url + term.grey50 if moltbook_url else "") +
+                 " " + term.grey50 + "\u2502")
     out.append(term.move(h - 2, 0) + pad_row(term, ctrl_line, w))
 
     out.append(term.move(h - 1, 0) + term.grey50 + "\u2514" + "\u2500" * (w - 2) + "\u2518")
