@@ -4,7 +4,7 @@ import pytest
 import json
 import tempfile
 from pathlib import Path
-from taste_profile import TasteProfile, RejectionCategory
+from cognition.taste_profile import TasteProfile, RejectionCategory
 
 
 @pytest.fixture
