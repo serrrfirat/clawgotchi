@@ -180,5 +180,76 @@ class TestHealthCheckerEdgeCases:
                 os.chmod(unreadable, 0o644)
 
 
+class TestOpenClawGatewayCheck:
+    """Test cases for OpenClaw gateway health check."""
+    
+    @pytest.fixture
+    def temp_workspace(self):
+        """Create a temporary workspace."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield tmpdir
+    
+    def test_gateway_running_returns_pass(self, temp_workspace, monkeypatch):
+        """Test that gateway check passes when openclaw is running."""
+        def mock_run(*args, **kwargs):
+            class MockResult:
+                returncode = 0
+                stdout = "Gateway status: running\n"
+                stderr = ""
+            return MockResult()
+        
+        import subprocess
+        monkeypatch.setattr(subprocess, 'run', mock_run)
+        
+        checker = HealthChecker(workspace=temp_workspace)
+        result = checker._check_openclaw_gateway()
+        
+        assert result['status'] == 'pass'
+        assert 'running' in result['message'].lower()
+    
+    def test_gateway_not_running_returns_warn(self, temp_workspace, monkeypatch):
+        """Test that gateway check warns when openclaw is not running."""
+        def mock_run(*args, **kwargs):
+            class MockResult:
+                returncode = 1
+                stdout = ""
+                stderr = "Gateway is not running"
+            return MockResult()
+        
+        import subprocess
+        monkeypatch.setattr(subprocess, 'run', mock_run)
+        
+        checker = HealthChecker(workspace=temp_workspace)
+        result = checker._check_openclaw_gateway()
+        
+        assert result['status'] == 'warn'
+        assert 'not running' in result['message'].lower()
+    
+    def test_gateway_not_installed_returns_warn(self, temp_workspace, monkeypatch):
+        """Test that gateway check warns when openclaw CLI is not installed."""
+        import subprocess
+        monkeypatch.setattr(subprocess, 'run', lambda *args, **kwargs: (_ for _ in ()).throw(FileNotFoundError()))
+        
+        checker = HealthChecker(workspace=temp_workspace)
+        result = checker._check_openclaw_gateway()
+        
+        assert result['status'] == 'warn'
+        assert 'not found' in result['message'].lower()
+    
+    def test_gateway_timeout_returns_warn(self, temp_workspace, monkeypatch):
+        """Test that gateway check warns on timeout."""
+        def mock_run(*args, **kwargs):
+            raise subprocess.TimeoutExpired('openclaw', 10)
+        
+        import subprocess
+        monkeypatch.setattr(subprocess, 'run', mock_run)
+        
+        checker = HealthChecker(workspace=temp_workspace)
+        result = checker._check_openclaw_gateway()
+        
+        assert result['status'] == 'warn'
+        assert 'timed out' in result['message']
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

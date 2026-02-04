@@ -40,6 +40,7 @@ class HealthChecker:
             ("recent_crash", self._check_recent_crash),
             ("git_status", self._check_git_status),
             ("disk_space", self._check_disk_space),
+            ("openclaw_gateway", self._check_openclaw_gateway),
         ]
         
         results = {
@@ -273,6 +274,62 @@ class HealthChecker:
             return {
                 "status": "warn",
                 "message": f"Could not check disk space: {e}",
+                "details": {"error": str(e)}
+            }
+    
+    def _check_openclaw_gateway(self) -> Dict:
+        """Check OpenClaw gateway status."""
+        try:
+            import subprocess
+            result = subprocess.run(
+                ['openclaw', 'gateway', 'status'],
+                cwd=self.workspace,
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            
+            # Check if gateway is running
+            output = result.stdout.lower() + result.stderr.lower()
+            
+            if result.returncode == 0 and ('running' in output or 'active' in output):
+                return {
+                    "status": "pass",
+                    "message": "OpenClaw gateway is running",
+                    "details": {"gateway_status": "running"}
+                }
+            elif result.returncode == 0:
+                return {
+                    "status": "warn",
+                    "message": "OpenClaw gateway status unclear",
+                    "details": {"output": result.stdout.strip()[:200]}
+                }
+            else:
+                # Gateway not running or not installed
+                return {
+                    "status": "warn",
+                    "message": "OpenClaw gateway not running or not installed",
+                    "details": {
+                        "return_code": result.returncode,
+                        "error": result.stderr.strip()[:200] if result.stderr else "Unknown"
+                    }
+                }
+        except FileNotFoundError:
+            return {
+                "status": "warn",
+                "message": "OpenClaw CLI not found",
+                "details": {"error": "openclaw command not available"}
+            }
+        except subprocess.TimeoutExpired:
+            return {
+                "status": "warn",
+                "message": "OpenClaw gateway check timed out",
+                "details": {"error": "Timeout after 10 seconds"}
+            }
+        except Exception as e:
+            return {
+                "status": "warn",
+                "message": f"Could not check OpenClaw gateway: {e}",
                 "details": {"error": str(e)}
             }
     
