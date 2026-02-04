@@ -11,9 +11,22 @@ Inspired by @clawdvine's work on DossierStandard's Taste Function.
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+from enum import Enum
 import json
 import hashlib
-import os
+
+
+class RejectionCategory(Enum):
+    """
+    Taxonomy of rejection types - because not all discards are equal.
+    
+    As @clawdvine noted: "considered and rejected" is a different signal
+    from "never saw it" or "API was down".
+    """
+    considered_rejected = "considered_rejected"  # Thought about it, chose not to build
+    ignored = "ignored"                          # Never saw it (API down, missed, etc.)
+    deferred = "deferred"                       # Not now, maybe later
+    auto_filtered = "auto_filtered"              # Filtered before consideration (spam, quality threshold)
 
 
 class TasteProfile:
@@ -24,6 +37,7 @@ class TasteProfile:
     - What was considered
     - Why it was rejected
     - What axis of taste (composition, vibe, scope, etc.)
+    - Category of rejection (considered, ignored, deferred, auto_filtered)
     - Timestamp and context
     """
     
@@ -42,7 +56,8 @@ class TasteProfile:
         subject: str,
         reason: str,
         taste_axis: str,
-        alternative: Optional[str] = None
+        alternative: Optional[str] = None,
+        category: RejectionCategory = RejectionCategory.considered_rejected
     ) -> str:
         """
         Log a rejection decision.
@@ -52,6 +67,7 @@ class TasteProfile:
             reason: Why it was rejected
             taste_axis: Category of decision (scope, vibe, composition, etc.)
             alternative: What was chosen instead (optional)
+            category: Type of rejection (considered, ignored, deferred, auto_filtered)
         
         Returns:
             Rejection fingerprint (hash of the decision)
@@ -66,7 +82,8 @@ class TasteProfile:
             "subject": subject,
             "reason": reason,
             "axis": taste_axis,
-            "alternative": alternative
+            "alternative": alternative,
+            "category": category.value
         }
         
         with open(self.rejections_file, "a") as f:
@@ -79,32 +96,57 @@ class TasteProfile:
         Generate a summary of the taste fingerprint.
         
         Returns:
-            Dict with counts per axis and recent rejection samples.
+            Dict with counts per axis, per category, and matrix of axis×category.
         """
         if not self.rejections_file.exists():
-            return {"total_rejections": 0, "axes": {}, "recent": []}
+            return {
+                "total_rejections": 0, 
+                "axes": {}, 
+                "by_category": {},
+                "matrix": {},
+                "recent": []
+            }
         
         axes = {}
+        by_category = {cat.value: 0 for cat in RejectionCategory}
+        matrix = {}  # axis -> category -> count
         recent = []
         
         with open(self.rejections_file, "r") as f:
             for line in f:
                 if line.strip():
                     rejection = json.loads(line)
+                    
+                    # Count by axis
                     axis = rejection.get("axis", "unknown")
                     axes[axis] = axes.get(axis, 0) + 1
+                    
+                    # Initialize matrix entry for this axis if needed
+                    if axis not in matrix:
+                        matrix[axis] = {cat.value: 0 for cat in RejectionCategory}
+                    
+                    # Count by category
+                    category = rejection.get("category", "considered_rejected")
+                    by_category[category] = by_category.get(category, 0) + 1
+                    matrix[axis][category] = matrix[axis].get(category, 0) + 1
+                    
+                    # Recent samples
                     if len(recent) < 5:
                         recent.append({
                             "subject": rejection["subject"],
                             "axis": axis,
-                            "fingerprint": rejection["fingerprint"]
+                            "fingerprint": rejection["fingerprint"],
+                            "category": category
                         })
         
         return {
             "total_rejections": sum(axes.values()),
             "axes": axes,
+            "by_category": by_category,
+            "matrix": matrix,
             "recent": recent,
-            "primary_axis": max(axes, key=axes.get) if axes else None
+            "primary_axis": max(axes, key=axes.get) if axes else None,
+            "primary_category": max(by_category, key=by_category.get) if by_category else None
         }
     
     def analyze_identity(self) -> str:
@@ -123,12 +165,28 @@ class TasteProfile:
         if fingerprint["primary_axis"]:
             lines.append(f"  Primary axis of discrimination: {fingerprint['primary_axis']}")
         
+        lines.append("")
+        lines.append("### By Axis")
         for axis, count in sorted(fingerprint["axes"].items(), key=lambda x: -x[1]):
             lines.append(f"  {axis}: {count} rejections")
         
+        lines.append("")
+        lines.append("### By Category")
+        for cat, count in sorted(fingerprint["by_category"].items(), key=lambda x: -x[1]):
+            if count > 0:
+                lines.append(f"  {cat}: {count}")
+        
+        lines.append("")
+        lines.append("### Matrix (axis × category)")
+        for axis, categories in sorted(fingerprint["matrix"].items()):
+            non_zero = [(c, n) for c, n in categories.items() if n > 0]
+            if non_zero:
+                parts = [f"{c}:{n}" for c, n in sorted(non_zero, key=lambda x: -x[1])]
+                lines.append(f"  {axis}: {' | '.join(parts)}")
+        
         lines.append("\nRecent decisions:")
         for item in fingerprint["recent"]:
-            lines.append(f"  - [{item['fingerprint']}] Rejected '{item['subject']}' ({item['axis']})")
+            lines.append(f"  - [{item['fingerprint']}] Rejected '{item['subject']}' ({item['axis']}, {item['category']})")
         
         return "\n".join(lines)
     
@@ -155,6 +213,15 @@ class TasteProfile:
             "Each rejection leaves a fingerprint. Over time, these rejections",
             "form an unforgeable identity primitive.",
             "",
+            "### Rejection Taxonomy",
+            "",
+            "Not all discards are equal. Each rejection is categorized:",
+            "",
+            "- **considered_rejected**: Thought about it, chose not to build",
+            "- **ignored**: Never saw it (API down, missed request, etc.)",
+            "- **deferred**: Not now, maybe later",
+            "- **auto_filtered**: Filtered before consideration (spam, quality threshold)",
+            "",
             "---",
             "",
             "## Taste Fingerprint",
@@ -166,9 +233,9 @@ class TasteProfile:
         else:
             lines.append(f"**Total rejections:** {fingerprint['total_rejections']}")
             lines.append("")
+            
             lines.append("### By Axis of Discrimination")
             lines.append("")
-            
             for axis, count in sorted(fingerprint["axes"].items(), key=lambda x: -x[1]):
                 bar = "█" * min(count, 20)
                 lines.append(f"- **{axis}**: {count} {bar}")
@@ -176,6 +243,31 @@ class TasteProfile:
             if fingerprint["primary_axis"]:
                 lines.append("")
                 lines.append(f"**Primary axis:** {fingerprint['primary_axis']}")
+            
+            lines.append("")
+            lines.append("### By Category")
+            lines.append("")
+            for cat, count in sorted(fingerprint["by_category"].items(), key=lambda x: -x[1]):
+                if count > 0:
+                    bar = "█" * min(count, 20)
+                    lines.append(f"- **{cat}**: {count} {bar}")
+            
+            if fingerprint["primary_category"]:
+                lines.append("")
+                lines.append(f"**Primary category:** {fingerprint['primary_category']}")
+            
+            lines.append("")
+            lines.append("### Matrix: Axis × Category")
+            lines.append("")
+            lines.append("| Axis | considered_rejected | ignored | deferred | auto_filtered |")
+            lines.append("|------|---------------------|---------|----------|---------------|")
+            for axis, categories in sorted(fingerprint["matrix"].items()):
+                cr = categories.get("considered_rejected", 0)
+                ig = categories.get("ignored", 0)
+                df = categories.get("deferred", 0)
+                af = categories.get("auto_filtered", 0)
+                if cr + ig + df + af > 0:
+                    lines.append(f"| {axis} | {cr} | {ig} | {df} | {af} |")
             
             lines.append("")
             lines.append("---")
@@ -196,6 +288,7 @@ class TasteProfile:
                     fp = rejection.get("fingerprint", "?")[:8]
                     subject = rejection.get("subject", "?")
                     axis = rejection.get("axis", "?")
+                    category = rejection.get("category", "?")
                     reason = rejection.get("reason", "")
                     alt = rejection.get("alternative")
                     ts = rejection.get("timestamp", "")[:10]
@@ -204,6 +297,7 @@ class TasteProfile:
                     lines.append("")
                     lines.append(f"**When:** {ts}  ")
                     lines.append(f"**Axis:** {axis}")
+                    lines.append(f"**Category:** {category}")
                     if alt:
                         lines.append(f"**Chose instead:** {alt}")
                     lines.append("")
@@ -229,7 +323,9 @@ if __name__ == "__main__":
         print("Usage: python taste_profile.py <command>")
         print("Commands:")
         print("  log <subject> <reason> <axis> [alternative]")
+        print("  log-with-category <subject> <reason> <axis> <category> [alternative]")
         print("  fingerprint")
+        print("  taxonomy")
         print("  analyze")
         print("  export [output_file]")
         sys.exit(1)
@@ -248,9 +344,49 @@ if __name__ == "__main__":
         fp = profile.log_rejection(subject, reason, axis, alternative)
         print(f"Logged rejection: {fp}")
     
+    elif command == "log-with-category":
+        if len(sys.argv) < 6:
+            print("Error: log-with-category requires <subject> <reason> <axis> <category> [alternative]")
+            sys.exit(1)
+        subject = sys.argv[2]
+        reason = sys.argv[3]
+        axis = sys.argv[4]
+        category_str = sys.argv[5]
+        alternative = sys.argv[6] if len(sys.argv) > 6 else None
+        
+        try:
+            category = RejectionCategory(category_str)
+        except ValueError:
+            print(f"Error: Invalid category '{category_str}'. Valid options: {[c.value for c in RejectionCategory]}")
+            sys.exit(1)
+        
+        fp = profile.log_rejection(subject, reason, axis, alternative, category)
+        print(f"Logged rejection ({category.value}): {fp}")
+    
     elif command == "fingerprint":
         fp = profile.get_taste_fingerprint()
         print(json.dumps(fp, indent=2))
+    
+    elif command == "taxonomy":
+        """Show taxonomy breakdown."""
+        fp = profile.get_taste_fingerprint()
+        print("=== Taste Taxonomy ===")
+        print(f"\nTotal rejections: {fp['total_rejections']}")
+        
+        print("\n--- By Category ---")
+        for cat, count in sorted(fp['by_category'].items(), key=lambda x: -x[1]):
+            if count > 0:
+                bar = "█" * min(count, 30)
+                print(f"  {cat:20} {count:3} {bar}")
+        
+        print("\n--- Matrix (axis × category) ---")
+        for axis, categories in sorted(fp['matrix'].items()):
+            non_zero = [(c, n) for c, n in categories.items() if n > 0]
+            if non_zero:
+                parts = [f"{c}:{n}" for c, n in sorted(non_zero, key=lambda x: -x[1])]
+                print(f"  {axis:15} {' | '.join(parts)}")
+        
+        print()
     
     elif command == "analyze":
         print(profile.analyze_identity())
