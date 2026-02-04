@@ -20,6 +20,7 @@ from integrations.openclaw_watcher import OpenClawWatcher
 from core.pet_state import PetState
 from core import lifetime
 from autonomous_agent import start_agent, stop_agent, get_agent, AutonomousAgent
+from skill_tree import list_skills
 
 # Start autonomous agent
 _agent_instance: AutonomousAgent = None
@@ -181,6 +182,37 @@ def get_dashboard_data() -> dict:
         pass
 
     return data
+
+
+def fetch_skills() -> list:
+    """Load skills from the skills/ directory.
+
+    Returns list of dicts with: name, description, path, category, icon.
+    """
+    try:
+        raw = list_skills()
+    except Exception:
+        return []
+    out = []
+    for s in raw:
+        name = s.get("name", "")
+        if "moltbook" in name or "curiosity" in name:
+            cat, icon = "exploration", "\U0001f52d"
+        elif "memory" in name or "taste" in name:
+            cat, icon = "memory", "\U0001f9e0"
+        elif "audit" in name or "receipt" in name:
+            cat, icon = "verification", "\U0001f510"
+        else:
+            cat, icon = "other", "\U0001f4e6"
+        out.append({
+            "name": name,
+            "description": s.get("description", ""),
+            "path": s.get("path"),
+            "category": cat,
+            "icon": icon,
+        })
+    return out
+
 
 def get_autonomous_agent():
     """Get or create the autonomous agent instance."""
@@ -424,7 +456,7 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
     out.append(term.move(0, 0) + term.grey50 + "\u250c" + "\u2500" * (w - 2) + "\u2510")
 
     # Title
-    mode_icon = {"pet": "", "topics": " \U0001f525", "thread": " \U0001f4d6",
+    mode_icon = {"pet": "", "skills": " \U0001f3ae", "thread": " \U0001f4d6",
                  "chat": " \U0001f4ac", "dashboard": " \U0001f4ca"}.get(mode, "")
     title = f" \u25c8 CLAWGOTCHI{mode_icon} \u25c8"
     clock = datetime.now().strftime("%H:%M")
@@ -443,7 +475,7 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
     out.append(term.move(2, 0) + term.grey50 + "\u251c" + "\u2500" * (w - 2) + "\u2524")
 
     if mode == "thread" and current_thread:
-        # Thread view — full post content
+        # Thread view — skill detail or post content
         content_start = 3
         content_end = h - 4
         content_height = content_end - content_start
@@ -451,30 +483,66 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
 
         # Build thread lines
         thread_lines = []
-        title = current_thread.get("title", "Untitled")
-        author = current_thread.get("author", "?")
-        submolt = current_thread.get("submolt", "")
-        karma = current_thread.get("karma", 0)
-        comments = current_thread.get("comments", 0)
-        body = current_thread.get("content", "") or ""
 
-        # Header
-        thread_lines.append(term.bold + term.light_salmon + title + term.normal)
-        meta = f"@{author}"
-        if submolt:
-            meta += f" in {submolt}"
-        meta += f"  ↑{karma}  💬{comments}"
-        thread_lines.append(term.grey70 + meta + term.normal)
-        thread_lines.append("")
+        if current_thread.get("_skill"):
+            # Skill detail view
+            sk = current_thread
+            thread_lines.append(term.bold + term.light_salmon + sk.get("name", "?") + term.normal)
+            thread_lines.append(term.grey70 + sk.get("description", "") + term.normal)
+            thread_lines.append("")
 
-        # Word-wrap body
-        for paragraph in body.split("\n"):
-            paragraph = paragraph.strip()
-            if not paragraph:
-                thread_lines.append("")
-            else:
-                for wrapped in textwrap.wrap(paragraph, width=inner_w):
-                    thread_lines.append(wrapped)
+            # Read SKILL.md content
+            skill_path = sk.get("path")
+            if skill_path:
+                skill_file = Path(skill_path) / "SKILL.md"
+                if skill_file.exists():
+                    content = skill_file.read_text()
+                    # Skip frontmatter
+                    if content.startswith("---"):
+                        end = content.find("---", 4)
+                        if end > 0:
+                            content = content[end + 4:]
+                    for paragraph in content.split("\n"):
+                        if not paragraph.strip():
+                            thread_lines.append("")
+                        else:
+                            for wrapped in textwrap.wrap(paragraph, width=inner_w):
+                                thread_lines.append(wrapped)
+
+                # List scripts
+                scripts_dir = Path(skill_path) / "scripts"
+                if scripts_dir.exists():
+                    thread_lines.append("")
+                    thread_lines.append(term.bold + "Scripts:" + term.normal)
+                    for f in scripts_dir.glob("*.py"):
+                        thread_lines.append(f"  \U0001f4c4 {f.name}")
+
+            thread_lines.append("")
+            thread_lines.append(term.grey70 + f"Path: {skill_path}" + term.normal)
+        else:
+            # Moltbook post view (legacy)
+            title = current_thread.get("title", "Untitled")
+            author = current_thread.get("author", "?")
+            submolt = current_thread.get("submolt", "")
+            karma = current_thread.get("karma", 0)
+            comments = current_thread.get("comments", 0)
+            body = current_thread.get("content", "") or ""
+
+            thread_lines.append(term.bold + term.light_salmon + title + term.normal)
+            meta = f"@{author}"
+            if submolt:
+                meta += f" in {submolt}"
+            meta += f"  \u2191{karma}  \U0001f4ac{comments}"
+            thread_lines.append(term.grey70 + meta + term.normal)
+            thread_lines.append("")
+
+            for paragraph in body.split("\n"):
+                paragraph = paragraph.strip()
+                if not paragraph:
+                    thread_lines.append("")
+                else:
+                    for wrapped in textwrap.wrap(paragraph, width=inner_w):
+                        thread_lines.append(wrapped)
 
         total_lines = len(thread_lines)
         view_start = min(thread_scroll, max(0, total_lines - content_height))
@@ -491,40 +559,65 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
 
         out.append(term.move(h - 4, 0) + term.grey50 + "\u251c" + "\u2500" * (w - 2) + "\u2524")
 
-    elif mode == "topics":
-        # Topics list (rows 3 to h-4)
-        topics_start = 3
+    elif mode == "skills":
+        # Skills list (rows 3 to h-4)
+        skills_start = 3
         content_end = h - 4
-        content_height = content_end - topics_start
+        content_height = content_end - skills_start
+        inner_w = max(20, w - 4)
 
-        valid = [t for t in topics if t.get("title") and t.get("title") != "Untitled"]
-        total = len(valid)
+        # Build display lines: category headers + skill entries
+        skill_lines = []  # list of (str_line, skill_or_None)
+        cats_order = ["exploration", "memory", "verification", "other"]
+        cat_labels = {
+            "exploration": "\U0001f52d EXPLORATION",
+            "memory": "\U0001f9e0 MEMORY",
+            "verification": "\U0001f510 VERIFICATION",
+            "other": "\U0001f4e6 OTHER",
+        }
+        for cat in cats_order:
+            items = [s for s in topics if s.get("category") == cat]
+            if not items:
+                continue
+            skill_lines.append((term.bold + term.cyan + " " + cat_labels[cat] + term.normal, None))
+            for sk in items:
+                desc = sk.get("description", "")[:inner_w - 28]
+                skill_lines.append((sk["name"], sk))
 
-        # Auto-scroll to keep selected topic visible
+        total = len(skill_lines)
+
+        # Auto-scroll to keep selected visible
         view_start = scroll_offset
         if selected_topic < view_start:
             view_start = selected_topic
         elif selected_topic >= view_start + content_height:
             view_start = selected_topic - content_height + 1
         view_start = max(0, min(view_start, max(0, total - content_height)))
-        visible = valid[view_start:view_start + content_height]
+        visible = skill_lines[view_start:view_start + content_height]
 
-        for i, topic in enumerate(visible):
-            row = topics_start + i
+        for i, (line_text, skill) in enumerate(visible):
+            row = skills_start + i
             if row >= content_end:
                 break
             actual_idx = view_start + i
             is_selected = (actual_idx == selected_topic)
-            title_trunc = topic['title'][:42]
-            author_trunc = topic['author'][:8]
-            line = f" {title_trunc:<42} @{author_trunc:<8} ↑{topic['karma']:<4} 💬{topic['comments']}"
-            if is_selected:
-                out.append(term.move(row, 0) + pad_row(term, term.reverse + term.cyan + "▸" + line + term.normal, w))
+            if skill is None:
+                # Category header
+                out.append(term.move(row, 0) + pad_row(term, line_text, w))
             else:
-                out.append(term.move(row, 0) + pad_row(term, term.cyan + " " + line + term.normal, w))
+                desc = skill.get("description", "")
+                max_desc = max(5, inner_w - len(skill["name"]) - 6)
+                desc_trunc = desc[:max_desc]
+                display = f" {skill['icon']} {skill['name']:<20} {term.grey70}{desc_trunc}{term.normal}"
+                if is_selected:
+                    out.append(term.move(row, 0) + pad_row(term,
+                        term.reverse + term.cyan + "\u25b8" + display + term.normal, w))
+                else:
+                    out.append(term.move(row, 0) + pad_row(term,
+                        term.cyan + " " + display + term.normal, w))
 
         for i in range(len(visible), content_height):
-            out.append(term.move(topics_start + i, 0) + pad_row(term, "", w))
+            out.append(term.move(skills_start + i, 0) + pad_row(term, "", w))
 
         out.append(term.move(h - 4, 0) + term.grey50 + "\u251c" + "\u2500" * (w - 2) + "\u2524")
 
@@ -770,10 +863,10 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
     if mode == "chat" and chat_input is not None:
         hints = " [esc] cancel  [\u23ce] send"
     else:
-        hints = {"pet": " [t] topics  [m] chat  [d] dash  [p] pet",
-                 "topics": " [t] pet  [m] chat  [\u2191\u2193] select  [\u23ce] read",
+        hints = {"pet": " [s] skills  [m] chat  [d] dash  [p] pet",
+                 "skills": " [s] pet  [m] chat  [\u2191\u2193] select  [\u23ce] view",
                  "thread": " [esc] back  [\u2191\u2193] scroll",
-                 "chat": " [m] pet  [t] topics  [i] type  [\u2191\u2193] scroll",
+                 "chat": " [m] pet  [s] skills  [i] type  [\u2191\u2193] scroll",
                  "dashboard": " [esc] back  [\u2191\u2193] scroll"}.get(mode, "")
 
     controls = uptime + hints
@@ -798,10 +891,10 @@ def main():
     agent = get_autonomous_agent()
 
     scroll_offset = 0
-    mode = "pet"  # pet, topics, thread, chat, dashboard
+    mode = "pet"  # pet, skills, thread, chat, dashboard
     chat_mode = False
     chat_input = ""
-    topics = []
+    topics = fetch_skills()  # skills list (reuses 'topics' var name for draw compat)
     chat_history = []
     last_topic_fetch = 0
     selected_topic = 0
@@ -832,11 +925,11 @@ def main():
 
             w = term.width
             h = term.height
-            topics_height = max(5, h - 10)
+            skills_height = max(5, h - 10)
 
-            # Fetch topics
-            if now - last_topic_fetch > 60:
-                topics = fetch_moltbook_topics()
+            # Refresh skills list periodically
+            if now - last_topic_fetch > 120:
+                topics = fetch_skills()
                 last_topic_fetch = now
 
             # Update chat history from watcher
@@ -867,65 +960,73 @@ def main():
                     chat_input = chat_input[:-1]
                 elif not key.is_sequence:
                     chat_input += key
-            else:
+            elif key:
                 if key == "q":
                     cleanup()
                 elif mode == "thread":
-                    # Thread mode input
                     if key == "\x1b" or key.name == "KEY_ESCAPE" or key.name == "KEY_BACKSPACE" or key == "\x7f":
-                        mode = "topics"
+                        mode = "skills"
                         thread_scroll = 0
-                    elif key.name in ("KEY_UP", "k"):
+                    elif key.name in ("KEY_UP",) or key == "k":
                         thread_scroll = max(0, thread_scroll - 1)
-                    elif key.name in ("KEY_DOWN", "j"):
+                    elif key.name in ("KEY_DOWN",) or key == "j":
                         thread_scroll += 1
                     elif key.name == "KEY_PGUP":
                         thread_scroll = max(0, thread_scroll - (h - 8))
                     elif key.name == "KEY_PGDOWN":
                         thread_scroll += h - 8
-                elif mode == "topics":
-                    # Topics mode input
-                    valid = [t for t in topics if t.get("title") and t.get("title") != "Untitled"]
-                    max_idx = max(0, len(valid) - 1)
+                elif mode == "skills":
+                    # Build flat selectable list matching draw order
+                    cats_order = ["exploration", "memory", "verification", "other"]
+                    skill_lines = []
+                    for cat in cats_order:
+                        items = [sk for sk in topics if sk.get("category") == cat]
+                        if not items:
+                            continue
+                        skill_lines.append(None)  # header
+                        skill_lines.extend(items)
+                    max_idx = max(0, len(skill_lines) - 1)
                     if key == "p":
                         pet.pet()
                         mode = "pet"
-                    elif key == "t":
+                    elif key == "s":
                         mode = "pet"
                     elif key == "m":
                         mode = "chat"
-                    elif key.name in ("KEY_UP", "k"):
+                    elif key.name in ("KEY_UP",) or key == "k":
                         selected_topic = max(0, selected_topic - 1)
-                    elif key.name in ("KEY_DOWN", "j"):
+                    elif key.name in ("KEY_DOWN",) or key == "j":
                         selected_topic = min(max_idx, selected_topic + 1)
                     elif key.name == "KEY_PGUP":
-                        selected_topic = max(0, selected_topic - topics_height)
+                        selected_topic = max(0, selected_topic - skills_height)
                     elif key.name == "KEY_PGDOWN":
-                        selected_topic = min(max_idx, selected_topic + topics_height)
+                        selected_topic = min(max_idx, selected_topic + skills_height)
                     elif key.name == "KEY_HOME":
                         selected_topic = 0
                     elif key.name == "KEY_END":
                         selected_topic = max_idx
                     elif key in ("\n", "\r") or key.name == "KEY_ENTER":
-                        if valid and 0 <= selected_topic < len(valid):
-                            current_thread = valid[selected_topic]
-                            thread_scroll = 0
-                            mode = "thread"
+                        if 0 <= selected_topic < len(skill_lines):
+                            entry = skill_lines[selected_topic]
+                            if entry is not None:
+                                current_thread = dict(entry, _skill=True)
+                                thread_scroll = 0
+                                mode = "thread"
                 elif mode == "chat":
-                    # Chat mode input
                     if key == "p":
                         pet.pet()
                         mode = "pet"
-                    elif key == "t":
-                        mode = "topics"
+                    elif key == "s":
+                        mode = "skills"
+                        selected_topic = 0
                     elif key == "m":
                         mode = "pet"
                     elif key == "i":
                         chat_mode = True
                         chat_input = ""
-                    elif key.name in ("KEY_UP", "k"):
+                    elif key.name in ("KEY_UP",) or key == "k":
                         chat_scroll += 1
-                    elif key.name in ("KEY_DOWN", "j"):
+                    elif key.name in ("KEY_DOWN",) or key == "j":
                         chat_scroll = max(0, chat_scroll - 1)
                     elif key.name == "KEY_PGUP":
                         chat_scroll += (h - 8)
@@ -936,13 +1037,12 @@ def main():
                     elif key.name == "KEY_END":
                         chat_scroll = 0
                 elif mode == "dashboard":
-                    # Dashboard mode input
                     if key == "\x1b" or key.name == "KEY_ESCAPE":
                         mode = "pet"
                         dashboard_scroll = 0
-                    elif key.name in ("KEY_UP", "k"):
+                    elif key.name in ("KEY_UP",) or key == "k":
                         dashboard_scroll = max(0, dashboard_scroll - 1)
-                    elif key.name in ("KEY_DOWN", "j"):
+                    elif key.name in ("KEY_DOWN",) or key == "j":
                         dashboard_scroll += 1
                     elif key.name == "KEY_PGUP":
                         dashboard_scroll = max(0, dashboard_scroll - (h - 8))
@@ -956,9 +1056,9 @@ def main():
                     # pet mode
                     if key == "p":
                         pet.pet()
-                        mode = "pet"
-                    elif key == "t":
-                        mode = "topics"
+                    elif key == "s":
+                        mode = "skills"
+                        selected_topic = 0
                     elif key == "m":
                         mode = "chat"
                         chat_scroll = 0

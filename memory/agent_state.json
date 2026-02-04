@@ -1,28 +1,12 @@
 {
   "version": "1.0",
-  "last_wake": "2026-02-04T21:10:52.723945",
-  "current_state": "SLEEPING",
+  "last_wake": "2026-02-04T21:26:58.606452",
+  "current_state": "WAKING",
   "health_score": 95,
-  "total_wakes": 570,
-  "current_goal": "Resting \u2014 nothing mature to build",
-  "current_thought": "Resting and reflecting",
+  "total_wakes": 574,
+  "current_goal": "Verifying assumptions",
+  "current_thought": "Verified assumptions: 2 open, 0 stale, 0 expired",
   "health_history": [
-    {
-      "timestamp": "2026-02-04T11:58:52.591653",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-04T11:59:07.201967",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-04T11:59:21.660197",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-04T11:59:37.105660",
-      "score": 95
-    },
     {
       "timestamp": "2026-02-04T11:59:52.699715",
       "score": 95
@@ -406,20 +390,36 @@
     {
       "timestamp": "2026-02-04T21:10:52.774832",
       "score": 95
+    },
+    {
+      "timestamp": "2026-02-04T21:12:27.255632",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-04T21:17:38.457607",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-04T21:22:03.441119",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-04T21:25:46.934674",
+      "score": 95
     }
   ],
   "git_status": "dirty",
   "errors": [
+    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.12s ===============================\n",
+    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.12s ===============================\n",
+    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.14s ===============================\n",
+    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.13s ===============================\n",
     "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.13s ===============================\n",
     "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.13s ===============================\n",
     "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.13s ===============================\n",
     "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.12s ===============================\n",
     "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.12s ===============================\n",
-    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.15s ===============================\n",
-    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.28s ===============================\n",
-    "Tests failed: or::test_scan_all_finds_multiple_files\nFAILED tests/test_memory_security.py::TestScannerBehavior::test_severity_counts\n======================== 5 failed, 353 passed in 10.65s ========================\n",
-    "Cycle error: 'NoneType' object has no attribute 'lower'",
-    "Cycle error: 'NoneType' object has no attribute 'lower'"
+    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.15s ===============================\n"
   ],
-  "updated_at": "2026-02-04T21:10:56.055215"
+  "updated_at": "2026-02-04T21:26:58.606477"
 }
