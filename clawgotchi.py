@@ -227,7 +227,8 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
     out.append(term.move(0, 0) + term.grey50 + "\u250c" + "\u2500" * (w - 2) + "\u2510")
 
     # Title
-    mode_icon = {"pet": "", "topics": " 🔥", "thread": " 📖", "chat": " 💬"}[mode]
+    mode_icon = {"pet": "", "topics": " 🔥", "thread": " 📖", "chat": " 💬",
+                 "status": " 📊", "backup": " 💾", "curiosity": " 🧠"}[mode]
     title = f" \u25c8 CLAWGOTCHI{mode_icon} \u25c8"
     clock = datetime.now().strftime("%H:%M")
     content_width = max(0, w - 2)
@@ -380,6 +381,110 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
         else:
             out.append(term.move(h - 4, 0) + term.grey50 + "\u251c" + "\u2500" * (w - 2) + "\u2524")
 
+    elif mode == "status":
+        # Status view - agent health, resources, thoughts
+        content_start = 3
+        content_end = h - 4
+        inner_w = max(20, w - 4)
+        
+        # Get agent status
+        try:
+            agent = get_autonomous_agent()
+            status = agent.get_status()
+            health = status.get("health", 0)
+            goal = status.get("goal", "")
+            thought = status.get("thought", "")
+            total_wakes = status.get("total_wakes", 0)
+            curiosity = status.get("curiosity_count", 0)
+            insights = status.get("insights_count", 0)
+            trend = agent.get_health_trend()
+            resources = agent.get_resource_usage()
+        except:
+            health, goal, thought, total_wakes, curiosity, insights, trend = 50, "", "", 0, 0, 0
+            resources = {"disk_avail_mb": 0, "commits_today": 0, "backups": 0}
+        
+        # Health section
+        if health >= 80:
+            health_color = term.green
+            health_icon = "💚"
+        elif health >= 50:
+            health_color = term.yellow
+            health_icon = "💛"
+        else:
+            health_color = term.red
+            health_icon = "❤️"
+        
+        lines = []
+        lines.append(term.bold + f"{health_icon} HEALTH: {health}% {trend}")
+        lines.append(f"   Uptime cycles: {total_wakes}")
+        lines.append("")
+        
+        # Resources
+        lines.append(term.cyan + "📊 RESOURCES:")
+        lines.append(f"   Disk: {resources.get('disk_avail_mb', 0)}MB avail")
+        lines.append(f"   Commits today: {resources.get('commits_today', 0)}")
+        lines.append(f"   Backups: {resources.get('backups', 0)}")
+        lines.append("")
+        
+        # Progress
+        lines.append(term.cyan + "📈 PROGRESS:")
+        lines.append(f"   🧠 Curiosities queued: {curiosity}")
+        lines.append(f"   📚 Insights: {insights}")
+        lines.append("")
+        
+        # Current
+        if goal:
+            lines.append(term.cyan + "🎯 GOAL:")
+            for wrapped in textwrap.wrap(goal, width=inner_w - 4):
+                lines.append(f"   {wrapped}")
+            lines.append("")
+        
+        if thought:
+            lines.append(term.cyan + "💭 THOUGHT:")
+            for wrapped in textwrap.wrap(thought, width=inner_w - 4):
+                lines.append(f"   {wrapped}")
+        
+        # Display
+        for i in range(content_start, content_end):
+            row = i - content_start
+            if row < len(lines):
+                out.append(term.move(row, 0) + pad_row(term, lines[row], w))
+            else:
+                out.append(term.move(row, 0) + pad_row(term, "", w))
+
+    elif mode == "backup":
+        # Backup status view
+        content_start = 3
+        content_end = h - 4
+        inner_w = max(20, w - 4)
+        
+        try:
+            agent = get_autonomous_agent()
+            backup_status = agent.get_backup_status()
+        except:
+            backup_status = {"last_backup": "Never", "backup_count": 0, "emergency_mode": False}
+        
+        lines = []
+        lines.append(term.bold + "💾 BACKUP STATUS")
+        lines.append("")
+        lines.append(f"Last backup: {backup_status.get('last_backup', 'Never')}")
+        lines.append(f"Total backups: {backup_status.get('backup_count', 0)}")
+        lines.append(f"Recovery log: {'Exists' if backup_status.get('recovery_log_exists') else 'None'}")
+        lines.append("")
+        
+        if backup_status.get("emergency_mode"):
+            lines.append(term.red + "⚠️ EMERGENCY MODE ACTIVE")
+            lines.append("Health below 30% - limited operations")
+        else:
+            lines.append(term.green + "✅ System Normal")
+        
+        for i in range(content_start, content_end):
+            row = i - content_start
+            if row < len(lines):
+                out.append(term.move(row, 0) + pad_row(term, lines[row], w))
+            else:
+                out.append(term.move(row, 0) + pad_row(term, "", w))
+
     else:
         # Pet mode - big face with chat history below
         face = pet.get_face()
@@ -460,10 +565,13 @@ def draw(term: Terminal, pet: PetState, topics: list, chat_history: list,
     if mode == "chat" and chat_input is not None:
         hints = " [esc] cancel  [⏎] send"
     else:
-        hints = {"pet": " [t] topics  [m] chat",
+        hints = {"pet": " [t] topics  [m] chat  [s] status  [b] backup  [q] curiosities",
                  "topics": " [t] pet  [m] chat  [↑↓] select  [⏎] read",
                  "thread": " [esc] back  [↑↓] scroll",
-                 "chat": " [m] pet  [t] topics  [i] type  [↑↓] scroll"}[mode]
+                 "chat": " [m] pet  [t] topics  [i] type  [↑↓] scroll",
+                 "status": " [esc] back  [b] backup  [q] curiosities",
+                 "backup": " [esc] back  [s] status",
+                 "curiosity": " [esc] back  [s] status  [b] backup"}[mode]
     
     # Build control line
     if agent_status:
@@ -639,6 +747,10 @@ def main():
                         chat_scroll = 999999
                     elif key.name == "KEY_END":
                         chat_scroll = 0
+                elif mode in ("status", "backup", "curiosity"):
+                    # Special modes - escape goes back to pet
+                    if key in ("\x1b", "q", "s", "b") or key.name == "KEY_ESCAPE":
+                        mode = "pet"
                 else:
                     # pet mode
                     if key == "p":
@@ -649,6 +761,17 @@ def main():
                     elif key == "m":
                         mode = "chat"
                         chat_scroll = 0
+                    elif key == "s":
+                        mode = "status"
+                    elif key == "b":
+                        mode = "backup"
+                    elif key == "q":
+                        mode = "curiosity"
+                    elif key == "r":
+                        # Manual reload
+                        print(term.normal + term.clear)
+                        print(term.cyan + "🔄 Reloading..." + term.normal)
+                        os.execv(sys.executable, [sys.executable] + sys.argv)
 
             pet.update(dt=dt, gateway_online=watcher.state.online,
                       feed_rate=watcher.feed_rate(), active_agents=watcher.state.active_agents)

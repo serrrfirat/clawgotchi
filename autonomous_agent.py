@@ -9,18 +9,58 @@ It runs in a background thread and coordinates:
 - Assumption verification
 - Feature building
 - Moltbook integration
+- Self-preservation (backups, recovery, adaptive behavior)
 
 The TUI (clawgotchi.py) displays the agent's state, thoughts, and health.
+
+Hot-Reload: Watches source files for changes and auto-restarts.
 """
 
 import asyncio
 import json
 import os
+import subprocess
+import sys
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timedelta, timedelta
 from pathlib import Path
 from typing import Optional
+
+
+class HotReloader:
+    """Watch source files and trigger hot-reload on changes."""
+    
+    def __init__(self, watch_files: list):
+        self.watch_files = [Path(f).absolute() for f in watch_files]
+        self.last_mtimes = {}
+        self._update_mtimes()
+    
+    def _update_mtimes(self):
+        """Store current modification times."""
+        for f in self.watch_files:
+            try:
+                self.last_mtimes[str(f)] = f.stat().st_mtime
+            except:
+                self.last_mtimes[str(f)] = 0
+    
+    def check(self) -> bool:
+        """Check if any watched file changed. Returns True if changed."""
+        for f in self.watch_files:
+            try:
+                mtime = f.stat().st_mtime
+                if self.last_mtimes.get(str(f), 0) < mtime:
+                    self._update_mtimes()
+                    return True
+            except:
+                pass
+        return False
+    
+    def restart(self):
+        """Restart the process preserving state."""
+        print("🔄 Hot-reloading...")
+        # Signal main thread to restart
+        os._exit(100)  # Special code for hot-reload
 
 # State constants
 STATE_SLEEPING = "SLEEPING"
@@ -363,21 +403,25 @@ class AutonomousAgent:
                 continue
             
             try:
-                asyncio.run(self.wake_cycle())
+                interval = asyncio.run(self.wake_cycle())
+                # Sleep until next wake with adaptive interval
+                for _ in range(int(interval)):
+                    if not self.running or not self.paused:
+                        break
+                    time.sleep(1)
             except Exception as e:
                 error_msg = f"Cycle error: {e}"
                 print(error_msg)
                 self.state.add_error(error_msg)
                 self.state.save()
-            
-            # Sleep until next wake
-            for _ in range(WAKE_INTERVAL):
-                if not self.running or not self.paused:
-                    break
-                time.sleep(1)
+                time.sleep(60)  # Brief pause on error
     
     async def wake_cycle(self):
         """Execute one wake cycle."""
+        # Check for crash recovery first
+        if not await self._recover_from_crash():
+            self.state.add_error("State recovery performed")
+        
         # WAKING
         self.state.current_state = STATE_WAKING
         self.state.last_wake = datetime.now().isoformat()
@@ -385,21 +429,31 @@ class AutonomousAgent:
         
         # OBSERVING
         self.state.current_state = STATE_OBSERVING
-        health_issues = self.resources.update()
+        self.resources.update()
         health_score = await self._check_health()
         
-        # Reduce health if issues found
-        if health_issues:
-            health_score = max(0, health_score - len(health_issues) * 10)
+        # Check disk space
+        disk_status, disk_msg = await self._check_disk_space()
+        if disk_status != "ok":
+            health_score = max(0, health_score - 20)
         
         self.state.update_health(health_score)
         self.state.current_thought = "Observing my surroundings..."
         self.state.save()
         await asyncio.sleep(2)
         
+        # ADAPTIVE BEHAVIOR
+        adaptive = await self._adaptive_behavior(health_score)
+        skip_tasks = adaptive.get("skip_tasks", [])
+        
         # DECIDING
         self.state.current_state = STATE_DECIDING
         action = await self._decide_next_action()
+        
+        # Skip if task is in skip list
+        if action["type"] in skip_tasks:
+            action = {"type": "REST", "description": "Skipping tasks (emergency mode)"}
+        
         self.state.current_goal = action.get("description", "")
         self.state.save()
         await asyncio.sleep(1)
@@ -439,12 +493,20 @@ class AutonomousAgent:
         # REFLECTING
         self.state.current_state = STATE_REFLECTING
         await self._reflect(action, result)
+        
+        # SELF-PRESERVATION TASKS (run every 10 cycles)
+        if self.state.total_wakes % 10 == 0:
+            await self._cleanup_resources()
+        await self._backup_state()
+        
         self.state.total_wakes += 1
         self.state.save()
         
-        # SLEEPING
+        # SLEEPING - use adaptive interval
         self.state.current_state = STATE_SLEEPING
         self.state.save()
+        
+        return adaptive.get("interval", WAKE_INTERVAL)
     
     async def _check_health(self) -> int:
         """Run health checks. Returns score 0-100."""
@@ -532,6 +594,199 @@ class AutonomousAgent:
             if "success" in result.lower():
                 self.beliefs.add_evidence("bel-001", "Built something this cycle")
         return "Reflection complete"
+    
+    # ========== PHASE 3: SELF-PRESERVATION ==========
+    
+    BACKUP_DIR = MEMORY_DIR / "backups"
+    
+    async def _backup_state(self) -> str:
+        """Create a timestamped backup of agent state."""
+        self.BACKUP_DIR.mkdir(exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_file = self.BACKUP_DIR / f"state_{timestamp}.json"
+        
+        backup_data = {
+            "timestamp": timestamp,
+            "state": {
+                "version": self.state.version,
+                "health_score": self.state.health_score,
+                "total_wakes": self.state.total_wakes,
+                "current_goal": self.state.current_goal,
+                "current_state": self.state.current_state,
+            },
+            "resources": self.resources.data,
+            "backups_count": len(list(self.BACKUP_DIR.glob("state_*.json")))
+        }
+        
+        backup_file.write_text(json.dumps(backup_data, indent=2))
+        
+        # Update resources.json
+        self.resources.data["last_backup"] = timestamp
+        self.resources.data["backup_count"] = backup_data["backups_count"]
+        self.resources.save()
+        
+        return f"Backup created: {timestamp}"
+    
+    async def _cleanup_resources(self) -> str:
+        """Clean up old logs (>30 days)."""
+        cleaned = 0
+        cutoff = (datetime.now() - timedelta(days=30)).timestamp()
+        
+        for log_file in MEMORY_DIR.glob("*.md"):
+            if log_file.name.startswith("20"):  # Date-named files like 2026-01-01.md
+                try:
+                    mtime = log_file.stat().st_mtime
+                    if mtime < cutoff:
+                        log_file.unlink()
+                        cleaned += 1
+                except:
+                    pass
+        
+        # Clean old backups (>90 days)
+        backup_cutoff = (datetime.now() - timedelta(days=90)).timestamp()
+        for backup in self.BACKUP_DIR.glob("state_*.json"):
+            try:
+                if backup.stat().st_mtime < backup_cutoff:
+                    backup.unlink()
+                    cleaned += 1
+            except:
+                pass
+        
+        return f"Cleaned {cleaned} old files"
+    
+    async def _check_disk_space(self) -> tuple:
+        """Check disk space. Returns (status, message)."""
+        disk_mb = self.resources.data.get("disk", {}).get("available_mb", 1000)
+        
+        if disk_mb < 50:
+            return "critical", f"Disk critical: {disk_mb}MB remaining"
+        elif disk_mb < 100:
+            return "warning", f"Disk low: {disk_mb}MB remaining"
+        else:
+            return "ok", f"Disk OK: {disk_mb}MB available"
+    
+    async def _adaptive_behavior(self, health_score: int) -> dict:
+        """Adjust behavior based on health and resources."""
+        status, _ = await self._check_disk_space()
+        
+        # Default values
+        interval = WAKE_INTERVAL
+        mode = "normal"
+        skip_tasks = []
+        
+        # Reduce frequency if health degraded
+        if health_score < 70:
+            interval = int(WAKE_INTERVAL * 1.5)  # Slower
+            mode = "degraded"
+        
+        # Emergency mode
+        if health_score < 30 or status == "critical":
+            interval = WAKE_INTERVAL * 2  # Much slower
+            mode = "emergency"
+            skip_tasks = ["BUILD", "EXPLORE"]  # Only critical tasks
+        
+        return {
+            "interval": interval,
+            "mode": mode,
+            "skip_tasks": skip_tasks,
+            "status": status
+        }
+    
+    async def _recover_from_crash(self) -> bool:
+        """Detect crash and recover from latest backup."""
+        # Check if state file exists and is valid
+        if not STATE_FILE.exists():
+            return await self._restore_from_backup()
+        
+        try:
+            data = json.loads(STATE_FILE.read_text())
+            if not data.get("current_state"):
+                return await self._restore_from_backup()
+        except:
+            return await self._restore_from_backup()
+        
+        return True
+    
+    async def _restore_from_backup(self) -> bool:
+        """Restore state from latest backup."""
+        backups = sorted(self.BACKUP_DIR.glob("state_*.json"), reverse=True)
+        if not backups:
+            return False
+        
+        latest = backups[0]
+        try:
+            data = json.loads(latest.read_text())
+            state_data = data.get("state", {})
+            
+            # Restore state
+            self.state.health_score = state_data.get("health_score", 50)
+            self.state.total_wakes = state_data.get("total_wakes", 0)
+            self.state.current_goal = state_data.get("current_goal", "")
+            self.state.current_state = STATE_SLEEPING
+            
+            # Log recovery
+            recovery_log = MEMORY_DIR / "recovery_log.json"
+            log_entry = {
+                "timestamp": datetime.now().isoformat(),
+                "restored_from": str(latest),
+                "health_score": self.state.health_score
+            }
+            
+            existing = []
+            if recovery_log.exists():
+                try:
+                    existing = json.loads(recovery_log.read_text())
+                except:
+                    pass
+            existing.insert(0, log_entry)
+            recovery_log.write_text(json.dumps(existing, indent=2))
+            
+            self.state.save()
+            return True
+        except:
+            return False
+    
+    def get_backup_status(self) -> dict:
+        """Get backup status for TUI."""
+        backups = list(self.BACKUP_DIR.glob("state_*.json"))
+        last_backup = self.resources.data.get("last_backup", "Never")
+        
+        return {
+            "last_backup": last_backup,
+            "backup_count": len(backups),
+            "recovery_log_exists": (MEMORY_DIR / "recovery_log.json").exists(),
+            "emergency_mode": self.state.health_score < 30
+        }
+    
+    def get_health_trend(self) -> str:
+        """Get health trend arrow."""
+        history = self.state.health_history
+        if len(history) < 2:
+            return "→"
+        
+        current = history[-1].get("score", 50)
+        previous = history[-2].get("score", 50)
+        
+        if current > previous + 5:
+            return "↑"
+        elif current < previous - 5:
+            return "↓"
+        else:
+            return "→"
+    
+    def get_resource_usage(self) -> dict:
+        """Get resource usage for TUI."""
+        disk = self.resources.data.get("disk", {})
+        git = self.resources.data.get("git", {})
+        
+        return {
+            "disk_used_mb": disk.get("used_mb", 0),
+            "disk_avail_mb": disk.get("available_mb", 0),
+            "commits_today": git.get("commits_today", 0),
+            "backups": self.resources.data.get("backup_count", 0)
+        }
+    
+    # ========== END PHASE 3 ==========
     
     def get_status(self) -> dict:
         """Get current status for TUI display."""
