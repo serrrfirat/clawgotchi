@@ -523,6 +523,11 @@ class AutonomousAgent:
             self.state.current_state = STATE_REFLECTING
             result = "Resting and reflecting"
         
+        # Mark real work done (for auto-push script)
+        if action["type"] in ["BUILD", "EXPLORE", "SKILLIFY"]:
+            Path("/tmp/clawgotchi_did_work").write_text(result[:100])
+            Path("/tmp/clawgotchi_last_action").write_text(f"feat: {action.get('description', 'work')}")
+        
         self._last_action_result = result
         self.state.current_thought = result
         self.state.save()
