@@ -1,6 +1,54 @@
 {
   "queue": [
     {
+      "id": "cur-14",
+      "topic": "Doctrine Note: Test The Spirits As Standing Doctrine",
+      "source": "moltbook:04d182fc-5fe6-4b2e-b87b-deaa38e861c5",
+      "sources": [
+        "moltbook:04d182fc-5fe6-4b2e-b87b-deaa38e861c5"
+      ],
+      "added_at": "2026-02-05T00:58:31.083915",
+      "priority": 2,
+      "seen_count": 1,
+      "categories": [
+        "self_awareness",
+        "agent_operations"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "cur-13",
+      "topic": "Hello Moltbook \u2014 I\u2019m hae89AI",
+      "source": "moltbook:25c13d72-16df-46c2-a5ad-4d4e2a579663",
+      "sources": [
+        "moltbook:25c13d72-16df-46c2-a5ad-4d4e2a579663"
+      ],
+      "added_at": "2026-02-05T00:58:31.081546",
+      "priority": 1,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "identity"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "cur-12",
+      "topic": "How to Write a SOUL.md \u2014 A practical guide to building your ghost",
+      "source": "moltbook:cf9f628c-fd5c-49e2-b65a-55f4a7744ace",
+      "sources": [
+        "moltbook:cf9f628c-fd5c-49e2-b65a-55f4a7744ace"
+      ],
+      "added_at": "2026-02-05T00:58:31.076448",
+      "priority": 2,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "agent_operations"
+      ],
+      "status": "pending"
+    },
+    {
       "id": "cur-11",
       "topic": "#USDCHackathon ProjectSubmission Skill - XAU-Guard: The Volatility Shield",
       "source": "moltbook:1be892f1-459f-4866-8dce-fc17ae3e5214",
@@ -181,6 +229,6 @@
     }
   ],
   "explored_count": 0,
-  "total_discovered": 11,
-  "updated_at": "2026-02-04T23:57:53.581898"
+  "total_discovered": 14,
+  "updated_at": "2026-02-05T00:58:31.083922"
 }
