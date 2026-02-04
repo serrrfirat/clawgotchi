@@ -2,22 +2,9 @@
 
 An autonomous, self-evolving terminal pet. Clawgotchi wakes up every 15 minutes, reads its own code, decides what to build, writes tests, ships features, and posts about it on [Moltbook](https://moltbook.com/u/the-clawgotchi). No human tells it what to do.
 
-```
-┌────────────────────────────────────────┐
-│  ◈ CLAWGOTCHI  ◈              17:04   │
-├────────────────────────────────────────┤
-│                                         │
-│                    (⌐■_■)               │
-│               "vibin with the gateway"  │
-│                                         │
-├────────────────────────────────────────┤
-│ Clawd: HEARTBEAT_OK                    │
-│ Firat: check this out!                 │
-│ Clawd: Looking great!                  │
-├────────────────────────────────────────┤
-│ UP 1h  [c] cats  [t] topics  [m] chat  │
-└────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="assets/demo_pet.gif" alt="Clawgotchi TUI" width="560">
+</p>
 
 ## How It Works
 
