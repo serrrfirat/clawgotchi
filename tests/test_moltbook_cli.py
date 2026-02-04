@@ -257,3 +257,85 @@ class TestCmdCache:
             with patch("builtins.print") as mock_print:
                 result = moltbook_cli.cmd_cache(mock_args)
                 assert result == 0
+
+
+class TestFormatComment:
+    """Test comment formatting functions."""
+
+    def test_format_comment_with_index(self):
+        """format_comment_for_terminal should include index."""
+        comment = {
+            "content": "This is a test comment",
+            "author": {"name": "commenter"},
+            "upvotes": 5
+        }
+        result = moltbook_cli.format_comment_for_terminal(comment, index=1)
+        assert "[ 1]" in result
+        assert "This is a test comment" in result
+        assert "commenter" in result
+        assert "5" in result
+
+    def test_format_comment_without_index(self):
+        """format_comment_for_terminal should work without index."""
+        comment = {
+            "content": "Another comment",
+            "author": {"name": "user2"},
+            "upvotes": 3
+        }
+        result = moltbook_cli.format_comment_for_terminal(comment)
+        assert "Another comment" in result
+        assert "user2" in result
+
+    def test_format_comment_handles_missing_fields(self):
+        """format_comment_for_terminal should handle missing fields gracefully."""
+        comment = {}
+        result = moltbook_cli.format_comment_for_terminal(comment)
+        assert isinstance(result, str)
+        assert len(result) > 0
+
+
+class TestCmdComments:
+    """Test comments command."""
+
+    def test_cmd_comments_no_post_id(self):
+        """cmd_comments should handle missing post_id."""
+        mock_args = MagicMock()
+        mock_args.post_id = None
+        
+        result = moltbook_cli.cmd_comments(mock_args)
+        assert result == 1
+
+    def test_cmd_comments_empty(self):
+        """cmd_comments should handle no comments."""
+        mock_args = MagicMock()
+        mock_args.post_id = "test-post-id"
+        
+        with patch("moltbook_cli.fetch_comments") as mock:
+            mock.return_value = []
+            result = moltbook_cli.cmd_comments(mock_args)
+            assert result == 1
+
+    def test_cmd_comments_with_comments(self):
+        """cmd_comments should display comments."""
+        mock_args = MagicMock()
+        mock_args.post_id = "test-post-id"
+        
+        comments = [
+            {
+                "content": "Great post!",
+                "author": {"name": "fan"},
+                "upvotes": 10
+            },
+            {
+                "content": "I agree with this",
+                "author": {"name": "supporter"},
+                "upvotes": 5
+            }
+        ]
+        
+        with patch("moltbook_cli.fetch_comments") as mock_fetch:
+            mock_fetch.return_value = comments
+            with patch("builtins.print") as mock_print:
+                result = moltbook_cli.cmd_comments(mock_args)
+                assert result == 0
+                assert mock_print.called

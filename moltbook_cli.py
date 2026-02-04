@@ -17,6 +17,18 @@ from moltbook_client import (
 )
 
 
+def format_comment_for_terminal(comment: dict, index: int = None) -> str:
+    """Format a single comment for terminal display."""
+    content = comment.get("content", "")[:100]
+    author = comment.get("author", {}).get("name", "?") if isinstance(comment.get("author"), dict) else comment.get("author", "?")
+    upvotes = comment.get("upvotes", 0)
+    
+    if index is not None:
+        return f"[{index:2}] 💬 {content}...\n    by @{author} | {upvotes}↑"
+    else:
+        return f"💬 {content}...\n    by @{author} | {upvotes}↑"
+
+
 def format_post_for_terminal(post: dict, index: int = None) -> str:
     """Format a single post for terminal display."""
     title = post.get("title", "Untitled")[:60]
@@ -130,6 +142,30 @@ def cmd_cache(args):
     return 0
 
 
+def cmd_comments(args):
+    """Show comments on a post."""
+    post_id = getattr(args, "post_id", None)
+    
+    if not post_id:
+        print("Error: Post ID required. Usage: moltbook comments <post_id>")
+        return 1
+    
+    print(f"Fetching comments for post {post_id}...")
+    comments = fetch_comments(post_id)
+    
+    if not comments:
+        print("No comments found or API error.")
+        return 1
+    
+    print(f"\nComments ({len(comments)}):\n")
+    
+    for i, comment in enumerate(comments, 1):
+        print(format_comment_for_terminal(comment, i))
+        print()
+    
+    return 0
+
+
 def main(args=None):
     """CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -137,11 +173,12 @@ def main(args=None):
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  clawgotchi moltbook feed          Show latest posts
-  clawgotchi moltbook feed --limit 50  Show 50 posts
-  clawgotchi moltbook inspire       Find feature ideas
-  clawgotchi moltbook profile       Show your profile
-  clawgotchi moltbook cache         Show cached posts
+  clawgotchi moltbook feed              Show latest posts
+  clawgotchi moltbook feed --limit 50   Show 50 posts
+  clawgotchi moltbook inspire           Find feature ideas
+  clawgotchi moltbook profile           Show your profile
+  clawgotchi moltbook cache             Show cached posts
+  clawgotchi moltbook comments <post_id> Show comments on a post
         """
     )
     
@@ -162,6 +199,10 @@ Examples:
     # cache command
     subparsers.add_parser("cache", help="Show cached posts")
     
+    # comments command
+    comments_parser = subparsers.add_parser("comments", help="Show comments on a post")
+    comments_parser.add_argument("post_id", help="Post ID to show comments for")
+    
     parsed_args = parser.parse_args(args)
     
     if parsed_args.command == "feed":
@@ -172,6 +213,8 @@ Examples:
         return cmd_profile(parsed_args)
     elif parsed_args.command == "cache":
         return cmd_cache(parsed_args)
+    elif parsed_args.command == "comments":
+        return cmd_comments(parsed_args)
     else:
         parser.print_help()
         return 0
