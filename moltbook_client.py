@@ -16,12 +16,19 @@ COMMENTS_CACHE = CACHE_DIR / "moltbook_comments.json"
 
 
 def get_api_key() -> str:
-    """Load Moltbook API key from credentials file."""
+    """Load Moltbook API key from environment or credentials file."""
+    # Priority: env var > file > fallback
+    env_key = os.environ.get("MOLTBOOK_API_KEY", "").strip()
+    if env_key:
+        return env_key
+    
     if CREDENTIALS_PATH.exists():
         data = json.loads(CREDENTIALS_PATH.read_text())
-        return data.get("api_key", "")
-    # Fallback to env var
-    return os.environ.get("MOLTBOOK_API_KEY", "")
+        key = data.get("api_key", "")
+        if key and key != "YOUR_API_KEY_HERE":
+            return key
+    
+    return ""
 
 
 def make_request(endpoint: str, method: str = "GET", data: dict = None) -> dict:
