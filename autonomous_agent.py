@@ -74,12 +74,9 @@ STATE_SHARING = "SHARING"
 STATE_REFLECTING = "REFLECTING"
 
 # Paths
-BASE_DIR = Path(__file__).parent
-MEMORY_DIR = BASE_DIR / "memory"
-STATE_FILE = MEMORY_DIR / "agent_state.json"
-CURIOSITY_FILE = MEMORY_DIR / "curiosity_queue.json"
-BELIEFS_FILE = MEMORY_DIR / "beliefs.json"
-RESOURCES_FILE = MEMORY_DIR / "resources.json"
+from config import PROJECT_ROOT, MEMORY_DIR, AGENT_STATE_FILE, CURIOSITY_FILE, BELIEFS_FILE, RESOURCES_FILE
+BASE_DIR = PROJECT_ROOT
+STATE_FILE = AGENT_STATE_FILE
 
 WAKE_INTERVAL = 15 * 60  # 15 minutes in seconds
 
@@ -640,15 +637,15 @@ class AutonomousAgent:
     # ---- Category-specific templates for feature building ----
     TEMPLATE_CATEGORIES = {
         "memory_systems": {
-            "imports": "from memory_decay import MemoryDecayEngine\nfrom memory_curation import MemoryCuration",
+            "imports": "from cognition.memory_decay import MemoryDecayEngine\nfrom cognition.memory_curation import MemoryCuration",
             "description": "Memory system extension",
         },
         "self_awareness": {
-            "imports": "from assumption_tracker import AssumptionTracker",
+            "imports": "from cognition.assumption_tracker import AssumptionTracker",
             "description": "Self-awareness / metacognition extension",
         },
         "identity": {
-            "imports": "from taste_profile import TasteProfile",
+            "imports": "from cognition.taste_profile import TasteProfile",
             "description": "Identity / taste extension",
         },
         "agent_operations": {
@@ -675,7 +672,7 @@ class AutonomousAgent:
         previously rejected (or too similar to a rejection).
         """
         try:
-            from taste_profile import TasteProfile
+            from cognition.taste_profile import TasteProfile
             tp = TasteProfile(memory_dir=str(MEMORY_DIR))
             fp = tp.get_taste_fingerprint()
             recent_subjects = [r.get("subject", "").lower() for r in fp.get("recent", [])]
@@ -1227,7 +1224,7 @@ if __name__ == "__main__":
           2. Rejects ~90% → logged via TasteProfile
           3. Adds passing ideas to the curiosity queue (or boosts existing)
         """
-        from moltbook_client import fetch_feed, score_post_relevance
+        from integrations.moltbook_client import fetch_feed, score_post_relevance
 
         posts = fetch_feed(limit=50)
         if not posts:
@@ -1238,7 +1235,7 @@ if __name__ == "__main__":
 
         # Load TasteProfile for rejection logging
         try:
-            from taste_profile import TasteProfile
+            from cognition.taste_profile import TasteProfile
             tp = TasteProfile(memory_dir=str(MEMORY_DIR))
         except Exception:
             tp = None
@@ -1277,7 +1274,7 @@ if __name__ == "__main__":
     async def _verify_assumptions(self) -> str:
         """Verify assumptions using the AssumptionTracker."""
         try:
-            from assumption_tracker import AssumptionTracker
+            from cognition.assumption_tracker import AssumptionTracker
             tracker = AssumptionTracker()
             stale = tracker.get_stale(days_old=7)
             expired = tracker.expire_old(days_old=30)
@@ -1292,7 +1289,7 @@ if __name__ == "__main__":
     async def _curate_memory(self) -> str:
         """Curate memory by extracting insights from daily logs."""
         try:
-            from memory_curation import MemoryCuration
+            from cognition.memory_curation import MemoryCuration
             curator = MemoryCuration(memory_dir=str(MEMORY_DIR))
             insights = curator.extract_insights_from_logs(days=7)
             promoted = 0
@@ -1309,7 +1306,7 @@ if __name__ == "__main__":
     async def _share_update(self, action: dict) -> str:
         """Share an update about the last action on Moltbook."""
         try:
-            from moltbook_client import post_update
+            from integrations.moltbook_client import post_update
             description = action.get("description", "autonomous cycle")
             content = self._last_action_result or "Completed a wake cycle"
             result = post_update(

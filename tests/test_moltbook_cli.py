@@ -7,8 +7,7 @@ from unittest.mock import patch, MagicMock
 import pytest
 
 # Module under test
-sys.path.insert(0, str(Path(__file__).parent.parent))
-import moltbook_cli
+from cli import moltbook_cli
 
 
 class TestFormatPost:
@@ -62,7 +61,7 @@ class TestCLIArgs:
         mock_args.limit = 50
         mock_args.karma = False
         
-        with patch("moltbook_cli.fetch_feed") as mock_fetch:
+        with patch("cli.moltbook_cli.fetch_feed") as mock_fetch:
             mock_fetch.return_value = []
             result = moltbook_cli.cmd_feed(mock_args)
             mock_fetch.assert_called_with(limit=50)
@@ -74,7 +73,7 @@ class TestCLIArgs:
         mock_args.limit = 20
         mock_args.karma = False
         
-        with patch("moltbook_cli.fetch_feed") as mock_fetch:
+        with patch("cli.moltbook_cli.fetch_feed") as mock_fetch:
             mock_fetch.return_value = []
             result = moltbook_cli.cmd_feed(mock_args)
             mock_fetch.assert_called_with(limit=20)
@@ -85,7 +84,7 @@ class TestCLIArgs:
         mock_args = MagicMock()
         mock_args.limit = 100
         
-        with patch("moltbook_cli.fetch_feed") as mock_fetch:
+        with patch("cli.moltbook_cli.fetch_feed") as mock_fetch:
             mock_fetch.return_value = []
             result = moltbook_cli.cmd_inspire(mock_args)
             assert result == 1
@@ -94,7 +93,7 @@ class TestCLIArgs:
         """profile command should be recognized."""
         mock_args = MagicMock()
         
-        with patch("moltbook_cli.get_my_profile") as mock:
+        with patch("cli.moltbook_cli.get_my_profile") as mock:
             mock.return_value = {"error": "No API key"}
             result = moltbook_cli.cmd_profile(mock_args)
             assert result == 1
@@ -103,7 +102,7 @@ class TestCLIArgs:
         """cache command should be recognized."""
         mock_args = MagicMock()
         
-        with patch("moltbook_cli.get_cached_posts") as mock:
+        with patch("cli.moltbook_cli.get_cached_posts") as mock:
             mock.return_value = []
             result = moltbook_cli.cmd_cache(mock_args)
             assert result == 0
@@ -130,7 +129,7 @@ class TestCmdFeed:
         mock_args.limit = 20
         mock_args.karma = False
         
-        with patch("moltbook_cli.fetch_feed") as mock:
+        with patch("cli.moltbook_cli.fetch_feed") as mock:
             mock.return_value = []
             result = moltbook_cli.cmd_feed(mock_args)
             assert result == 1
@@ -152,7 +151,7 @@ class TestCmdFeed:
             }
         ]
         
-        with patch("moltbook_cli.fetch_feed") as mock_fetch:
+        with patch("cli.moltbook_cli.fetch_feed") as mock_fetch:
             mock_fetch.return_value = posts
             with patch("builtins.print") as mock_print:
                 result = moltbook_cli.cmd_feed(mock_args)
@@ -168,7 +167,7 @@ class TestCmdInspire:
         mock_args = MagicMock()
         mock_args.limit = 50
         
-        with patch("moltbook_cli.fetch_feed") as mock:
+        with patch("cli.moltbook_cli.fetch_feed") as mock:
             mock.return_value = []
             result = moltbook_cli.cmd_inspire(mock_args)
             assert result == 1
@@ -189,7 +188,7 @@ class TestCmdInspire:
             }
         ]
         
-        with patch("moltbook_cli.fetch_feed") as mock_fetch:
+        with patch("cli.moltbook_cli.fetch_feed") as mock_fetch:
             mock_fetch.return_value = posts
             with patch("builtins.print") as mock_print:
                 result = moltbook_cli.cmd_inspire(mock_args)
@@ -203,7 +202,7 @@ class TestCmdProfile:
         """cmd_profile should handle API error."""
         mock_args = MagicMock()
         
-        with patch("moltbook_cli.get_my_profile") as mock:
+        with patch("cli.moltbook_cli.get_my_profile") as mock:
             mock.return_value = {"error": "No API key"}
             with patch("builtins.print") as mock_print:
                 result = moltbook_cli.cmd_profile(mock_args)
@@ -213,7 +212,7 @@ class TestCmdProfile:
         """cmd_profile should display profile."""
         mock_args = MagicMock()
         
-        with patch("moltbook_cli.get_my_profile") as mock:
+        with patch("cli.moltbook_cli.get_my_profile") as mock:
             mock.return_value = {
                 "name": "testagent",
                 "posts_count": 10,
@@ -231,7 +230,7 @@ class TestCmdCache:
         """cmd_cache should handle no cached posts."""
         mock_args = MagicMock()
         
-        with patch("moltbook_cli.get_cached_posts") as mock:
+        with patch("cli.moltbook_cli.get_cached_posts") as mock:
             mock.return_value = []
             with patch("builtins.print") as mock_print:
                 result = moltbook_cli.cmd_cache(mock_args)
@@ -252,7 +251,7 @@ class TestCmdCache:
             }
         ]
         
-        with patch("moltbook_cli.get_cached_posts") as mock:
+        with patch("cli.moltbook_cli.get_cached_posts") as mock:
             mock.return_value = posts
             with patch("builtins.print") as mock_print:
                 result = moltbook_cli.cmd_cache(mock_args)
@@ -310,7 +309,7 @@ class TestCmdComments:
         mock_args = MagicMock()
         mock_args.post_id = "test-post-id"
         
-        with patch("moltbook_cli.fetch_comments") as mock:
+        with patch("cli.moltbook_cli.fetch_comments") as mock:
             mock.return_value = []
             result = moltbook_cli.cmd_comments(mock_args)
             assert result == 1
@@ -333,7 +332,7 @@ class TestCmdComments:
             }
         ]
         
-        with patch("moltbook_cli.fetch_comments") as mock_fetch:
+        with patch("cli.moltbook_cli.fetch_comments") as mock_fetch:
             mock_fetch.return_value = comments
             with patch("builtins.print") as mock_print:
                 result = moltbook_cli.cmd_comments(mock_args)

@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 from pathlib import Path
 
 # Import classes to test
-from openclaw_watcher import (
+from integrations.openclaw_watcher import (
     FeedItem,
     GatewayState,
     OpenClawWatcher,

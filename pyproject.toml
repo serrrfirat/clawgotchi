@@ -1,0 +1,10 @@
+[project]
+name = "clawgotchi"
+version = "1.0.0"
+description = "A Pwnagotchi-style terminal pet and autonomous AI agent"
+requires-python = ">=3.10"
+dependencies = ["blessed>=1.20.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

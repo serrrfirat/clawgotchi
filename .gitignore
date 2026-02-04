@@ -29,3 +29,4 @@ Thumbs.db
 # Agent runtime
 memory/backups/
 scripts/auto-push.log
+firebase-debug.log

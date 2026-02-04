@@ -3,17 +3,13 @@ Tests for Memory Decay System.
 """
 
 import os
-import sys
 import json
 import tempfile
 import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from memory_decay import (
+from cognition.memory_decay import (
     MemoryAccessTracker,
     MemoryDecayEngine,
     DEFAULT_DECAY_DAYS,

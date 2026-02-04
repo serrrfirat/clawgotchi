@@ -7,7 +7,7 @@ import pytest
 import hashlib
 import json
 from datetime import datetime
-from artifact_verifier import ArtifactVerifier, ArtifactCertificate
+from health.artifact_verifier import ArtifactVerifier, ArtifactCertificate
 
 
 class TestArtifactVerifier:

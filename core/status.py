@@ -4,13 +4,9 @@ import argparse
 import shutil
 import sys
 from datetime import datetime
-from pathlib import Path
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent))
-
-import lifetime
-from pet_state import PetState
+from core import lifetime
+from core.pet_state import PetState
 
 
 def get_lifetime_stats() -> dict:

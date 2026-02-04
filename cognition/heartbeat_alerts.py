@@ -9,7 +9,7 @@ import json
 import os
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Any
+from typing import List, Dict, Any
 
 
 @dataclass
@@ -42,15 +42,8 @@ class AlertEngine:
 
     def _default_assumptions_path(self) -> str:
         """Find the assumptions.json file."""
-        # Check common locations
-        for path in [
-            '/workspace/memory/assumptions.json',
-            '/Users/firatsertgoz/Documents/clawgotchi/memory/assumptions.json',
-            'memory/assumptions.json',
-        ]:
-            if os.path.exists(path):
-                return path
-        return 'memory/assumptions.json'
+        from config import ASSUMPTIONS_FILE
+        return str(ASSUMPTIONS_FILE)
 
     def load_assumptions(self) -> List[Dict[str, Any]]:
         """Load assumptions from JSON file."""

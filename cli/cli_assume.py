@@ -14,7 +14,7 @@ import argparse
 import sys
 from datetime import datetime
 
-from assumption_tracker import AssumptionTracker, get_tracker
+from cognition.assumption_tracker import AssumptionTracker
 
 
 def cmd_record(args):

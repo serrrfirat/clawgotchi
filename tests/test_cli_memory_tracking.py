@@ -3,15 +3,11 @@ Tests for CLI Memory Access Tracking Integration.
 """
 
 import os
-import sys
 import json
 import tempfile
 import shutil
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-
-# Add parent directory to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 class TestCLIMemoryAccessTracking:
@@ -35,14 +31,14 @@ class TestCLIMemoryAccessTracking:
     def test_cli_imports_memory_tracker(self):
         """Test that cli_memory.py imports MemoryAccessTracker."""
         # This tests the import doesn't fail
-        from memory_decay import MemoryAccessTracker
+        from cognition.memory_decay import MemoryAccessTracker
         tracker = MemoryAccessTracker(memory_dir=self.memory_dir)
         assert tracker is not None
 
     def test_search_command_tracks_access(self):
         """Test that 'memory search' records access."""
-        from memory_curation import MemoryCuration
-        from memory_decay import MemoryAccessTracker
+        from cognition.memory_curation import MemoryCuration
+        from cognition.memory_decay import MemoryAccessTracker
         
         curation = MemoryCuration(memory_dir=self.memory_dir)
         tracker = MemoryAccessTracker(memory_dir=self.memory_dir)
@@ -56,7 +52,7 @@ class TestCLIMemoryAccessTracking:
 
     def test_show_command_tracks_access(self):
         """Test that 'memory show' records access."""
-        from memory_decay import MemoryAccessTracker
+        from cognition.memory_decay import MemoryAccessTracker
         
         tracker = MemoryAccessTracker(memory_dir=self.memory_dir)
         
@@ -69,7 +65,7 @@ class TestCLIMemoryAccessTracking:
 
     def test_promote_command_tracks_access(self):
         """Test that 'memory promote' records access."""
-        from memory_decay import MemoryAccessTracker
+        from cognition.memory_decay import MemoryAccessTracker
         
         tracker = MemoryAccessTracker(memory_dir=self.memory_dir)
         
@@ -82,7 +78,7 @@ class TestCLIMemoryAccessTracking:
 
     def test_summarize_command_tracks_access(self):
         """Test that 'memory summarize' records access."""
-        from memory_decay import MemoryAccessTracker
+        from cognition.memory_decay import MemoryAccessTracker
         
         tracker = MemoryAccessTracker(memory_dir=self.memory_dir)
         
@@ -95,7 +91,7 @@ class TestCLIMemoryAccessTracking:
 
     def test_access_tracking_preserves_existing_entries(self):
         """Test that new tracking doesn't overwrite existing data."""
-        from memory_decay import MemoryAccessTracker
+        from cognition.memory_decay import MemoryAccessTracker
         
         tracker = MemoryAccessTracker(memory_dir=self.memory_dir)
         
@@ -113,7 +109,7 @@ class TestCLIMemoryAccessTracking:
 
     def test_diagnose_command_does_not_track_memory_access(self):
         """Test that 'memory diagnose' doesn't track curated memory access."""
-        from memory_decay import MemoryAccessTracker
+        from cognition.memory_decay import MemoryAccessTracker
         
         tracker = MemoryAccessTracker(memory_dir=self.memory_dir)
         

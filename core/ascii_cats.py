@@ -1,7 +1,6 @@
 """Clawgotchi ASCII cats — loads cat art from local cache (78 cats from asciiart.eu)."""
 
 import json
-import time
 from pathlib import Path
 from typing import Optional
 
@@ -15,7 +14,8 @@ class CatArt:
 
 
 # Path to local cat cache
-CAT_CACHE_FILE = Path(__file__).parent / "cats.json"
+from config import CATS_JSON
+CAT_CACHE_FILE = CATS_JSON
 
 # Search terms for emotion → cat mapping
 EMOTION_CAT_TERMS = {

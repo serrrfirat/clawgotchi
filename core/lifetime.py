@@ -1,12 +1,11 @@
 """Clawgotchi lifetime tracker — tracks uptime, wake cycles, and total lifespan."""
 
 import json
-import os
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
-LIFETIME_FILE = Path(__file__).parent / "memory" / "lifetime.json"
+from config import LIFETIME_FILE
 
 
 def _load_data() -> Dict[str, Any]:

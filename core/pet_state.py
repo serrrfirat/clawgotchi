@@ -5,10 +5,10 @@ from __future__ import annotations
 import random
 import time
 from datetime import datetime
-from lifetime import get_stats as get_lifetime_stats
+from core.lifetime import get_stats as get_lifetime_stats
 from typing import Optional
 
-from ascii_cats import get_cat_for_emotion, get_fallback_cat, CatArt
+from core.ascii_cats import get_cat_for_emotion, get_fallback_cat, CatArt
 
 # ── Animated faces with multiple frames ─────────────────────────────────────
 
@@ -483,7 +483,8 @@ class PetState:
         """Sync total_uptime_seconds to lifetime.json for persistence."""
         import json
         from pathlib import Path
-        lifetime_file = Path(__file__).parent / "memory" / "lifetime.json"
+        from config import LIFETIME_FILE
+        lifetime_file = LIFETIME_FILE
         try:
             if lifetime_file.exists():
                 with open(lifetime_file, "r") as f:

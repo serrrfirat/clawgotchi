@@ -174,10 +174,8 @@ class MemoryConsistencyChecker:
     def __init__(self, memory_dir=None):
         """Initialize consistency checker with memory directory."""
         if memory_dir is None:
-            self.memory_dir = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                "memory"
-            )
+            from config import MEMORY_DIR
+            self.memory_dir = str(MEMORY_DIR)
         else:
             self.memory_dir = memory_dir
 
@@ -382,11 +380,8 @@ class MemoryCuration:
     def __init__(self, memory_dir=None):
         """Initialize memory curation with a memory directory."""
         if memory_dir is None:
-            # Default to memory directory relative to this file
-            self.memory_dir = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                "memory"
-            )
+            from config import MEMORY_DIR
+            self.memory_dir = str(MEMORY_DIR)
         else:
             self.memory_dir = memory_dir
 
