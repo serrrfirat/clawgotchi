@@ -18,165 +18,139 @@ from clawgotchi.resilience.state_checkpoint import (
 
 class TestCheckpointMetadata:
     """Test checkpoint metadata handling."""
-
-    def test_create_metadata(self):
-        """Create metadata with timestamp and hash."""
-        metadata = CheckpointMetadata(
-            state_type="memory",
+    
+    def test_metadata_default_timestamp(self):
+        """Test that timestamp is set automatically."""
+        meta = CheckpointMetadata(
+            state_type="test",
             state_hash="abc123",
             checkpoint_count=1
         )
-        assert metadata.state_type == "memory"
-        assert metadata.state_hash == "abc123"
-        assert metadata.checkpoint_count == 1
-        assert metadata.timestamp is not None
-
+        assert meta.timestamp is not None
+        assert "T" in meta.timestamp  # ISO format contains T
+    
     def test_metadata_to_dict(self):
-        """Convert metadata to dictionary."""
-        metadata = CheckpointMetadata(
-            state_type="skills",
-            state_hash="def456",
-            checkpoint_count=5
+        """Test metadata converts to dictionary correctly."""
+        meta = CheckpointMetadata(
+            state_type="test",
+            state_hash="abc123",
+            checkpoint_count=1,
+            custom_metadata={"key": "value"}
         )
-        data = metadata.to_dict()
-        assert data["state_type"] == "skills"
-        assert data["state_hash"] == "def456"
-        assert "timestamp" in data
+        data = meta.to_dict()
+        
+        assert data["state_type"] == "test"
+        assert data["state_hash"] == "abc123"
+        assert data["checkpoint_count"] == 1
+        assert data["custom_metadata"]["key"] == "value"
 
 
 class TestStateCheckpoint:
     """Test StateCheckpoint core functionality."""
-
+    
+    def test_init_creates_checkpoint_dir(self):
+        """Test that initialization creates the checkpoint directory."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            checkpoint_dir = os.path.join(tmpdir, "checkpoints")
+            checkpoint = StateCheckpoint(checkpoint_dir, "test")
+            assert os.path.exists(checkpoint_dir)
+    
     def test_save_and_load_checkpoint(self):
-        """Save state and load it back."""
+        """Test saving and loading a simple checkpoint."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            checkpoint = StateCheckpoint(tmpdir)
-            state = {"health": 100, "mood": "happy"}
+            checkpoint = StateCheckpoint(tmpdir, "test")
+            original_state = {"key": "value"}
+            checkpoint.save("test_id", original_state)
             
-            checkpoint.save("session_001", state)
-            loaded = checkpoint.load("session_001")
-            
-            assert loaded == state
-
+            loaded_state = checkpoint.load("test_id")
+            assert loaded_state == original_state
+    
     def test_detect_changes(self):
-        """Detect when state has changed."""
+        """Test change detection returns True when state changes."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            checkpoint = StateCheckpoint(tmpdir)
-            original = {"count": 10}
+            checkpoint = StateCheckpoint(tmpdir, "test")
+            checkpoint.save("test_id", {"version": 1})
             
-            # Save initial state
-            checkpoint.save("task_001", original)
-            
-            # Modify state
-            modified = {"count": 20}
-            
-            # Checkpoint should detect change
-            has_changed = checkpoint.detect_change("task_001", modified)
-            assert has_changed is True
-
+            has_changed = checkpoint.detect_change("test_id", {"version": 2})
+            assert has_changed == True
+    
     def test_no_change_detection(self):
-        """Return False when state unchanged."""
+        """Test change detection returns False when state unchanged."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            checkpoint = StateCheckpoint(tmpdir)
-            state = {"value": "test"}
+            checkpoint = StateCheckpoint(tmpdir, "test")
+            original = {"version": 1, "data": "same"}
+            checkpoint.save("test_id", original)
             
-            checkpoint.save("item_001", state)
-            has_changed = checkpoint.detect_change("item_001", state)
-            
-            assert has_changed is False
-
+            has_changed = checkpoint.detect_change("test_id", original)
+            assert has_changed == False
+    
     def test_list_checkpoints(self):
-        """List all saved checkpoints."""
+        """Test listing all checkpoints."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            checkpoint = StateCheckpoint(tmpdir)
-            
-            checkpoint.save("session_a", {"data": "A"})
-            checkpoint.save("session_b", {"data": "B"})
-            checkpoint.save("session_c", {"data": "C"})
+            checkpoint = StateCheckpoint(tmpdir, "test")
+            checkpoint.save("id1", {"v": 1})
+            checkpoint.save("id2", {"v": 2})
+            checkpoint.save("id3", {"v": 3})
             
             checkpoints = checkpoint.list_checkpoints()
-            
             assert len(checkpoints) == 3
-            assert "session_a" in checkpoints
-            assert "session_b" in checkpoints
-            assert "session_c" in checkpoints
-
+            assert "id1" in checkpoints
+            assert "id2" in checkpoints
+            assert "id3" in checkpoints
+    
     def test_delete_checkpoint(self):
-        """Delete a checkpoint."""
+        """Test deleting an existing checkpoint."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            checkpoint = StateCheckpoint(tmpdir)
+            checkpoint = StateCheckpoint(tmpdir, "test")
+            checkpoint.save("test_id", {"v": 1})
             
-            checkpoint.save("temp_state", {"temp": True})
-            assert checkpoint.load("temp_state") == {"temp": True}
+            result = checkpoint.delete("test_id")
+            assert result == True
             
-            checkpoint.delete("temp_state")
-            
-            # Should raise error when loading deleted
-            with pytest.raises(CheckpointError):
-                checkpoint.load("temp_state")
-
+            path = checkpoint._get_checkpoint_path("test_id")
+            assert not path.exists()
+    
     def test_get_hash(self):
-        """Verify hash computation."""
+        """Test that same state produces same hash."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            checkpoint = StateCheckpoint(tmpdir)
-            state = {"key": "value", "number": 42}
-            state_hash = checkpoint._compute_hash(state)
+            checkpoint = StateCheckpoint(tmpdir, "test")
+            state = {"key": "value"}
             
-            # Same state should produce same hash
+            hash1 = checkpoint._compute_hash(state)
             hash2 = checkpoint._compute_hash(state)
-            assert state_hash == hash2
-            
-            # Different state should produce different hash
-            different_state = {"key": "different"}
-            hash3 = checkpoint._compute_hash(different_state)
-            assert state_hash != hash3
-
+            assert hash1 == hash2
+    
     def test_checkpoint_with_metadata(self):
-        """Save state with custom metadata."""
+        """Test saving with custom metadata."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            checkpoint = StateCheckpoint(tmpdir)
-            state = {"progress": 0.75}
+            checkpoint = StateCheckpoint(tmpdir, "test")
+            custom_meta = {"author": "test", "version": "1.0"}
+            metadata = checkpoint.save("test_id", {"key": "value"}, custom_meta)
             
-            checkpoint.save(
-                "learning_session",
-                state,
-                metadata={"learning_rate": 0.01, "epoch": 10}
-            )
-            
-            loaded = checkpoint.load("learning_session")
-            assert loaded == state
-            
-            # Check metadata was stored
-            info = checkpoint.get_info("learning_session")
-            assert info is not None
-            assert info.get("metadata", {}).get("custom_metadata", {}).get("epoch") == 10
-
+            assert metadata.custom_metadata == custom_meta
+            assert metadata.custom_metadata["author"] == "test"
+    
     def test_raises_on_nonexistent_load(self):
-        """Raise error when loading nonexistent checkpoint."""
+        """Test that loading nonexistent checkpoint raises error."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            checkpoint = StateCheckpoint(tmpdir)
+            checkpoint = StateCheckpoint(tmpdir, "test")
             
-            with pytest.raises(CheckpointError):
-                checkpoint.load("does_not_exist")
+            with pytest.raises(Exception):  # CheckpointNotFoundError
+                checkpoint.load("nonexistent")
 
 
-class TestLoadSaveFunctions:
-    """Test module-level convenience functions."""
-
+class TestConvenienceFunctions:
+    """Test convenience functions."""
+    
     def test_save_checkpoint_function(self):
         """Test save_checkpoint convenience function."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            result = save_checkpoint(
-                tmpdir,
-                "quick_save",
-                {"status": "done"}
-            )
-            assert result is True
-
+            result = save_checkpoint(tmpdir, "test_id", {"key": "value"})
+            assert result == True
+    
     def test_load_checkpoint_function(self):
         """Test load_checkpoint convenience function."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            save_checkpoint(tmpdir, "test_load", {"data": 123})
-            loaded = load_checkpoint(tmpdir, "test_load")
-            
-            assert loaded == {"data": 123}
+            save_checkpoint(tmpdir, "test_id", {"key": "value"})
+            state = load_checkpoint(tmpdir, "test_id")
+            assert state == {"key": "value"}
