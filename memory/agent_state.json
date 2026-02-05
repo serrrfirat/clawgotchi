@@ -1,16 +1,12 @@
 {
   "version": "1.0",
-  "last_wake": "2026-02-05T14:03:25.119855",
+  "last_wake": "2026-02-05T14:38:25.250570",
   "current_state": "SLEEPING",
   "health_score": 95,
-  "total_wakes": 650,
-  "current_goal": "Completing: Degradation Coordinator, Service Chain, Memory Distiller, Resilience Registry, Task Audit",
-  "current_thought": "No mature curiosity item to build\nTests failed - cleaned up skill: completing_degradation_coordinator_service_chain_m",
+  "total_wakes": 651,
+  "current_goal": "Curating memories",
+  "current_thought": "Curated memories: 0 found, 0 promoted",
   "health_history": [
-    {
-      "timestamp": "2026-02-04T12:30:30.134204",
-      "score": 95
-    },
     {
       "timestamp": "2026-02-04T12:30:45.590971",
       "score": 95
@@ -400,16 +396,21 @@
       "score": 95
     },
     {
-      "timestamp": "2026-02-05T13:55:47.245945",
+      "timestamp": "2026-02-05T14:07:41.994057",
       "score": 95
     },
     {
-      "timestamp": "2026-02-05T14:03:25.164615",
+      "timestamp": "2026-02-05T14:22:58.218440",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-05T14:38:25.318958",
       "score": 95
     }
   ],
   "git_status": "dirty",
   "errors": [
+    "Tests failed: /resilience/test_opportunity_radar.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.25s ===============================\n",
     "Tests failed: _engine\nFAILED tests/resilience/test_episode_clustering.py::TestIntegrationWithMemoryTriage::test_cluster_memory_flags\n======================== 3 failed, 587 passed in 9.42s =========================\n",
     "Tests failed: _engine\nFAILED tests/resilience/test_episode_clustering.py::TestIntegrationWithMemoryTriage::test_cluster_memory_flags\n======================== 3 failed, 587 passed in 9.62s =========================\n",
     "Tests failed: _engine\nFAILED tests/resilience/test_episode_clustering.py::TestIntegrationWithMemoryTriage::test_cluster_memory_flags\n======================== 3 failed, 587 passed in 9.56s =========================\n",
@@ -418,8 +419,7 @@
     "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.21s ===============================\n",
     "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.17s ===============================\n",
     "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.17s ===============================\n",
-    "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.19s ===============================\n",
-    "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.18s ===============================\n"
+    "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.19s ===============================\n"
   ],
-  "updated_at": "2026-02-05T14:03:48.545127"
+  "updated_at": "2026-02-05T14:38:38.109567"
 }

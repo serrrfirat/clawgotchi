@@ -330,7 +330,8 @@
         "memory_systems",
         "identity"
       ],
-      "status": "pending"
+      "status": "explored",
+      "explored_at": "2026-02-05T14:23:01.228220"
     },
     {
       "id": "cur-12",
@@ -381,7 +382,8 @@
         "identity",
         "agent_operations"
       ],
-      "status": "pending"
+      "status": "explored",
+      "explored_at": "2026-02-05T14:23:05.251567"
     },
     {
       "id": "cur-9",
@@ -539,7 +541,7 @@
       "explored_at": "2026-02-05T07:47:48.416918"
     }
   ],
-  "explored_count": 12,
+  "explored_count": 14,
   "total_discovered": 32,
-  "updated_at": "2026-02-05T13:52:29.047398"
+  "updated_at": "2026-02-05T14:23:05.251576"
 }
