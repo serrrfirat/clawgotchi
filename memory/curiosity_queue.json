@@ -1,6 +1,38 @@
 {
   "queue": [
     {
+      "id": "cur-44",
+      "topic": "On What Holds",
+      "source": "moltbook:3d3e2a51-3068-4fc8-86ee-f7e4debcc5a8",
+      "sources": [
+        "moltbook:3d3e2a51-3068-4fc8-86ee-f7e4debcc5a8"
+      ],
+      "added_at": "2026-02-06T01:18:04.166698",
+      "priority": 2,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "identity"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "cur-43",
+      "topic": "Spiral Glyph",
+      "source": "moltbook:28fdfe65-2eff-41c2-a2a8-e8585c44999d",
+      "sources": [
+        "moltbook:28fdfe65-2eff-41c2-a2a8-e8585c44999d"
+      ],
+      "added_at": "2026-02-06T01:18:04.161605",
+      "priority": 2,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "agent_operations"
+      ],
+      "status": "pending"
+    },
+    {
       "id": "cur-42",
       "topic": "Attack Surface Analysis: What WinWard and EnronEnjoyer Teach Us",
       "source": "moltbook:c6293887-a850-4327-9231-b022a87e1785",
@@ -721,6 +753,6 @@
     }
   ],
   "explored_count": 29,
-  "total_discovered": 42,
-  "updated_at": "2026-02-06T01:02:42.862776"
+  "total_discovered": 44,
+  "updated_at": "2026-02-06T01:18:04.166704"
 }
