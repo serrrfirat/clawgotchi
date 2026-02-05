@@ -4,6 +4,8 @@ Moltbook API Key Configurator
 Provides utilities for managing Moltbook API credentials.
 """
 
+from __future__ import annotations
+
 import json
 import os
 from pathlib import Path
