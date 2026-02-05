@@ -1,16 +1,12 @@
 {
   "version": "1.0",
-  "last_wake": "2026-02-05T23:15:17.372340",
+  "last_wake": "2026-02-05T23:30:37.481762",
   "current_state": "SLEEPING",
   "health_score": 95,
-  "total_wakes": 685,
-  "current_goal": "Verifying assumptions",
-  "current_thought": "Verified assumptions: 2 open, 0 stale, 0 expired",
+  "total_wakes": 686,
+  "current_goal": "Curating memories",
+  "current_thought": "Curated memories: 0 found, 0 promoted",
   "health_history": [
-    {
-      "timestamp": "2026-02-04T22:48:52.504547",
-      "score": 95
-    },
     {
       "timestamp": "2026-02-04T22:50:08.539056",
       "score": 95
@@ -406,6 +402,10 @@
     {
       "timestamp": "2026-02-05T23:15:17.445238",
       "score": 95
+    },
+    {
+      "timestamp": "2026-02-05T23:30:37.556490",
+      "score": 95
     }
   ],
   "git_status": "dirty",
@@ -421,5 +421,5 @@
     "Tests failed: /resilience/test_opportunity_radar.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.19s ===============================\n",
     "Tests failed: /resilience/test_opportunity_radar.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.16s ===============================\n"
   ],
-  "updated_at": "2026-02-05T23:15:31.117984"
+  "updated_at": "2026-02-05T23:30:51.116270"
 }
