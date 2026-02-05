@@ -4,7 +4,7 @@ Tests for Fallback Response Generator
 
 import pytest
 import time
-from fallback_response import (
+from clawgotchi.resilience.fallback_response import (
     FallbackGenerator,
     FallbackConfig,
     FallbackStrategy,

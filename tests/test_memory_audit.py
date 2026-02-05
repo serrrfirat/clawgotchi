@@ -104,7 +104,9 @@ def test_generate_audit_summary():
 """
     }
     
-    with patch('cognition.memory_audit.read_memory_file') as mock_read:
+    with patch('cognition.memory_audit.read_memory_file') as mock_read, \
+         patch('cognition.memory_audit.get_today_date', return_value='2026-02-04'), \
+         patch('cognition.memory_audit.get_yesterday_date', return_value='2026-02-03'):
         mock_read.side_effect = lambda f: mock_files.get(f, '')
         summary = generate_audit_summary()
         

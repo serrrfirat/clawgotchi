@@ -7,7 +7,7 @@ import time
 # Import the module under test
 import sys
 sys.path.insert(0, '/Users/firatsertgoz/Documents/clawgotchi')
-from service_chain import ServiceDependencyChain, ServiceConfig, DependencyNode
+from clawgotchi.resilience.service_chain import ServiceDependencyChain, ServiceConfig, DependencyNode
 
 
 class TestServiceConfig:
@@ -167,7 +167,7 @@ class TestQuickChain:
 
     def test_quick_chain_creation(self):
         """quick_chain creates chain with multiple services."""
-        from service_chain import quick_chain
+        from clawgotchi.resilience.service_chain import quick_chain
 
         chain = quick_chain("api", "cache", timeout_ms=3000, fallback={"degraded": True})
         assert "api" in chain

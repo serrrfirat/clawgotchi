@@ -92,7 +92,7 @@ class ResilienceRegistry:
                 "description": config["description"],
                 "available": False,
                 "functions": [],
-                "last_check": datetime.utcnow().isoformat(),
+                "last_check": datetime.now().isoformat() + "Z",
                 "error": None,
             }
             
@@ -107,7 +107,7 @@ class ResilienceRegistry:
             except ImportError as e:
                 self._components[name]["error"] = str(e)
         
-        self._last_refresh = datetime.utcnow()
+        self._last_refresh = datetime.now().isoformat() + "Z"
     
     def list_components(self, show_unavailable: bool = False) -> list[dict[str, Any]]:
         """List all registered components.

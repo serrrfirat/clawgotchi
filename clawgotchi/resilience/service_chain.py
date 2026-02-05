@@ -88,12 +88,10 @@ class CircuitBreaker:
 @dataclass
 class DependencyNode:
     """Represents a single service in the dependency chain."""
-    name: str
-    config: ServiceConfig
-    circuit_breaker: CircuitBreaker = field(init=False)
-
-    def __post_init__(self):
-        """Initialize circuit breaker from config."""
+    
+    def __init__(self, config: ServiceConfig):
+        self.name = config.name
+        self.config = config
         self.circuit_breaker = CircuitBreaker(
             failure_threshold=self.config.circuit_failure_threshold,
             reset_timeout_sec=self.config.circuit_reset_timeout_sec
@@ -170,7 +168,7 @@ class ServiceDependencyChain:
 
     def add(self, config: ServiceConfig) -> "ServiceDependencyChain":
         """Add a service dependency to the chain. Returns self for chaining."""
-        self._dependencies[config.name] = DependencyNode(config.name, config)
+        self._dependencies[config.name] = DependencyNode(config)
         if config.name not in self._execution_order:
             self._execution_order.append(config.name)
         return self
@@ -215,7 +213,11 @@ class ServiceDependencyChain:
             try:
                 node = self._dependencies[name]
                 result = node.execute(func)
-                results[name] = {"status": "success", "result": result}
+                # Check if result is fallback (only if fallback is configured)
+                if node.config.fallback_return is not None and result == node.config.fallback_return:
+                    results[name] = {"status": "fallback", "result": result}
+                else:
+                    results[name] = {"status": "success", "result": result}
             except Exception as e:
                 results[name] = {"status": "error", "error": str(e)}
 

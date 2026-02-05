@@ -78,10 +78,14 @@ class TestMemoryCuration:
     def test_extract_insights_from_logs(self, temp_memory_dir):
         """Test extracting insights from daily logs."""
         from cognition.memory_curation import MemoryCuration
+        from datetime import datetime
+        
         curation = MemoryCuration(memory_dir=temp_memory_dir)
-
+        
+        today = datetime.now().strftime('%Y-%m-%d')
+        
         # Create a fake daily log with insights
-        log_content = """
+        log_content = f"""
 ## What I Did
 - Built a new feature
 - Important: File persistence is crucial for agent continuity
@@ -91,8 +95,8 @@ class TestMemoryCuration:
 - Testing was difficult
 - Key learning: Always test before shipping
 """
-        # Write a fake daily log
-        log_file = os.path.join(temp_memory_dir, "2026-02-04.md")
+        # Write a fake daily log with today's date
+        log_file = os.path.join(temp_memory_dir, f"{today}.md")
         with open(log_file, 'w') as f:
             f.write(log_content)
 

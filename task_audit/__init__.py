@@ -260,22 +260,24 @@ class TaskAuditLog:
         records = list(self._records.values())
         total = len(records)
         verified = sum(1 for r in records if r.status == TaskStatus.VERIFIED)
+        # Count completed INCLUDING verified (a verified task is still completed)
+        completed_including_verified = sum(1 for r in records if r.status in (TaskStatus.COMPLETED, TaskStatus.VERIFIED))
         completed = sum(1 for r in records if r.status == TaskStatus.COMPLETED)
         failed = sum(1 for r in records if r.status == TaskStatus.FAILED)
         in_progress = sum(1 for r in records if r.status == TaskStatus.IN_PROGRESS)
         claimed = sum(1 for r in records if r.status == TaskStatus.CLAIMED)
         
-        # Calculate completion rate (completed / (completed + failed))
-        completable = completed + failed
-        completion_rate = (completed / completable * 100) if completable > 0 else 0
+        # Calculate completion rate (completed_including_verified / (completed_including_verified + failed))
+        completable = completed_including_verified + failed
+        completion_rate = (completed_including_verified / completable * 100) if completable > 0 else 0
         
-        # Calculate verification rate (verified / completed)
-        verification_rate = (verified / completed * 100) if completed > 0 else 0
+        # Calculate verification rate (verified / completed_including_verified)
+        verification_rate = (verified / completed_including_verified * 100) if completed_including_verified > 0 else 0
         
         return {
             "total_tasks": total,
             "verified": verified,
-            "completed": completed,
+            "completed": completed_including_verified,  # Include verified in completed count
             "failed": failed,
             "in_progress": in_progress,
             "claimed": claimed,
