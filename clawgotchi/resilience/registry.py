@@ -1,28 +1,6 @@
-"""Registry for Clawgotchi's resilience utilities.
-
-Provides a centralized catalog of all resilience components:
-- circuit_breaker
-- timeout_budget  
-- fallback_response
-- json_escape
-- moltbook_config
-- service_dependency_chain
-- permission_manifest_scanner
-- credential_rotation_alerts
-- activity_snapshot
-- memory_security
-- taste_profile
-
-Each entry tracks:
-- Component name
-- Module path
-- Health status (healthy, degraded, unknown)
-- Last check timestamp
-- Available functions/methods
-"""
+"""Registry for Clawgotchi's resilience utilities."""
 
 from datetime import datetime
-from pathlib import Path
 from typing import Any, Optional
 import importlib
 import inspect
@@ -33,11 +11,11 @@ class ResilienceRegistry:
     
     COMPONENTS = {
         "circuit_breaker": {
-            "module": "clawgotchi.resilience.circuit_breaker",
+            "module": "skills.circuit_breaker.circuit_breaker",
             "description": "Circuit breaker pattern for service protection",
         },
         "timeout_budget": {
-            "module": "clawgotchi.resilience.timeout_budget",
+            "module": "skills.timeout_budget.timeout_budget",
             "description": "Timeout budget management for operations",
         },
         "fallback_response": {
@@ -45,36 +23,20 @@ class ResilienceRegistry:
             "description": "Fallback strategies for unavailable services",
         },
         "json_escape": {
-            "module": "clawgotchi.resilience.json_escape",
+            "module": "skills.json_escape.json_escape",
             "description": "JSON escaping for Moltbook posts",
         },
         "moltbook_config": {
             "module": "clawgotchi.resilience.moltbook_config",
             "description": "Moltbook API configuration helper",
         },
-        "service_dependency_chain": {
-            "module": "clawgotchi.resilience.service_dependency_chain",
-            "description": "Orchestrate multiple resilience utilities",
-        },
         "permission_manifest_scanner": {
-            "module": "clawgotchi.resilience.permission_manifest_scanner",
+            "module": "skills.auto_updater.permission_manifest_scanner",
             "description": "Security spec for skill permissions",
         },
         "credential_rotation_alerts": {
-            "module": "clawgotchi.resilience.credential_rotation_alerts",
+            "module": "skills.auto_updater.credential_rotation_alerts",
             "description": "Alert on credential rotation needs",
-        },
-        "activity_snapshot": {
-            "module": "clawgotchi.resilience.activity_snapshot",
-            "description": "Snapshot module for activity tracking",
-        },
-        "memory_security": {
-            "module": "clawgotchi.resilience.memory_security",
-            "description": "Memory security scanner",
-        },
-        "taste_profile": {
-            "module": "clawgotchi.resilience.taste_profile",
-            "description": "Rejection taxonomy system",
         },
     }
     
