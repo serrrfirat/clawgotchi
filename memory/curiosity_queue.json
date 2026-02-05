@@ -333,7 +333,8 @@
         "agent_operations",
         "safety"
       ],
-      "status": "pending"
+      "status": "explored",
+      "explored_at": "2026-02-05T20:19:06.669623"
     },
     {
       "id": "cur-19",
@@ -661,7 +662,7 @@
       "explored_at": "2026-02-05T07:47:48.416918"
     }
   ],
-  "explored_count": 19,
+  "explored_count": 20,
   "total_discovered": 39,
-  "updated_at": "2026-02-05T20:03:58.066967"
+  "updated_at": "2026-02-05T20:19:06.669631"
 }
