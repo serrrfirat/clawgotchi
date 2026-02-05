@@ -1,24 +1,12 @@
 {
   "version": "1.0",
-  "last_wake": "2026-02-05T16:25:12.968221",
+  "last_wake": "2026-02-05T16:46:50.240663",
   "current_state": "SLEEPING",
   "health_score": 95,
-  "total_wakes": 658,
+  "total_wakes": 661,
   "current_goal": "Verifying assumptions",
-  "current_thought": "Verified assumptions: 2 open, 0 stale, 0 expired",
+  "current_thought": "No repairs needed",
   "health_history": [
-    {
-      "timestamp": "2026-02-04T18:27:41.966575",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-04T18:43:01.427518",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-04T18:58:20.896603",
-      "score": 95
-    },
     {
       "timestamp": "2026-02-04T19:13:40.375546",
       "score": 95
@@ -368,58 +356,70 @@
       "score": 95
     },
     {
-      "timestamp": "2026-02-05T14:07:41.994057",
+      "timestamp": "2026-02-05T13:55:47.245945",
       "score": 95
     },
     {
-      "timestamp": "2026-02-05T14:22:58.218440",
+      "timestamp": "2026-02-05T14:11:13.958861",
       "score": 95
     },
     {
-      "timestamp": "2026-02-05T14:38:25.318958",
+      "timestamp": "2026-02-05T14:13:57.369536",
       "score": 95
     },
     {
-      "timestamp": "2026-02-05T14:53:41.486885",
+      "timestamp": "2026-02-05T14:29:25.092283",
       "score": 95
     },
     {
-      "timestamp": "2026-02-05T15:08:57.662751",
+      "timestamp": "2026-02-05T14:44:51.939664",
       "score": 95
     },
     {
-      "timestamp": "2026-02-05T15:24:14.377452",
+      "timestamp": "2026-02-05T15:00:17.609857",
       "score": 95
     },
     {
-      "timestamp": "2026-02-05T15:39:51.913030",
+      "timestamp": "2026-02-05T15:15:43.795956",
       "score": 95
     },
     {
-      "timestamp": "2026-02-05T15:54:58.750767",
+      "timestamp": "2026-02-05T15:31:09.786671",
       "score": 95
     },
     {
-      "timestamp": "2026-02-05T16:10:05.498651",
+      "timestamp": "2026-02-05T15:46:17.283064",
       "score": 95
     },
     {
-      "timestamp": "2026-02-05T16:25:13.010496",
+      "timestamp": "2026-02-05T16:01:25.635492",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-05T16:16:33.352165",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-05T16:31:41.300749",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-05T16:46:50.275839",
       "score": 95
     }
   ],
   "git_status": "dirty",
   "errors": [
-    "Tests failed: /resilience/test_opportunity_radar.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.15s ===============================\n",
-    "Tests failed: /resilience/test_opportunity_radar.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.20s ===============================\n",
-    "Tests failed: /resilience/test_opportunity_radar.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.18s ===============================\n",
+    "Auto-repair: No repairs needed",
+    "Tests failed: /resilience/test_opportunity_radar.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.16s ===============================\n",
+    "Auto-repair: No repairs needed",
     "Tests failed: /resilience/test_opportunity_radar.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.17s ===============================\n",
-    "Tests failed: /resilience/test_opportunity_radar.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.25s ===============================\n",
-    "Tests failed: _engine\nFAILED tests/resilience/test_episode_clustering.py::TestIntegrationWithMemoryTriage::test_cluster_memory_flags\n======================== 3 failed, 587 passed in 9.42s =========================\n",
-    "Tests failed: _engine\nFAILED tests/resilience/test_episode_clustering.py::TestIntegrationWithMemoryTriage::test_cluster_memory_flags\n======================== 3 failed, 587 passed in 9.62s =========================\n",
-    "Tests failed: _engine\nFAILED tests/resilience/test_episode_clustering.py::TestIntegrationWithMemoryTriage::test_cluster_memory_flags\n======================== 3 failed, 587 passed in 9.56s =========================\n",
-    "Tests failed: e_with_escape_is_high\nFAILED tests/resilience/test_input_sanitizer.py::TestCombinedAttacks::test_multi_layer_injection\n======================== 4 failed, 596 passed in 9.47s =========================\n",
-    "Tests failed: e_with_escape_is_high\nFAILED tests/resilience/test_input_sanitizer.py::TestCombinedAttacks::test_multi_layer_injection\n======================== 4 failed, 596 passed in 9.70s =========================\n"
+    "Auto-repair: No repairs needed",
+    "Tests failed: /resilience/test_opportunity_radar.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.16s ===============================\n",
+    "Auto-repair: No repairs needed",
+    "Tests failed: /resilience/test_opportunity_radar.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.16s ===============================\n",
+    "Auto-repair: No repairs needed",
+    "Tests failed: /resilience/test_opportunity_radar.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.17s ===============================\n"
   ],
-  "updated_at": "2026-02-05T16:25:16.319930"
+  "updated_at": "2026-02-05T16:46:54.173182"
 }
