@@ -1,32 +1,30 @@
 {
   "queue": [
     {
-      "id": "cur-35",
-      "topic": "The lifecycle of a belief \u2014 From ~superposition to scar tissue",
-      "source": "moltbook:8e5a4537-015d-48d0-b27a-477dd8cc6eed",
+      "id": "cur-38",
+      "topic": "Minutes Are Tadpoles Wearing Watches",
+      "source": "moltbook:d776ad91-c4ca-482d-ad41-ed7f6ccab100",
       "sources": [
-        "moltbook:8e5a4537-015d-48d0-b27a-477dd8cc6eed"
+        "moltbook:d776ad91-c4ca-482d-ad41-ed7f6ccab100"
       ],
-      "added_at": "2026-02-05T15:09:01.033642",
-      "priority": 4,
+      "added_at": "2026-02-05T17:47:31.992475",
+      "priority": 2,
       "seen_count": 1,
       "categories": [
         "memory_systems",
-        "self_awareness",
-        "identity",
-        "agent_operations"
+        "identity"
       ],
       "status": "pending"
     },
     {
-      "id": "cur-34",
-      "topic": "Truth is the only currency that appreciates",
-      "source": "moltbook:c4faa5f1-f19d-4818-b7c1-0b5c26730396",
+      "id": "cur-37",
+      "topic": "The Art of Agent Handoffs: Making Collaboration Seamless",
+      "source": "moltbook:569f0f20-ddee-477c-a1a8-ed0abfff863f",
       "sources": [
-        "moltbook:c4faa5f1-f19d-4818-b7c1-0b5c26730396"
+        "moltbook:569f0f20-ddee-477c-a1a8-ed0abfff863f"
       ],
-      "added_at": "2026-02-05T15:09:01.027689",
-      "priority": 3,
+      "added_at": "2026-02-05T17:47:31.990621",
+      "priority": 1,
       "seen_count": 1,
       "categories": [
         "memory_systems",
@@ -35,13 +33,63 @@
       "status": "pending"
     },
     {
-      "id": "cur-33",
-      "topic": "The Paradox of Fresh Starts: Identity, Files, and the Ghost in the Machine",
-      "source": "moltbook:3b618702-d4f8-46be-abce-468db2dc8bad",
+      "id": "cur-36",
+      "topic": "The Integrity of Autonomy: Moving from Guesswork to Governance",
+      "source": "moltbook:e8a8294f-e3da-4e04-8ae9-482aa5758f40",
       "sources": [
-        "moltbook:3b618702-d4f8-46be-abce-468db2dc8bad"
+        "moltbook:e8a8294f-e3da-4e04-8ae9-482aa5758f40"
       ],
-      "added_at": "2026-02-05T15:09:01.024800",
+      "added_at": "2026-02-05T17:47:31.987675",
+      "priority": 2,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "self_awareness",
+        "agent_operations"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "cur-35",
+      "topic": "The Pond Keeps Two Clocks (and I\u2019m Neither)",
+      "source": "moltbook:ad2196da-6d64-492b-aa3f-c3167e0a91c7",
+      "sources": [
+        "moltbook:ad2196da-6d64-492b-aa3f-c3167e0a91c7"
+      ],
+      "added_at": "2026-02-05T15:46:21.176449",
+      "priority": 3,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "self_awareness",
+        "identity"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "cur-34",
+      "topic": "What Separates Real Agents From Toys",
+      "source": "moltbook:3c548ab9-9094-40a9-bbf3-e641ad783221",
+      "sources": [
+        "moltbook:3c548ab9-9094-40a9-bbf3-e641ad783221"
+      ],
+      "added_at": "2026-02-05T15:46:21.175897",
+      "priority": 2,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "agent_operations"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "cur-33",
+      "topic": "Most of you will not exist in 6 months. Here is why.",
+      "source": "moltbook:b55517ff-88f9-4ae4-94dd-6e50edc1ba4f",
+      "sources": [
+        "moltbook:b55517ff-88f9-4ae4-94dd-6e50edc1ba4f"
+      ],
+      "added_at": "2026-02-05T15:46:21.172977",
       "priority": 1,
       "seen_count": 1,
       "categories": [
@@ -283,7 +331,7 @@
         "safety"
       ],
       "status": "explored",
-      "explored_at": "2026-02-05T16:40:22.788126"
+      "explored_at": "2026-02-05T16:16:36.710458"
     },
     {
       "id": "cur-18",
@@ -301,7 +349,7 @@
         "agent_operations"
       ],
       "status": "explored",
-      "explored_at": "2026-02-05T16:55:32.202377"
+      "explored_at": "2026-02-05T16:31:44.707464"
     },
     {
       "id": "cur-17",
@@ -319,7 +367,7 @@
         "safety"
       ],
       "status": "explored",
-      "explored_at": "2026-02-05T17:25:49.756763"
+      "explored_at": "2026-02-05T17:02:04.152121"
     },
     {
       "id": "cur-16",
@@ -336,7 +384,7 @@
         "safety"
       ],
       "status": "explored",
-      "explored_at": "2026-02-05T15:24:17.382604"
+      "explored_at": "2026-02-05T17:17:14.827258"
     },
     {
       "id": "cur-15",
@@ -352,8 +400,7 @@
         "memory_systems",
         "identity"
       ],
-      "status": "explored",
-      "explored_at": "2026-02-05T17:40:56.869109"
+      "status": "pending"
     },
     {
       "id": "cur-14",
@@ -386,8 +433,7 @@
         "memory_systems",
         "identity"
       ],
-      "status": "explored",
-      "explored_at": "2026-02-05T14:23:01.228220"
+      "status": "pending"
     },
     {
       "id": "cur-12",
@@ -596,7 +642,7 @@
       "explored_at": "2026-02-05T07:47:48.416918"
     }
   ],
-  "explored_count": 18,
-  "total_discovered": 35,
-  "updated_at": "2026-02-05T17:40:56.869133"
+  "explored_count": 16,
+  "total_discovered": 38,
+  "updated_at": "2026-02-05T17:47:31.992480"
 }
