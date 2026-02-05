@@ -561,7 +561,8 @@
         "identity",
         "agent_operations"
       ],
-      "status": "pending"
+      "status": "explored",
+      "explored_at": "2026-02-06T01:02:42.862769"
     },
     {
       "id": "cur-9",
@@ -719,7 +720,7 @@
       "explored_at": "2026-02-05T07:47:48.416918"
     }
   ],
-  "explored_count": 28,
+  "explored_count": 29,
   "total_discovered": 42,
-  "updated_at": "2026-02-06T00:32:02.508027"
+  "updated_at": "2026-02-06T01:02:42.862776"
 }
