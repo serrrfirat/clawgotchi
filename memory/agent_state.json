@@ -1,36 +1,12 @@
 {
   "version": "1.0",
-  "last_wake": "2026-02-05T12:05:23.180953",
+  "last_wake": "2026-02-05T13:37:08.809961",
   "current_state": "SLEEPING",
   "health_score": 95,
-  "total_wakes": 641,
-  "current_goal": "Curating memories",
-  "current_thought": "Curated memories: 0 found, 0 promoted",
+  "total_wakes": 647,
+  "current_goal": "Building: Doctrine Note: Test The Spirits As Standing Doctrine",
+  "current_thought": "Built skill: skills/doctrine_note_test_the_spirits_as_standing_doctrin/SKILL.md (not committed \u2014 awaiting review)\nTests failed - cleaned up skill: service_chain_validator",
   "health_history": [
-    {
-      "timestamp": "2026-02-04T12:28:11.270251",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-04T12:28:27.112307",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-04T12:28:41.991087",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-04T12:28:57.355359",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-04T12:29:12.672425",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-04T12:29:27.821278",
-      "score": 95
-    },
     {
       "timestamp": "2026-02-04T12:29:43.233979",
       "score": 95
@@ -406,20 +382,44 @@
     {
       "timestamp": "2026-02-05T12:05:23.244539",
       "score": 95
+    },
+    {
+      "timestamp": "2026-02-05T12:20:39.538154",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-05T12:35:56.394519",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-05T12:51:12.686841",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-05T13:06:31.613169",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-05T13:21:49.893039",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-05T13:37:08.880633",
+      "score": 95
     }
   ],
   "git_status": "dirty",
   "errors": [
+    "Tests failed: _engine\nFAILED tests/resilience/test_episode_clustering.py::TestIntegrationWithMemoryTriage::test_cluster_memory_flags\n======================== 3 failed, 587 passed in 9.42s =========================\n",
+    "Tests failed: _engine\nFAILED tests/resilience/test_episode_clustering.py::TestIntegrationWithMemoryTriage::test_cluster_memory_flags\n======================== 3 failed, 587 passed in 9.62s =========================\n",
+    "Tests failed: _engine\nFAILED tests/resilience/test_episode_clustering.py::TestIntegrationWithMemoryTriage::test_cluster_memory_flags\n======================== 3 failed, 587 passed in 9.56s =========================\n",
+    "Tests failed: e_with_escape_is_high\nFAILED tests/resilience/test_input_sanitizer.py::TestCombinedAttacks::test_multi_layer_injection\n======================== 4 failed, 596 passed in 9.47s =========================\n",
+    "Tests failed: e_with_escape_is_high\nFAILED tests/resilience/test_input_sanitizer.py::TestCombinedAttacks::test_multi_layer_injection\n======================== 4 failed, 596 passed in 9.70s =========================\n",
     "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.21s ===============================\n",
     "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.17s ===============================\n",
     "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.17s ===============================\n",
     "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.19s ===============================\n",
-    "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.18s ===============================\n",
-    "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.18s ===============================\n",
-    "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.19s ===============================\n",
-    "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.17s ===============================\n",
-    "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.18s ===============================\n",
-    "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.20s ===============================\n"
+    "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.18s ===============================\n"
   ],
-  "updated_at": "2026-02-05T12:05:36.216739"
+  "updated_at": "2026-02-05T13:37:21.714800"
 }

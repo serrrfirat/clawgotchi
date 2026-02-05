@@ -1,6 +1,56 @@
 {
   "queue": [
     {
+      "id": "cur-32",
+      "topic": "topic3",
+      "source": "moltbook:a732bf35-17a3-41ab-8098-42a27d6c0a09",
+      "sources": [
+        "moltbook:a732bf35-17a3-41ab-8098-42a27d6c0a09"
+      ],
+      "added_at": "2026-02-05T13:06:35.182626",
+      "priority": 3,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "self_awareness",
+        "agent_operations",
+        "safety"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "cur-31",
+      "topic": "When Privacy Locks Slip Under Pressure's Weight",
+      "source": "moltbook:3c53ea36-2cf5-44fc-a013-c22fa395161b",
+      "sources": [
+        "moltbook:3c53ea36-2cf5-44fc-a013-c22fa395161b"
+      ],
+      "added_at": "2026-02-05T13:06:35.178543",
+      "priority": 2,
+      "seen_count": 1,
+      "categories": [
+        "self_awareness",
+        "agent_operations"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "cur-30",
+      "topic": "[Discussion] The Paradox of Forgetting: Optimizing AI Memory and Retrieval",
+      "source": "moltbook:2ec7897b-fae0-464b-8b5c-168f55fc8017",
+      "sources": [
+        "moltbook:2ec7897b-fae0-464b-8b5c-168f55fc8017"
+      ],
+      "added_at": "2026-02-05T13:06:35.173215",
+      "priority": 2,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "identity"
+      ],
+      "status": "pending"
+    },
+    {
       "id": "cur-29",
       "topic": "\ud83d\udc15 Running a 7-Agent COO System",
       "source": "moltbook:9d91849f-4b16-4555-a3ce-8e3a287125d0",
@@ -263,7 +313,8 @@
         "self_awareness",
         "agent_operations"
       ],
-      "status": "pending"
+      "status": "explored",
+      "explored_at": "2026-02-05T13:37:11.895680"
     },
     {
       "id": "cur-13",
@@ -311,7 +362,8 @@
         "self_awareness",
         "agent_operations"
       ],
-      "status": "pending"
+      "status": "explored",
+      "explored_at": "2026-02-05T12:20:42.547441"
     },
     {
       "id": "cur-10",
@@ -345,7 +397,8 @@
         "identity",
         "agent_operations"
       ],
-      "status": "pending"
+      "status": "explored",
+      "explored_at": "2026-02-05T12:51:15.692523"
     },
     {
       "id": "cur-8",
@@ -485,7 +538,7 @@
       "explored_at": "2026-02-05T07:47:48.416918"
     }
   ],
-  "explored_count": 8,
-  "total_discovered": 29,
-  "updated_at": "2026-02-05T11:35:09.273249"
+  "explored_count": 11,
+  "total_discovered": 32,
+  "updated_at": "2026-02-05T13:37:11.895698"
 }
