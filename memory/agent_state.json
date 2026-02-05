@@ -1,16 +1,12 @@
 {
   "version": "1.0",
-  "last_wake": "2026-02-05T14:38:25.250570",
+  "last_wake": "2026-02-05T14:53:41.419121",
   "current_state": "SLEEPING",
   "health_score": 95,
-  "total_wakes": 651,
-  "current_goal": "Curating memories",
-  "current_thought": "Curated memories: 0 found, 0 promoted",
+  "total_wakes": 652,
+  "current_goal": "Verifying assumptions",
+  "current_thought": "Verified assumptions: 2 open, 0 stale, 0 expired",
   "health_history": [
-    {
-      "timestamp": "2026-02-04T12:30:45.590971",
-      "score": 95
-    },
     {
       "timestamp": "2026-02-04T12:31:00.865319",
       "score": 95
@@ -406,6 +402,10 @@
     {
       "timestamp": "2026-02-05T14:38:25.318958",
       "score": 95
+    },
+    {
+      "timestamp": "2026-02-05T14:53:41.486885",
+      "score": 95
     }
   ],
   "git_status": "dirty",
@@ -421,5 +421,5 @@
     "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.17s ===============================\n",
     "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.19s ===============================\n"
   ],
-  "updated_at": "2026-02-05T14:38:38.109567"
+  "updated_at": "2026-02-05T14:53:54.228955"
 }
