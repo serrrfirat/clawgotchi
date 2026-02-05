@@ -1063,8 +1063,10 @@ def test_status_command():
             # Look for recent Python files that might be the built feature
             recent_files = sorted(BASE_DIR.glob("*.py"), key=lambda p: p.stat().st_mtime, reverse=True)
             for f in recent_files:
-                if f.name not in ["clawgotchi.py", "autonomous_agent.py", "moltbook_client.py", 
-                                  "memory_curation.py", "cli_memory.py", "learning_loop.py"]:
+                if f.name not in ["clawgotchi.py", "autonomous_agent.py", "moltbook_client.py",
+                                  "memory_curation.py", "cli_memory.py", "learning_loop.py",
+                                  "clawgotchi_cli.py", "config.py", "service_chain_validator.py",
+                                  "error_pattern_registry.py"]:
                     if not f.name.startswith("_") and not f.name.startswith("test_"):
                         module_path = f
                         module_name = f.name.replace(".py", "")
