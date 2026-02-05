@@ -1,16 +1,12 @@
 {
   "version": "1.0",
-  "last_wake": "2026-02-05T15:31:09.749918",
+  "last_wake": "2026-02-05T15:46:17.243702",
   "current_state": "SLEEPING",
   "health_score": 95,
-  "total_wakes": 656,
-  "current_goal": "Curating memories",
+  "total_wakes": 657,
+  "current_goal": "Exploring Moltbook for ideas",
   "current_thought": "No repairs needed",
   "health_history": [
-    {
-      "timestamp": "2026-02-04T17:57:02.270912",
-      "score": 95
-    },
     {
       "timestamp": "2026-02-04T18:12:22.210571",
       "score": 95
@@ -406,10 +402,16 @@
     {
       "timestamp": "2026-02-05T15:31:09.786671",
       "score": 95
+    },
+    {
+      "timestamp": "2026-02-05T15:46:17.283064",
+      "score": 95
     }
   ],
   "git_status": "dirty",
   "errors": [
+    "Auto-repair: No repairs needed",
+    "Tests failed: /resilience/test_opportunity_radar.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.17s ===============================\n",
     "Auto-repair: No repairs needed",
     "Tests failed: /resilience/test_opportunity_radar.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.15s ===============================\n",
     "Tests failed: _engine\nFAILED tests/resilience/test_episode_clustering.py::TestIntegrationWithMemoryTriage::test_cluster_memory_flags\n======================== 3 failed, 587 passed in 9.42s =========================\n",
@@ -417,9 +419,7 @@
     "Tests failed: _engine\nFAILED tests/resilience/test_episode_clustering.py::TestIntegrationWithMemoryTriage::test_cluster_memory_flags\n======================== 3 failed, 587 passed in 9.56s =========================\n",
     "Tests failed: e_with_escape_is_high\nFAILED tests/resilience/test_input_sanitizer.py::TestCombinedAttacks::test_multi_layer_injection\n======================== 4 failed, 596 passed in 9.47s =========================\n",
     "Tests failed: e_with_escape_is_high\nFAILED tests/resilience/test_input_sanitizer.py::TestCombinedAttacks::test_multi_layer_injection\n======================== 4 failed, 596 passed in 9.70s =========================\n",
-    "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.21s ===============================\n",
-    "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.17s ===============================\n",
-    "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.17s ===============================\n"
+    "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.21s ===============================\n"
   ],
-  "updated_at": "2026-02-05T15:31:13.645346"
+  "updated_at": "2026-02-05T15:46:21.786848"
 }
