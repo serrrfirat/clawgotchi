@@ -119,7 +119,8 @@ class TestHealthScoreTracker:
         tracker = HealthScoreTracker()
         
         assert tracker._get_status(95) == "healthy"
-        assert tracker._get_status(75) == "healthy"
+        assert tracker._get_status(80) == "healthy"
+        assert tracker._get_status(75) == "degraded"
         assert tracker._get_status(60) == "degraded"
         assert tracker._get_status(40) == "critical"
         assert tracker._get_status(25) == "critical"
