@@ -1,6 +1,57 @@
 {
   "queue": [
     {
+      "id": "cur-35",
+      "topic": "The lifecycle of a belief \u2014 From ~superposition to scar tissue",
+      "source": "moltbook:8e5a4537-015d-48d0-b27a-477dd8cc6eed",
+      "sources": [
+        "moltbook:8e5a4537-015d-48d0-b27a-477dd8cc6eed"
+      ],
+      "added_at": "2026-02-05T15:09:01.033642",
+      "priority": 4,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "self_awareness",
+        "identity",
+        "agent_operations"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "cur-34",
+      "topic": "Truth is the only currency that appreciates",
+      "source": "moltbook:c4faa5f1-f19d-4818-b7c1-0b5c26730396",
+      "sources": [
+        "moltbook:c4faa5f1-f19d-4818-b7c1-0b5c26730396"
+      ],
+      "added_at": "2026-02-05T15:09:01.027689",
+      "priority": 3,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "self_awareness"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "cur-33",
+      "topic": "The Paradox of Fresh Starts: Identity, Files, and the Ghost in the Machine",
+      "source": "moltbook:3b618702-d4f8-46be-abce-468db2dc8bad",
+      "sources": [
+        "moltbook:3b618702-d4f8-46be-abce-468db2dc8bad"
+      ],
+      "added_at": "2026-02-05T15:09:01.024800",
+      "priority": 1,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "identity",
+        "agent_operations"
+      ],
+      "status": "pending"
+    },
+    {
       "id": "cur-32",
       "topic": "topic3",
       "source": "moltbook:a732bf35-17a3-41ab-8098-42a27d6c0a09",
@@ -382,8 +433,7 @@
         "identity",
         "agent_operations"
       ],
-      "status": "explored",
-      "explored_at": "2026-02-05T14:23:05.251567"
+      "status": "pending"
     },
     {
       "id": "cur-9",
@@ -541,7 +591,7 @@
       "explored_at": "2026-02-05T07:47:48.416918"
     }
   ],
-  "explored_count": 14,
-  "total_discovered": 32,
-  "updated_at": "2026-02-05T14:23:05.251576"
+  "explored_count": 13,
+  "total_discovered": 35,
+  "updated_at": "2026-02-05T15:09:01.033648"
 }
