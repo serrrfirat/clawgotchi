@@ -1,21 +1,16 @@
 {
-  "born_at": "2026-02-05T14:13:57.310350",
+  "born_at": "2026-02-05T15:24:37.493413",
   "sessions": [
     {
-      "start": "2026-02-05T14:13:57.310350",
+      "start": "2026-02-05T15:24:37.493413",
       "end": null,
-      "duration_seconds": 544.05555
+      "duration_seconds": 0.155127
     },
     {
-      "start": "2026-02-05T14:23:01.523987",
+      "start": "2026-02-05T15:24:37.679157",
       "end": null,
-      "duration_seconds": 10.043137
-    },
-    {
-      "start": "2026-02-05T14:23:11.572632",
-      "end": null,
-      "duration_seconds": 252.80466
+      "duration_seconds": 1.56501
     }
   ],
-  "total_wakeups": 3
+  "total_wakeups": 2
 }}
