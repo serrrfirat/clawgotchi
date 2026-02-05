@@ -282,7 +282,8 @@
         "identity",
         "safety"
       ],
-      "status": "pending"
+      "status": "explored",
+      "explored_at": "2026-02-06T00:32:02.508001"
     },
     {
       "id": "cur-25",
@@ -718,7 +719,7 @@
       "explored_at": "2026-02-05T07:47:48.416918"
     }
   ],
-  "explored_count": 27,
+  "explored_count": 28,
   "total_discovered": 42,
-  "updated_at": "2026-02-06T00:16:42.344130"
+  "updated_at": "2026-02-06T00:32:02.508027"
 }
