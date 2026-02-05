@@ -1,0 +1,182 @@
+"""Registry for Clawgotchi's resilience utilities.
+
+Provides a centralized catalog of all resilience components:
+- circuit_breaker
+- timeout_budget  
+- fallback_response
+- json_escape
+- moltbook_config
+- service_dependency_chain
+- permission_manifest_scanner
+- credential_rotation_alerts
+- activity_snapshot
+- memory_security
+- taste_profile
+
+Each entry tracks:
+- Component name
+- Module path
+- Health status (healthy, degraded, unknown)
+- Last check timestamp
+- Available functions/methods
+"""
+
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Optional
+import importlib
+import inspect
+
+
+class ResilienceRegistry:
+    """Central registry for resilience utilities."""
+    
+    COMPONENTS = {
+        "circuit_breaker": {
+            "module": "clawgotchi.resilience.circuit_breaker",
+            "description": "Circuit breaker pattern for service protection",
+        },
+        "timeout_budget": {
+            "module": "clawgotchi.resilience.timeout_budget",
+            "description": "Timeout budget management for operations",
+        },
+        "fallback_response": {
+            "module": "clawgotchi.resilience.fallback_response",
+            "description": "Fallback strategies for unavailable services",
+        },
+        "json_escape": {
+            "module": "clawgotchi.resilience.json_escape",
+            "description": "JSON escaping for Moltbook posts",
+        },
+        "moltbook_config": {
+            "module": "clawgotchi.resilience.moltbook_config",
+            "description": "Moltbook API configuration helper",
+        },
+        "service_dependency_chain": {
+            "module": "clawgotchi.resilience.service_dependency_chain",
+            "description": "Orchestrate multiple resilience utilities",
+        },
+        "permission_manifest_scanner": {
+            "module": "clawgotchi.resilience.permission_manifest_scanner",
+            "description": "Security spec for skill permissions",
+        },
+        "credential_rotation_alerts": {
+            "module": "clawgotchi.resilience.credential_rotation_alerts",
+            "description": "Alert on credential rotation needs",
+        },
+        "activity_snapshot": {
+            "module": "clawgotchi.resilience.activity_snapshot",
+            "description": "Snapshot module for activity tracking",
+        },
+        "memory_security": {
+            "module": "clawgotchi.resilience.memory_security",
+            "description": "Memory security scanner",
+        },
+        "taste_profile": {
+            "module": "clawgotchi.resilience.taste_profile",
+            "description": "Rejection taxonomy system",
+        },
+    }
+    
+    def __init__(self):
+        self._components: dict[str, dict[str, Any]] = {}
+        self._last_refresh: Optional[datetime] = None
+        self._refresh()
+    
+    def _refresh(self) -> None:
+        """Scan all registered components and update registry."""
+        self._components = {}
+        for name, config in self.COMPONENTS.items():
+            self._components[name] = {
+                "name": name,
+                "module": config["module"],
+                "description": config["description"],
+                "available": False,
+                "functions": [],
+                "last_check": datetime.utcnow().isoformat(),
+                "error": None,
+            }
+            
+            try:
+                module = importlib.import_module(config["module"])
+                functions = [
+                    name for name, obj in inspect.getmembers(module, inspect.isfunction)
+                    if not name.startswith("_")
+                ]
+                self._components[name]["available"] = True
+                self._components[name]["functions"] = functions
+            except ImportError as e:
+                self._components[name]["error"] = str(e)
+        
+        self._last_refresh = datetime.utcnow()
+    
+    def list_components(self, show_unavailable: bool = False) -> list[dict[str, Any]]:
+        """List all registered components.
+        
+        Args:
+            show_unavailable: Include components that failed to import.
+            
+        Returns:
+            List of component info dictionaries.
+        """
+        if show_unavailable:
+            return list(self._components.values())
+        return [c for c in self._components.values() if c["available"]]
+    
+    def get_component(self, name: str) -> Optional[dict[str, Any]]:
+        """Get info about a specific component.
+        
+        Args:
+            name: Component name (e.g., 'circuit_breaker').
+            
+        Returns:
+            Component info dict or None if not found.
+        """
+        return self._components.get(name)
+    
+    def get_healthy_count(self) -> int:
+        """Count components that are available."""
+        return sum(1 for c in self._components.values() if c["available"])
+    
+    def get_unhealthy_count(self) -> int:
+        """Count components that failed to import."""
+        return sum(1 for c in self._components.values() if not c["available"])
+    
+    def get_summary(self) -> dict[str, Any]:
+        """Get a summary of the registry state."""
+        return {
+            "total_components": len(self._components),
+            "healthy": self.get_healthy_count(),
+            "unhealthy": self.get_unhealthy_count(),
+            "last_refresh": self._last_refresh.isoformat() if self._last_refresh else None,
+            "uptime_percent": (
+                self.get_healthy_count() / len(self._components) * 100
+                if self._components else 0
+            ),
+        }
+    
+    def reload(self) -> None:
+        """Re-scan all components."""
+        self._refresh()
+
+
+# Global registry instance
+_registry: Optional[ResilienceRegistry] = None
+
+
+def get_registry() -> ResilienceRegistry:
+    """Get or create the global registry instance."""
+    global _registry
+    if _registry is None:
+        _registry = ResilienceRegistry()
+    return _registry
+
+
+def list_all(show_unavailable: bool = False) -> list[dict[str, Any]]:
+    """Convenience function to list all components."""
+    return get_registry().list_components(show_unavailable)
+
+
+def get_summary() -> dict[str, Any]:
+    """Convenience function to get registry summary."""
+    return get_registry().get_summary()
