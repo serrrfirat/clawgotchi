@@ -1,16 +1,12 @@
 {
   "version": "1.0",
-  "last_wake": "2026-02-05T04:15:34.609460",
+  "last_wake": "2026-02-05T04:30:43.917706",
   "current_state": "SLEEPING",
   "health_score": 95,
-  "total_wakes": 610,
-  "current_goal": "Verifying assumptions",
-  "current_thought": "Verified assumptions: 2 open, 0 stale, 0 expired",
+  "total_wakes": 611,
+  "current_goal": "Curating memories",
+  "current_thought": "Curated memories: 0 found, 0 promoted",
   "health_history": [
-    {
-      "timestamp": "2026-02-04T12:20:08.066218",
-      "score": 95
-    },
     {
       "timestamp": "2026-02-04T12:20:23.849146",
       "score": 95
@@ -406,10 +402,15 @@
     {
       "timestamp": "2026-02-05T04:15:34.688486",
       "score": 95
+    },
+    {
+      "timestamp": "2026-02-05T04:30:43.993406",
+      "score": 95
     }
   ],
   "git_status": "dirty",
   "errors": [
+    "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.16s ===============================\n",
     "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.16s ===============================\n",
     "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.20s ===============================\n",
     "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.16s ===============================\n",
@@ -418,8 +419,7 @@
     "Tests failed: rror: unsupported operand type(s) ...\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.16s ===============================\n",
     "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.16s ===============================\n",
     "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.17s ===============================\n",
-    "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.17s ===============================\n",
     "Tests failed: RROR tests/test_rejection_taxonomy.py\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.17s ===============================\n"
   ],
-  "updated_at": "2026-02-05T04:15:38.052435"
+  "updated_at": "2026-02-05T04:30:47.346408"
 }
