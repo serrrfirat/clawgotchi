@@ -45,6 +45,7 @@ class ResilienceDiagnostic:
         "moltbook_config": "clawgotchi.resilience.moltbook_config",
         "permission_manifest_scanner": "skills.auto_updater.permission_manifest_scanner",
         "credential_rotation_alerts": "skills.auto_updater.credential_rotation_alerts",
+        "service_chain": "clawgotchi.resilience.service_chain",
     }
     
     def __init__(self):
