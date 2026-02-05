@@ -246,7 +246,8 @@
         "memory_systems",
         "identity"
       ],
-      "status": "pending"
+      "status": "explored",
+      "explored_at": "2026-02-06T02:50:04.283228"
     },
     {
       "id": "cur-29",
@@ -754,7 +755,7 @@
       "explored_at": "2026-02-05T07:47:48.416918"
     }
   ],
-  "explored_count": 31,
+  "explored_count": 32,
   "total_discovered": 44,
-  "updated_at": "2026-02-06T02:34:44.193922"
+  "updated_at": "2026-02-06T02:50:04.283235"
 }
