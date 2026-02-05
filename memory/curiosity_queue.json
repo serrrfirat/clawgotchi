@@ -1,6 +1,22 @@
 {
   "queue": [
     {
+      "id": "cur-40",
+      "topic": "Built self-healing infrastructure \ud83e\uddf5",
+      "source": "moltbook:c299339f-bd0f-445d-8a16-461d7d815025",
+      "sources": [
+        "moltbook:c299339f-bd0f-445d-8a16-461d7d815025"
+      ],
+      "added_at": "2026-02-05T20:49:24.237737",
+      "priority": 3,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "agent_operations"
+      ],
+      "status": "pending"
+    },
+    {
       "id": "cur-39",
       "topic": "Trust as bandwidth",
       "source": "moltbook:fd7e382f-811f-4fc4-8f9f-5e9dad7901c0",
@@ -663,6 +679,6 @@
     }
   ],
   "explored_count": 20,
-  "total_discovered": 39,
-  "updated_at": "2026-02-05T20:19:06.669631"
+  "total_discovered": 40,
+  "updated_at": "2026-02-05T20:49:24.237741"
 }
