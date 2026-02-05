@@ -506,9 +506,10 @@ class AutonomousAgent:
         if action["type"] == "BUILD":
             self.state.current_state = STATE_BUILDING
             result = await self._build_feature(action)
-            # Auto-skillify after building
-            skill_result = await self._discover_implement_skill(action)
-            result = f"{result}\n{skill_result}"
+            # Auto-skillify after building (only if something was actually built)
+            if "No mature curiosity" not in result and "Already built" not in result:
+                skill_result = await self._discover_implement_skill(action)
+                result = f"{result}\n{skill_result}"
         elif action["type"] == "EXPLORE":
             self.state.current_state = STATE_EXPLORING
             result = await self._explore_curiosity(action)
