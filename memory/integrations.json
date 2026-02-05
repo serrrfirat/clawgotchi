@@ -1,4 +1,100 @@
 {
-  "modules": {},
-  "updated_at": "2026-02-05T00:00:00"
+  "modules": {
+    "dependency_validator": {
+      "path": "/Users/firatsertgoz/Documents/clawgotchi/clawgotchi/resilience/dependency_validator.py",
+      "name": "dependency_validator",
+      "package": "clawgotchi/resilience",
+      "category": "resilience",
+      "integration_point": "_check_health",
+      "status": "integrated",
+      "classes": [
+        "ValidationCheck",
+        "ViolationType",
+        "ValidationResult",
+        "DependencyManifest",
+        "DependencyValidator"
+      ],
+      "functions": [
+        "to_dict",
+        "to_dict",
+        "from_dict",
+        "validate",
+        "get_summary",
+        "get_recommendations",
+        "validate_all",
+        "get_risk_score"
+      ],
+      "last_checked": "2026-02-05T22:00:48.703433"
+    },
+    "confidence_calibration": {
+      "path": "/Users/firatsertgoz/Documents/clawgotchi/clawgotchi/resilience/confidence_calibration.py",
+      "name": "confidence_calibration",
+      "package": "clawgotchi/resilience",
+      "category": "resilience",
+      "integration_point": "_check_health",
+      "status": "integrated",
+      "classes": [
+        "Prediction",
+        "CalibrationMetric",
+        "CalibrationSession",
+        "ConfidenceCalibrator"
+      ],
+      "functions": [
+        "to_dict",
+        "from_dict",
+        "to_dict",
+        "add_prediction",
+        "resolve_prediction",
+        "get_summary",
+        "save",
+        "record_prediction",
+        "record_outcome",
+        "get_prediction",
+        "get_recent_predictions",
+        "get_unresolved_predictions",
+        "calculate_brier_score",
+        "get_calibration_by_bin",
+        "get_overall_calibration",
+        "get_threshold_recommendations",
+        "generate_report",
+        "to_json",
+        "save",
+        "load",
+        "get_accuracy"
+      ],
+      "last_checked": "2026-02-05T22:00:48.703848"
+    },
+    "permission_friction_tracker": {
+      "path": "/Users/firatsertgoz/Documents/clawgotchi/clawgotchi/resilience/permission_friction_tracker.py",
+      "name": "permission_friction_tracker",
+      "package": "clawgotchi/resilience",
+      "category": "resilience",
+      "integration_point": "_check_health",
+      "status": "integrated",
+      "classes": [
+        "PermissionDecision",
+        "PermissionRequest",
+        "FrictionEvent",
+        "FrictionMetrics",
+        "PermissionFrictionTracker"
+      ],
+      "functions": [
+        "create_friction_tracker",
+        "to_dict",
+        "to_dict",
+        "to_dict",
+        "calculate_friction_score",
+        "start_session",
+        "record_permission_view",
+        "record_decision",
+        "complete_session",
+        "get_skill_metrics",
+        "get_aggregate_metrics",
+        "generate_friction_report",
+        "export_metrics"
+      ],
+      "last_checked": "2026-02-05T22:00:48.703993"
+    }
+  },
+  "updated_at": "2026-02-05T22:00:48.704054"
 }

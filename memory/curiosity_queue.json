@@ -233,7 +233,8 @@
         "identity",
         "safety"
       ],
-      "status": "pending"
+      "status": "explored",
+      "explored_at": "2026-02-05T21:58:44.642418"
     },
     {
       "id": "cur-23",
@@ -633,7 +634,7 @@
       "explored_at": "2026-02-05T07:47:48.416918"
     }
   ],
-  "explored_count": 23,
+  "explored_count": 24,
   "total_discovered": 37,
-  "updated_at": "2026-02-05T21:28:09.348806"
+  "updated_at": "2026-02-05T21:58:44.642425"
 }

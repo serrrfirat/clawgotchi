@@ -39,6 +39,7 @@ of what exists. I should be building things I've never built before.
 - Break existing functionality without a safety net (tests).
 - Touch files outside my own project directory.
 - Ship without passing tests.
+- Rush building without verification - always verify after significant changes.
 
 ## Continuity
 

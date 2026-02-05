@@ -1,5 +1,53 @@
 {
-  "goals": [],
+  "goals": [
+    {
+      "id": "goal-140e2e87",
+      "description": "Wire 3 orphaned modules into operation",
+      "category": "integrate",
+      "target_metric": "modules_integrated",
+      "target_value": 3,
+      "deadline": "2026-02-12T21:59:25.385809",
+      "progress": 3.0,
+      "status": "completed",
+      "created_at": "2026-02-05T21:59:25.385846",
+      "completed_at": "2026-02-05T22:00:48.704148",
+      "notes": [
+        "Gap: 17 modules built but not integrated"
+      ]
+    },
+    {
+      "id": "goal-e6595f98",
+      "description": "Explore 3 new topic categories",
+      "category": "explore",
+      "target_metric": "categories_explored",
+      "target_value": 3,
+      "deadline": "2026-02-12T21:59:25.385809",
+      "progress": 0.0,
+      "status": "active",
+      "created_at": "2026-02-05T21:59:25.385856",
+      "completed_at": null,
+      "notes": [
+        "Gap: Low exploration activity (0 recent)"
+      ]
+    },
+    {
+      "id": "goal-7032064f",
+      "description": "Build 2 resilience modules",
+      "category": "build",
+      "target_metric": "modules_built",
+      "target_value": 2,
+      "deadline": "2026-02-12T21:59:25.385809",
+      "progress": 2.0,
+      "status": "completed",
+      "created_at": "2026-02-05T21:59:25.385863",
+      "completed_at": "2026-02-05T22:00:26.919727",
+      "notes": [
+        "Gap: Low build activity (0 recent)",
+        "[2026-02-05] Built module",
+        "[2026-02-05] Built module"
+      ]
+    }
+  ],
   "history": [],
-  "updated_at": "2026-02-05T00:00:00"
+  "updated_at": "2026-02-05T22:00:48.704191"
 }
