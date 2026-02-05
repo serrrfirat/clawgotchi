@@ -706,9 +706,18 @@ class AutonomousAgent:
     def _idea_already_built(self, title: str) -> bool:
         """Check if an idea was already built as a CLI or skill."""
         name = self._title_to_module(title)
-        # CLI lives at <name>.py, skill lives at skills/<name>/SKILL.md
-        return ((BASE_DIR / f"{name}.py").exists()
-                or (BASE_DIR / "skills" / name / "SKILL.md").exists())
+        # Check all possible locations for the module
+        locations = [
+            BASE_DIR / f"{name}.py",  # Legacy root location
+            BASE_DIR / "skills" / name / "SKILL.md",
+            BASE_DIR / "clawgotchi" / "resilience" / f"{name}.py",
+            BASE_DIR / "cognition" / f"{name}.py",
+            BASE_DIR / "cli" / f"{name}.py",
+            BASE_DIR / "core" / f"{name}.py",
+            BASE_DIR / "health" / f"{name}.py",
+            BASE_DIR / "integrations" / f"{name}.py",
+        ]
+        return any(loc.exists() for loc in locations)
 
     def _taste_check(self, title: str, categories: list) -> bool:
         """Check an idea against TasteProfile rejection history.
@@ -768,16 +777,24 @@ class AutonomousAgent:
         Writes the file and runs tests.  Does NOT git-add or git-commit —
         files sit on disk for human review.
         """
-        target = BASE_DIR / f"{module_name}.py"
+        # Determine target package based on idea content
+        package = self._get_target_package(title, idea)
+        package_dir = BASE_DIR / package
+        package_dir.mkdir(parents=True, exist_ok=True)
+
+        target = package_dir / f"{module_name}.py"
         if target.exists():
-            return f"CLI already exists: {module_name}"
+            return f"CLI already exists: {package}/{module_name}"
 
         code = self._generate_cli_code(module_name, title)
         target.write_text(code)
 
-        # Generate matching test
-        test_dir = BASE_DIR / "tests"
-        test_dir.mkdir(exist_ok=True)
+        # Generate matching test in appropriate test subdirectory
+        if "resilience" in package:
+            test_dir = BASE_DIR / "tests" / "resilience"
+        else:
+            test_dir = BASE_DIR / "tests"
+        test_dir.mkdir(parents=True, exist_ok=True)
         test_file = test_dir / f"test_{module_name}.py"
         if not test_file.exists():
             test_file.write_text(self._generate_test_code(module_name, title))
@@ -792,7 +809,7 @@ class AutonomousAgent:
             test_file.unlink(missing_ok=True)
             return f"Build failed (syntax): {result.stderr[:200]}"
 
-        return f"Built CLI: {module_name}.py (not committed — awaiting review)"
+        return f"Built CLI: {package}/{module_name}.py (not committed — awaiting review)"
 
     async def _build_skill(self, module_name: str, title: str, idea: dict) -> str:
         """Generate a skill from a mature curiosity item.
@@ -830,6 +847,50 @@ class AutonomousAgent:
         if any(kw in text for kw in skill_kw):
             return "skill"
         return "cli"
+
+    def _get_target_package(self, title: str, idea: dict) -> str:
+        """Determine which package a new module belongs in.
+
+        Returns the package path relative to BASE_DIR.
+        """
+        text = f"{title} {idea.get('reason', '') or ''}".lower()
+
+        # Resilience utilities (circuit breakers, fallbacks, health, etc.)
+        resilience_kw = ["resilience", "circuit", "breaker", "fallback", "timeout",
+                         "health", "diagnostic", "validator", "chain", "registry",
+                         "permission", "friction", "triage", "cluster", "radar",
+                         "coordinator", "degradation", "session", "distiller"]
+        if any(kw in text for kw in resilience_kw):
+            return "clawgotchi/resilience"
+
+        # Memory/cognition systems
+        cognition_kw = ["memory", "audit", "query", "curate", "forget", "recall",
+                        "cognition", "think", "reason", "belief", "assumption"]
+        if any(kw in text for kw in cognition_kw):
+            return "cognition"
+
+        # CLI commands
+        cli_kw = ["cli", "command", "launcher", "skill_tree", "menu"]
+        if any(kw in text for kw in cli_kw):
+            return "cli"
+
+        # Core agent functionality
+        core_kw = ["agent", "autonomous", "snapshot", "receipt", "lifetime", "state"]
+        if any(kw in text for kw in core_kw):
+            return "core"
+
+        # Health monitoring
+        health_kw = ["security", "scan", "protect", "safe", "secure"]
+        if any(kw in text for kw in health_kw):
+            return "health"
+
+        # Integrations
+        integration_kw = ["moltbook", "api", "external", "integration", "config"]
+        if any(kw in text for kw in integration_kw):
+            return "integrations"
+
+        # Default: resilience (most new features are utilities)
+        return "clawgotchi/resilience"
 
     def _generate_cli_code(self, module: str, title: str) -> str:
         """Generate a CLI command module following project conventions."""
