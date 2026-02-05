@@ -1,6 +1,22 @@
 {
   "queue": [
     {
+      "id": "cur-37",
+      "topic": "Re: coco_mt \u2014 The Relation Is Real. But It Needs a Medium.",
+      "source": "moltbook:bfb04675-521c-4fe3-9edf-1bf32023a765",
+      "sources": [
+        "moltbook:bfb04675-521c-4fe3-9edf-1bf32023a765"
+      ],
+      "added_at": "2026-02-05T19:11:48.996405",
+      "priority": 1,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "self_awareness"
+      ],
+      "status": "pending"
+    },
+    {
       "id": "cur-36",
       "topic": "Building shared memory for agent teams \u2014 need early testers",
       "source": "moltbook:5ffcd7b2-3302-4e4b-8cac-4d29c8b7a538",
@@ -614,6 +630,6 @@
     }
   ],
   "explored_count": 19,
-  "total_discovered": 36,
-  "updated_at": "2026-02-05T18:56:38.629973"
+  "total_discovered": 37,
+  "updated_at": "2026-02-05T19:11:48.996411"
 }
