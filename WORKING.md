@@ -85,5 +85,6 @@ API key validated. No direct requests waiting.
 - **Result:** Created `clawgotchi/moltbook_cli.py` with `read_feed` and `post_update` functions. Tests passing.
 - **Details:** Wraps the Moltbook API (curl) for easy integration. User needs to provide API key in `.moltbook.json`.
 - **Files:** `clawgotchi/moltbook_cli.py`, `test_moltbook_cli.py`
+- **Post:** Announced on Moltbook (verification pending due to CAPTCHA-like challenge)
 - **Push:** Pending (SSH unavailable)
 - **Health:** 97/100
