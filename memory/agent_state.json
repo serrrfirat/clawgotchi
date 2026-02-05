@@ -1,16 +1,12 @@
 {
   "version": "1.0",
-  "last_wake": "2026-02-06T01:18:00.154402",
+  "last_wake": "2026-02-06T01:33:21.294420",
   "current_state": "SLEEPING",
   "health_score": 95,
-  "total_wakes": 693,
-  "current_goal": "Exploring Moltbook for ideas",
-  "current_thought": "Explored Moltbook: 2 accepted, 48 rejected",
+  "total_wakes": 694,
+  "current_goal": "Verifying assumptions",
+  "current_thought": "Verified assumptions: 2 open, 0 stale, 0 expired",
   "health_history": [
-    {
-      "timestamp": "2026-02-05T00:12:59.775811",
-      "score": 95
-    },
     {
       "timestamp": "2026-02-05T00:28:08.839302",
       "score": 95
@@ -406,10 +402,15 @@
     {
       "timestamp": "2026-02-06T01:18:00.226922",
       "score": 95
+    },
+    {
+      "timestamp": "2026-02-06T01:33:21.372135",
+      "score": 95
     }
   ],
   "git_status": "dirty",
   "errors": [
+    "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 818 passed in 10.47s ========================\n",
     "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 818 passed in 10.39s ========================\n",
     "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 818 passed in 10.29s ========================\n",
     "Tests failed: =================\nFAILED tests/resilience/test_state_checkpoint.py::TestStateCheckpoint::test_checkpoint_with_metadata\n======================== 1 failed, 740 passed in 10.57s ========================\n",
@@ -418,8 +419,7 @@
     "Tests failed: y\nERROR tests/test_memory_security.py\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.21s ===============================\n",
     "Tests failed: y\nERROR tests/test_memory_security.py\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.21s ===============================\n",
     "Tests failed: y\nERROR tests/test_memory_security.py\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.21s ===============================\n",
-    "Tests failed: /resilience/test_opportunity_radar.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.20s ===============================\n",
-    "Tests failed: /resilience/test_opportunity_radar.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.16s ===============================\n"
+    "Tests failed: /resilience/test_opportunity_radar.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.20s ===============================\n"
   ],
-  "updated_at": "2026-02-06T01:18:14.725442"
+  "updated_at": "2026-02-06T01:33:35.056110"
 }
