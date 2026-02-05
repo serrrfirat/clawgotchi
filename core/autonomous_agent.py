@@ -396,7 +396,7 @@ class ResourceMonitor:
 
 class AutonomousAgent:
     """Main autonomous agent with state machine."""
-    
+
     def __init__(self):
         self.state = AgentState()
         self.curiosity = CuriosityQueue()
@@ -406,13 +406,54 @@ class AutonomousAgent:
         self.paused = False
         self._thread: Optional[threading.Thread] = None
         self._last_action_result = ""
-        
+
         # Load persisted state
         self.state.load()
         self.curiosity.load()
         self.beliefs.load()
         self.resources.load()
-    
+
+        # Initialize evolution components
+        self._init_evolution_components()
+
+    def _init_evolution_components(self):
+        """Initialize the evolution subsystem components."""
+        try:
+            from clawgotchi.evolution.soul_manager import SoulManager
+            from clawgotchi.evolution.goal_generator import GoalGenerator
+            from clawgotchi.evolution.knowledge_synthesizer import KnowledgeSynthesizer
+            from clawgotchi.evolution.integration_manager import IntegrationManager
+            from clawgotchi.evolution.self_modifier import SelfModifier
+
+            self.soul_manager = SoulManager(
+                soul_path=str(BASE_DIR / "docs" / "SOUL.md"),
+                memory_dir=str(MEMORY_DIR),
+            )
+            self.goal_generator = GoalGenerator(
+                memory_path=str(MEMORY_DIR / "goals.json")
+            )
+            self.knowledge_synthesizer = KnowledgeSynthesizer(
+                memory_dir=str(MEMORY_DIR)
+            )
+            self.integration_manager = IntegrationManager(
+                registry=None,  # Will set after resilience imports
+                memory_dir=str(MEMORY_DIR),
+            )
+            self.self_modifier = SelfModifier(
+                soul_manager=self.soul_manager,
+                memory_dir=str(MEMORY_DIR),
+            )
+            self._evolution_enabled = True
+        except ImportError as e:
+            # Evolution components not available
+            print(f"Evolution components not available: {e}")
+            self.soul_manager = None
+            self.goal_generator = None
+            self.knowledge_synthesizer = None
+            self.integration_manager = None
+            self.self_modifier = None
+            self._evolution_enabled = False
+
     def start(self):
         """Start the autonomous agent in a background thread."""
         if self._thread and self._thread.is_alive():
@@ -461,48 +502,89 @@ class AutonomousAgent:
                 time.sleep(60)  # Brief pause on error
     
     async def wake_cycle(self):
-        """Execute one wake cycle."""
+        """Execute one wake cycle.
+
+        Enhanced cycle with evolution components:
+        0. WAKE - Read SOUL.md and current goals
+        1. OBSERVE - Health check, goal progress check
+        2. DECIDE - Goal-aware priority adjustment
+        3. EXECUTE - BUILD, EXPLORE, VERIFY, CURATE, INTEGRATE, CONSOLIDATE, REST
+        4. VERIFY - Run tests
+        5. REFLECT - Update memory, consider consolidation/self-modification
+        6. SLEEP
+        """
         # Check for crash recovery first
         if not await self._recover_from_crash():
             self.state.add_error("State recovery performed")
-        
-        # WAKING
+
+        # 0. WAKING - Read soul and goals
         self.state.current_state = STATE_WAKING
         self.state.last_wake = datetime.now().isoformat()
         self.state.save()
-        
-        # OBSERVING
+
+        # Read SOUL.md at wake (new)
+        if self._evolution_enabled and self.soul_manager:
+            soul = self.soul_manager.read_soul()
+            self.state.current_thought = f"I am: {soul.get('identity', 'Clawgotchi')[:50]}..."
+
+        # Check active goals (new)
+        active_goals = []
+        if self._evolution_enabled and self.goal_generator:
+            active_goals = self.goal_generator.get_active_goals()
+            if active_goals:
+                goal_desc = active_goals[0].description[:40]
+                self.state.current_thought = f"Goal: {goal_desc}..."
+
+        self.state.save()
+
+        # 1. OBSERVING
         self.state.current_state = STATE_OBSERVING
         self.resources.update()
         health_score = await self._check_health()
-        
+
         # Check disk space
         disk_status, disk_msg = await self._check_disk_space()
         if disk_status != "ok":
             health_score = max(0, health_score - 20)
-        
+
         self.state.update_health(health_score)
         self.state.current_thought = "Observing my surroundings..."
         self.state.save()
         await asyncio.sleep(2)
-        
+
+        # Check goal progress (new)
+        if self._evolution_enabled and self.goal_generator:
+            for goal in active_goals:
+                if goal.is_overdue():
+                    self.state.current_thought = f"Goal overdue: {goal.description[:30]}..."
+
         # ADAPTIVE BEHAVIOR
         adaptive = await self._adaptive_behavior(health_score)
         skip_tasks = adaptive.get("skip_tasks", [])
-        
-        # DECIDING
+
+        # 2. DECIDING - with goal-aware priorities
         self.state.current_state = STATE_DECIDING
         action = await self._decide_next_action()
-        
+
+        # Apply goal-aware priority adjustment (new)
+        if self._evolution_enabled and self.goal_generator and action["type"] == "REST":
+            # If REST was chosen, check if goals suggest otherwise
+            adjusted = self.goal_generator.adjust_priority_for_goals({
+                "BUILD": 5, "EXPLORE": 4, "VERIFY": 3, "CURATE": 2, "INTEGRATE": 1
+            })
+            highest = max(adjusted.items(), key=lambda x: x[1])
+            if highest[1] > 5:  # Boosted above baseline
+                action = {"type": highest[0], "description": f"Goal-driven: {highest[0]}"}
+
         # Skip if task is in skip list
         if action["type"] in skip_tasks:
             action = {"type": "REST", "description": "Skipping tasks (emergency mode)"}
-        
+
         self.state.current_goal = action.get("description", "")
         self.state.save()
         await asyncio.sleep(1)
-        
-        # EXECUTE ACTION
+
+        # 3. EXECUTE ACTION
         if action["type"] == "BUILD":
             self.state.current_state = STATE_BUILDING
             result = await self._build_feature(action)
@@ -510,30 +592,53 @@ class AutonomousAgent:
             if "No mature curiosity" not in result and "Already built" not in result:
                 skill_result = await self._discover_implement_skill(action)
                 result = f"{result}\n{skill_result}"
+            # Update goal progress (new)
+            if self._evolution_enabled and self.goal_generator:
+                goal = self.goal_generator.find_goal_by_metric("modules_built")
+                if goal:
+                    self.goal_generator.increment_progress(goal.id, 1.0, "Built module")
         elif action["type"] == "EXPLORE":
             self.state.current_state = STATE_EXPLORING
             result = await self._explore_curiosity(action)
+            # Update goal progress (new)
+            if self._evolution_enabled and self.goal_generator:
+                goal = self.goal_generator.find_goal_by_metric("ideas_discovered")
+                if goal and "accepted" in result:
+                    # Parse accepted count from result like "5 accepted"
+                    try:
+                        count = int(result.split("accepted")[0].split()[-1])
+                        self.goal_generator.increment_progress(goal.id, count)
+                    except (ValueError, IndexError):
+                        pass
         elif action["type"] == "VERIFY":
             self.state.current_state = STATE_VERIFYING
             result = await self._verify_assumptions()
         elif action["type"] == "CURATE":
             self.state.current_state = STATE_REFLECTING
             result = await self._curate_memory()
+        elif action["type"] == "INTEGRATE":
+            # NEW ACTION: Integrate orphaned modules
+            self.state.current_state = STATE_BUILDING
+            result = await self._integrate_orphaned_modules()
+        elif action["type"] == "CONSOLIDATE":
+            # NEW ACTION: Consolidate knowledge
+            self.state.current_state = STATE_REFLECTING
+            result = await self._consolidate_knowledge()
         else:
             # REST - do nothing, just reflect
             self.state.current_state = STATE_REFLECTING
             result = "Resting and reflecting"
-        
+
         # Mark real work done (for auto-push script)
-        if action["type"] in ["BUILD", "EXPLORE", "SKILLIFY"]:
+        if action["type"] in ["BUILD", "EXPLORE", "SKILLIFY", "INTEGRATE"]:
             Path("/tmp/clawgotchi_did_work").write_text(result[:100])
             Path("/tmp/clawgotchi_last_action").write_text(f"feat: {action.get('description', 'work')}")
-        
+
         self._last_action_result = result
         self.state.current_thought = result
         self.state.save()
-        
-        # VERIFYING — run the test suite
+
+        # 4. VERIFYING — run the test suite
         self.state.current_state = STATE_VERIFYING
         verify_result = subprocess.run(
             [sys.executable, "-m", "pytest", "tests/", "-v", "--tb=short"],
@@ -546,28 +651,80 @@ class AutonomousAgent:
             self.state.current_thought = repair_result
             self.state.add_error(f"Auto-repair: {repair_result}")
         self.state.save()
-        
+
         # SHARING (disabled — no auto-posting)
         self.state.current_state = STATE_SHARING
         self.state.save()
-        
-        # REFLECTING
+
+        # 5. REFLECTING
         self.state.current_state = STATE_REFLECTING
         await self._reflect(action, result)
-        
+
+        # Consolidate if due (new - every 10 cycles)
+        if self._evolution_enabled and self.knowledge_synthesizer:
+            if self.knowledge_synthesizer.should_consolidate(self.state.total_wakes):
+                consolidation = self.knowledge_synthesizer.run_consolidation_cycle()
+                if consolidation.get("updated"):
+                    self.state.current_thought = f"Knowledge consolidated: {consolidation.get('synthesized_count', 0)} insights"
+
+        # Consider self-modification (new - weekly)
+        if self._evolution_enabled and self.self_modifier:
+            if self.state.total_wakes % 50 == 0:  # Roughly weekly at 15-min cycles
+                evolution = self.self_modifier.run_weekly_evolution()
+                if evolution.get("applied"):
+                    self.state.current_thought = "Soul evolved"
+
         # SELF-PRESERVATION TASKS (run every 10 cycles)
         if self.state.total_wakes % 10 == 0:
             await self._cleanup_resources()
         await self._backup_state()
-        
+
         self.state.total_wakes += 1
         self.state.save()
-        
-        # SLEEPING - use adaptive interval
+
+        # 6. SLEEPING - use adaptive interval
         self.state.current_state = STATE_SLEEPING
         self.state.save()
-        
+
         return adaptive.get("interval", WAKE_INTERVAL)
+
+    async def _integrate_orphaned_modules(self) -> str:
+        """Integrate orphaned modules into the system."""
+        if not self._evolution_enabled or not self.integration_manager:
+            return "Integration manager not available"
+
+        orphaned = self.integration_manager.scan_orphaned_modules(str(BASE_DIR))
+        if not orphaned:
+            return "No orphaned modules found"
+
+        integrated = 0
+        for module in orphaned[:3]:  # Integrate up to 3 per cycle
+            result = self.integration_manager.integrate_module(module)
+            if result["status"] == "integrated":
+                integrated += 1
+
+        # Update goal progress
+        if self.goal_generator:
+            goal = self.goal_generator.find_goal_by_metric("modules_integrated")
+            if goal:
+                self.goal_generator.increment_progress(goal.id, integrated)
+
+        return f"Integrated {integrated} modules, {len(orphaned) - integrated} remaining"
+
+    async def _consolidate_knowledge(self) -> str:
+        """Run knowledge consolidation cycle."""
+        if not self._evolution_enabled or not self.knowledge_synthesizer:
+            return "Knowledge synthesizer not available"
+
+        result = self.knowledge_synthesizer.run_consolidation_cycle(days=7)
+
+        # Update goal progress
+        if self.goal_generator:
+            goal = self.goal_generator.find_goal_by_metric("principles_extracted")
+            if goal:
+                self.goal_generator.increment_progress(goal.id, result.get("extracted_count", 0))
+
+        return f"Consolidated: {result.get('extracted_count', 0)} principles, {result.get('synthesized_count', 0)} insights"
     
     async def _check_health(self) -> int:
         """Run health checks. Returns score 0-100."""
@@ -633,14 +790,16 @@ class AutonomousAgent:
     async def _decide_next_action(self) -> dict:
         """Decide what to do in this wake cycle.
 
-        Priority order:
-          1. Resource issues       → VERIFY
-          2. Incomplete features   → BUILD (finish what you started!)
-          3. Every 3rd cycle     → VERIFY assumptions
-          4. Every 5th cycle     → CURATE memories
-          5. Every 4th cycle     → EXPLORE Moltbook (populates curiosity)
-          6. Mature curiosity    → BUILD → SKILLIFY
-          7. Default             → REST (not BUILD)
+        Priority order (enhanced with evolution actions):
+          1. Resource issues         → VERIFY
+          2. Incomplete features     → BUILD (finish what you started!)
+          3. Every 3rd cycle         → VERIFY assumptions
+          4. Orphaned modules exist  → INTEGRATE (new)
+          5. Every 5th cycle         → CURATE memories
+          6. Every 4th cycle         → EXPLORE Moltbook
+          7. Every 10th cycle        → CONSOLIDATE knowledge (new)
+          8. Mature curiosity        → BUILD → SKILLIFY
+          9. Default                 → REST
         """
         cycle = self.state.total_wakes
 
@@ -658,15 +817,26 @@ class AutonomousAgent:
         if cycle % 3 == 0:
             return {"type": "VERIFY", "description": "Verifying assumptions"}
 
-        # 3. Curate memories every 5th cycle
+        # 4. Integrate orphaned modules (new)
+        if self._evolution_enabled and self.integration_manager:
+            orphaned = self.integration_manager.scan_orphaned_modules(str(BASE_DIR))
+            if orphaned:
+                return {"type": "INTEGRATE", "description": f"Integrating {len(orphaned)} orphaned modules"}
+
+        # 5. Curate memories every 5th cycle
         if cycle % 5 == 0:
             return {"type": "CURATE", "description": "Curating memories"}
 
-        # 4. Explore Moltbook every 4th cycle (populates curiosity queue)
+        # 6. Explore Moltbook every 4th cycle (populates curiosity queue)
         if cycle % 4 == 0:
             return {"type": "EXPLORE", "description": "Exploring Moltbook for ideas"}
 
-        # 5. Build only when a mature curiosity item exists + passes taste check
+        # 7. Consolidate knowledge every 10th cycle (new)
+        if self._evolution_enabled and self.knowledge_synthesizer:
+            if self.knowledge_synthesizer.should_consolidate(cycle):
+                return {"type": "CONSOLIDATE", "description": "Consolidating knowledge"}
+
+        # 8. Build only when a mature curiosity item exists + passes taste check
         #    SKILLIFICATION happens automatically after BUILD completes
         mature = self.curiosity.get_mature()
         if mature and self._taste_check(mature.get("topic", ""), mature.get("categories", [])):
@@ -676,7 +846,7 @@ class AutonomousAgent:
                 "item": mature,
             }
 
-        # 6. Default: rest
+        # 9. Default: rest
         return {"type": "REST", "description": "Resting — nothing mature to build"}
 
     # ---- Category-specific templates for feature building ----

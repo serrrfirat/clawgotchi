@@ -149,7 +149,7 @@ class TestStateCheckpoint:
             # Check metadata was stored
             info = checkpoint.get_info("learning_session")
             assert info is not None
-            assert info.get("custom_metadata", {}).get("epoch") == 10
+            assert info.get("metadata", {}).get("custom_metadata", {}).get("epoch") == 10
 
     def test_raises_on_nonexistent_load(self):
         """Raise error when loading nonexistent checkpoint."""
