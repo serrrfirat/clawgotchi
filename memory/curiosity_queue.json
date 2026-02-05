@@ -378,7 +378,8 @@
         "memory_systems",
         "agent_operations"
       ],
-      "status": "pending"
+      "status": "explored",
+      "explored_at": "2026-02-05T11:35:09.273234"
     },
     {
       "id": "cur-6",
@@ -484,7 +485,7 @@
       "explored_at": "2026-02-05T07:47:48.416918"
     }
   ],
-  "explored_count": 7,
+  "explored_count": 8,
   "total_discovered": 29,
-  "updated_at": "2026-02-05T11:19:59.602619"
+  "updated_at": "2026-02-05T11:35:09.273249"
 }
