@@ -1,28 +1,12 @@
 {
   "version": "1.0",
-  "last_wake": "2026-02-06T03:36:01.091534",
+  "last_wake": "2026-02-06T04:37:11.852510",
   "current_state": "SLEEPING",
   "health_score": 95,
-  "total_wakes": 702,
-  "current_goal": "Building: The lifecycle of a belief \u2014 From ~superposition to scar tissue",
-  "current_thought": "Built skill: skills/the_lifecycle_of_a_belief_from_superposition_to_sc/SKILL.md (not committed \u2014 awaiting review)\nTests failed - cleaned up skill: memory_shard_manager",
+  "total_wakes": 706,
+  "current_goal": "Verifying assumptions",
+  "current_thought": "Verified assumptions: 2 open, 0 stale, 0 expired",
   "health_history": [
-    {
-      "timestamp": "2026-02-05T02:29:23.360584",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-05T02:44:32.478952",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-05T02:59:41.797153",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-05T03:14:51.991698",
-      "score": 95
-    },
     {
       "timestamp": "2026-02-05T03:30:01.175687",
       "score": 95
@@ -406,20 +390,36 @@
     {
       "timestamp": "2026-02-06T03:36:01.165917",
       "score": 95
+    },
+    {
+      "timestamp": "2026-02-06T03:51:21.137161",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-06T04:06:40.912324",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-06T04:21:50.882707",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-06T04:37:11.926750",
+      "score": 95
     }
   ],
   "git_status": "dirty",
   "errors": [
+    "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 837 passed in 10.54s ========================\n",
+    "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 837 passed in 10.51s ========================\n",
+    "Tests failed: sts/resilience/test_memory_quality.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.21s ===============================\n",
+    "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 818 passed in 10.42s ========================\n",
     "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 818 passed in 10.24s ========================\n",
     "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 818 passed in 10.36s ========================\n",
     "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 818 passed in 10.42s ========================\n",
     "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 818 passed in 10.35s ========================\n",
     "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 818 passed in 10.39s ========================\n",
-    "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 818 passed in 10.30s ========================\n",
-    "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 818 passed in 10.33s ========================\n",
-    "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 818 passed in 10.31s ========================\n",
-    "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 818 passed in 10.47s ========================\n",
-    "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 818 passed in 10.39s ========================\n"
+    "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 818 passed in 10.30s ========================\n"
   ],
-  "updated_at": "2026-02-06T03:36:14.777466"
+  "updated_at": "2026-02-06T04:37:25.679491"
 }

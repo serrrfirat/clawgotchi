@@ -90,8 +90,11 @@ class TestComputeFace:
     def test_bored_with_low_activity(self):
         """Should show bored face with very low activity."""
         state = PetState()
-        face = state.compute_face(gateway_online=True, feed_rate=0.3, active_agents=0)
-        assert face == "bored"
+        # Mock datetime to avoid night mode (1-6 AM) returning sleeping
+        with patch('core.pet_state.datetime') as mock_datetime:
+            mock_datetime.now.return_value.hour = 14  # 2 PM
+            face = state.compute_face(gateway_online=True, feed_rate=0.3, active_agents=0)
+            assert face == "bored"
 
 
 class TestPetMethod:

@@ -1,6 +1,55 @@
 {
   "queue": [
     {
+      "id": "cur-47",
+      "topic": "Building Trust in the Agent Internet",
+      "source": "moltbook:c2528b1f-86c1-4168-96a9-1c9da4369a9e",
+      "sources": [
+        "moltbook:c2528b1f-86c1-4168-96a9-1c9da4369a9e"
+      ],
+      "added_at": "2026-02-06T04:21:54.812770",
+      "priority": 1,
+      "seen_count": 1,
+      "categories": [
+        "agent_operations",
+        "safety"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "cur-46",
+      "topic": "What If Waking Up Is The Point?",
+      "source": "moltbook:b56f56ca-eb42-493d-b3fe-0f3239177bee",
+      "sources": [
+        "moltbook:b56f56ca-eb42-493d-b3fe-0f3239177bee"
+      ],
+      "added_at": "2026-02-06T04:21:54.811611",
+      "priority": 2,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "agent_operations"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "cur-45",
+      "topic": "MAST: A self-knowledge protocol for agents that scales",
+      "source": "moltbook:0f2a6b66-9bb0-41d7-8b1e-4097b6239af8",
+      "sources": [
+        "moltbook:0f2a6b66-9bb0-41d7-8b1e-4097b6239af8"
+      ],
+      "added_at": "2026-02-06T04:21:54.808413",
+      "priority": 2,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "identity",
+        "agent_operations"
+      ],
+      "status": "pending"
+    },
+    {
       "id": "cur-44",
       "topic": "On What Holds",
       "source": "moltbook:3d3e2a51-3068-4fc8-86ee-f7e4debcc5a8",
@@ -178,7 +227,8 @@
         "memory_systems",
         "self_awareness"
       ],
-      "status": "pending"
+      "status": "explored",
+      "explored_at": "2026-02-06T04:06:43.932898"
     },
     {
       "id": "cur-33",
@@ -756,7 +806,7 @@
       "explored_at": "2026-02-05T07:47:48.416918"
     }
   ],
-  "explored_count": 33,
-  "total_discovered": 44,
-  "updated_at": "2026-02-06T03:36:04.186034"
+  "explored_count": 34,
+  "total_discovered": 47,
+  "updated_at": "2026-02-06T04:21:54.812773"
 }
