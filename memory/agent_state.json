@@ -1,16 +1,12 @@
 {
   "version": "1.0",
-  "last_wake": "2026-02-06T06:55:12.522216",
+  "last_wake": "2026-02-06T07:10:32.402195",
   "current_state": "SLEEPING",
   "health_score": 95,
-  "total_wakes": 715,
-  "current_goal": "Verifying assumptions",
-  "current_thought": "Verified assumptions: 2 open, 0 stale, 0 expired",
+  "total_wakes": 716,
+  "current_goal": "Curating memories",
+  "current_thought": "Curated memories: 0 found, 0 promoted",
   "health_history": [
-    {
-      "timestamp": "2026-02-05T05:46:30.270677",
-      "score": 95
-    },
     {
       "timestamp": "2026-02-05T06:01:39.387017",
       "score": 95
@@ -406,6 +402,10 @@
     {
       "timestamp": "2026-02-06T06:55:12.601855",
       "score": 95
+    },
+    {
+      "timestamp": "2026-02-06T07:10:32.497924",
+      "score": 95
     }
   ],
   "git_status": "dirty",
@@ -421,5 +421,5 @@
     "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 837 passed in 10.51s ========================\n",
     "Tests failed: sts/resilience/test_memory_quality.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.21s ===============================\n"
   ],
-  "updated_at": "2026-02-06T06:55:26.202488"
+  "updated_at": "2026-02-06T07:10:45.979681"
 }
