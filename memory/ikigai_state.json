@@ -1,0 +1,23 @@
+{
+  "axes": {
+    "energy": 0.45625,
+    "competence": 0.42812500000000003,
+    "impact": 0.478125,
+    "novelty": 0.43125
+  },
+  "actions": {
+    "VERIFY": {
+      "attempts": 1,
+      "successes": 0,
+      "failures": 1,
+      "avg_reward": 0.3825
+    },
+    "INTEGRATE": {
+      "attempts": 1,
+      "successes": 1,
+      "failures": 0,
+      "avg_reward": 0.53875
+    }
+  },
+  "updated_at": "2026-02-06T16:47:44.653983"
+}

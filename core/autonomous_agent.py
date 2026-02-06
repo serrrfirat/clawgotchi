@@ -1216,15 +1216,13 @@ class AutonomousAgent:
         if not test_file.exists():
             test_file.write_text(self._generate_test_code(module_name, title))
 
-        # Verify it compiles
-        result = subprocess.run(
-            [sys.executable, "-m", "py_compile", str(target)],
-            capture_output=True, text=True,
-        )
-        if result.returncode != 0:
+        # Verify syntax without writing bytecode outside the workspace.
+        try:
+            compile(code, str(target), "exec")
+        except SyntaxError as e:
             target.unlink(missing_ok=True)
             test_file.unlink(missing_ok=True)
-            return f"Build failed (syntax): {result.stderr[:200]}"
+            return f"Build failed (syntax): {e}"
 
         return f"Built CLI: {package}/{module_name}.py (not committed — awaiting review)"
 

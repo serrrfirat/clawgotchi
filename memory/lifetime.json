@@ -1,5 +1,11 @@
 {
-  "born_at": null,
-  "sessions": [],
-  "total_wakeups": 0
+  "born_at": "2026-02-06T16:29:29.553062",
+  "sessions": [
+    {
+      "start": "2026-02-06T16:29:29.553062",
+      "end": null,
+      "duration_seconds": 1094.742007
+    }
+  ],
+  "total_wakeups": 1
 }

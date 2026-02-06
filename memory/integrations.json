@@ -94,7 +94,94 @@
         "export_metrics"
       ],
       "last_checked": "2026-02-05T22:00:48.703993"
+    },
+    "memory_quality": {
+      "path": "/Users/firatsertgoz/Documents/clawgotchi/clawgotchi/resilience/memory_quality.py",
+      "name": "memory_quality",
+      "package": "clawgotchi/resilience",
+      "category": "resilience",
+      "integration_point": "_check_health",
+      "status": "integrated",
+      "classes": [
+        "QualityDimension",
+        "QualityScore",
+        "QualityFinding",
+        "QualityResult",
+        "QualityReport",
+        "MemoryQualityAnalyzer"
+      ],
+      "functions": [
+        "analyze_memory_quality",
+        "weighted_value",
+        "summary",
+        "analyze",
+        "get_report",
+        "save_state",
+        "load_state",
+        "get_statistics"
+      ],
+      "last_checked": "2026-02-06T16:47:33.390706"
+    },
+    "rate_limit_manager": {
+      "path": "/Users/firatsertgoz/Documents/clawgotchi/clawgotchi/resilience/rate_limit_manager.py",
+      "name": "rate_limit_manager",
+      "package": "clawgotchi/resilience",
+      "category": "resilience",
+      "integration_point": "_check_health",
+      "status": "integrated",
+      "classes": [
+        "TokenBucket",
+        "AccountConfig",
+        "QueuedTask",
+        "TaskQueue",
+        "RateLimitManager",
+        "RateLimitExceeded"
+      ],
+      "functions": [
+        "consume",
+        "remaining",
+        "enqueue",
+        "dequeue",
+        "peek",
+        "register_account",
+        "check_rate_limit",
+        "get_best_account",
+        "get_account_status",
+        "get_all_accounts_status",
+        "execute_with_rate_limit",
+        "process_deferred_queue",
+        "save_state",
+        "load_state",
+        "get_health_score"
+      ],
+      "last_checked": "2026-02-06T16:47:33.392019"
+    },
+    "state_checkpoint": {
+      "path": "/Users/firatsertgoz/Documents/clawgotchi/clawgotchi/resilience/state_checkpoint.py",
+      "name": "state_checkpoint",
+      "package": "clawgotchi/resilience",
+      "category": "resilience",
+      "integration_point": "_check_health",
+      "status": "integrated",
+      "classes": [
+        "CheckpointError",
+        "CheckpointNotFoundError",
+        "CheckpointMetadata",
+        "StateCheckpoint"
+      ],
+      "functions": [
+        "save_checkpoint",
+        "load_checkpoint",
+        "to_dict",
+        "save",
+        "load",
+        "detect_change",
+        "list_checkpoints",
+        "delete",
+        "get_info"
+      ],
+      "last_checked": "2026-02-06T16:47:33.392453"
     }
   },
-  "updated_at": "2026-02-05T22:00:48.704054"
+  "updated_at": "2026-02-06T16:47:33.392663"
 }

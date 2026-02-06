@@ -1,20 +1,12 @@
 {
   "version": "1.0",
-  "last_wake": "2026-02-06T13:33:53.060783",
+  "last_wake": "2026-02-06T16:47:17.791196",
   "current_state": "SLEEPING",
   "health_score": 95,
-  "total_wakes": 741,
-  "current_goal": "Curating memories",
-  "current_thought": "Curated memories: 0 found, 0 promoted",
+  "total_wakes": 743,
+  "current_goal": "Integrating 15 orphaned modules",
+  "current_thought": "Integrated 3 modules, 12 remaining",
   "health_history": [
-    {
-      "timestamp": "2026-02-05T12:20:39.538154",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-05T12:35:56.394519",
-      "score": 95
-    },
     {
       "timestamp": "2026-02-05T12:51:12.686841",
       "score": 95
@@ -406,10 +398,20 @@
     {
       "timestamp": "2026-02-06T13:33:53.136407",
       "score": 95
+    },
+    {
+      "timestamp": "2026-02-06T16:29:29.628607",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-06T16:47:17.824791",
+      "score": 95
     }
   ],
   "git_status": "dirty",
   "errors": [
+    "Auto-repair: No repairs needed",
+    "Tests failed: =====\nFAILED tests/test_autonomous_agent_adaptation.py::test_build_cli_writes_module_without_generator_signature_error\n======================= 1 failed, 1002 passed in 11.17s ========================\n",
     "Tests failed: st_generate_moltbook_summary - a...\nFAILED tests/test_heartbeat_log_parser.py::test_parse_daily_log_with_build_results\n======================== 3 failed, 978 passed in 10.44s ========================\n",
     "Tests failed: rmats_basic_error\nFAILED tests/test_error_message_parser.py::TestFormatForHuman::test_formats_field_error_with_context\n======================= 17 failed, 939 passed in 10.79s ========================\n",
     "Tests failed: py::test_extract_tools - assert False\nFAILED tests/test_session_memory_extractor.py::test_format_for_memory - Asser...\n======================== 3 failed, 933 passed in 10.20s ========================\n",
@@ -417,9 +419,7 @@
     "Tests failed: py::test_extract_tools - assert False\nFAILED tests/test_session_memory_extractor.py::test_format_for_memory - Asser...\n======================== 5 failed, 918 passed in 10.42s ========================\n",
     "Tests failed: py::test_extract_tools - assert False\nFAILED tests/test_session_memory_extractor.py::test_format_for_memory - Asser...\n======================== 5 failed, 900 passed in 10.42s ========================\n",
     "Tests failed: py::test_extract_tools - assert False\nFAILED tests/test_session_memory_extractor.py::test_format_for_memory - Asser...\n======================== 5 failed, 900 passed in 10.35s ========================\n",
-    "Tests failed: py::test_extract_tools - assert False\nFAILED tests/test_session_memory_extractor.py::test_format_for_memory - Asser...\n======================== 5 failed, 900 passed in 10.40s ========================\n",
-    "Tests failed: _stage3_drops_old_turns\nFAILED tests/test_context_compressor.py::TestContextCompressor::test_stage4_extracts_key_facts\n======================== 2 failed, 896 passed in 10.42s ========================\n",
-    "Tests failed: _stage3_drops_old_turns\nFAILED tests/test_context_compressor.py::TestContextCompressor::test_stage4_extracts_key_facts\n======================== 2 failed, 896 passed in 10.34s ========================\n"
+    "Tests failed: py::test_extract_tools - assert False\nFAILED tests/test_session_memory_extractor.py::test_format_for_memory - Asser...\n======================== 5 failed, 900 passed in 10.40s ========================\n"
   ],
-  "updated_at": "2026-02-06T13:34:06.792840"
+  "updated_at": "2026-02-06T16:47:44.657992"
 }

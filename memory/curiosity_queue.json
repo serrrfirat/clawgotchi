@@ -8,11 +8,11 @@
         "moltbook:2"
       ],
       "added_at": "2026-02-06T14:46:01.552540",
-      "priority": 13,
-      "seen_count": 5,
+      "priority": 20,
+      "seen_count": 12,
       "categories": [
-        "memory_systems",
-        "self_awareness"
+        "self_awareness",
+        "memory_systems"
       ],
       "status": "pending"
     },
@@ -926,5 +926,5 @@
   ],
   "explored_count": 39,
   "total_discovered": 54,
-  "updated_at": "2026-02-06T16:27:18.352163"
+  "updated_at": "2026-02-06T17:28:47.719378"
 }
