@@ -417,6 +417,8 @@ class AutonomousAgent:
         # Initialize evolution components
         self._init_evolution_components()
         self._init_ikigai_engine()
+        self._init_self_evolution_loop()
+        self._init_safety_guard()
 
     def _init_evolution_components(self):
         """Initialize the evolution subsystem components."""
@@ -467,6 +469,24 @@ class AutonomousAgent:
             )
         except ImportError:
             self.ikigai = None
+
+    def _init_self_evolution_loop(self):
+        """Initialize hypothesis tracking loop for self-evolution."""
+        try:
+            from cognition.self_evolution_loop import SelfEvolutionLoop
+            self.self_evolution = SelfEvolutionLoop(
+                state_path=str(MEMORY_DIR / "self_evolution.json")
+            )
+        except ImportError:
+            self.self_evolution = None
+
+    def _init_safety_guard(self):
+        """Initialize runtime safety gate."""
+        try:
+            from core.safety_guard import SafetyGuard
+            self.safety_guard = SafetyGuard(project_root=str(BASE_DIR), allow_high_risk=False)
+        except ImportError:
+            self.safety_guard = None
 
     def start(self):
         """Start the autonomous agent in a background thread."""
@@ -603,6 +623,9 @@ class AutonomousAgent:
         if action["type"] in skip_tasks:
             action = {"type": "REST", "description": "Skipping tasks (emergency mode)"}
 
+        # Safety gate before execution.
+        action = self._safety_gate_action(action)
+
         self.state.current_goal = action.get("description", "")
         self.state.save()
         await asyncio.sleep(1)
@@ -679,15 +702,16 @@ class AutonomousAgent:
             self.state.current_thought = repair_result
             self.state.add_error(f"Auto-repair: {repair_result}")
 
+        lowered = result.lower()
+        action_success = (
+            verify_result.returncode == 0
+            and "failed" not in lowered
+            and "error" not in lowered
+        )
+
         # Stage 2 feedback loop: record outcomes + promote/rollback policy.
         if self.ikigai:
             try:
-                lowered = result.lower()
-                action_success = (
-                    verify_result.returncode == 0
-                    and "failed" not in lowered
-                    and "error" not in lowered
-                )
                 self.ikigai.record_outcome(action["type"], action_success, result)
                 self.ikigai.record_policy_outcome(policy_used, action_success)
 
@@ -701,6 +725,27 @@ class AutonomousAgent:
                         self.state.current_thought = "Policy rollback: default"
             except Exception as e:
                 self.state.add_error(f"Ikigai feedback error: {e}")
+
+        # Stage 2b self-evolution loop: form and track hypotheses over time.
+        if self.self_evolution:
+            try:
+                reward = 1.0 if action_success else 0.0
+                self.self_evolution.record_cycle(
+                    action=action["type"],
+                    success=action_success,
+                    reward=reward,
+                    policy=policy_used,
+                )
+
+                if self.state.total_wakes > 0 and self.state.total_wakes % 25 == 0 and self.ikigai:
+                    proposal = self.self_evolution.propose_hypothesis(
+                        self.ikigai.state.get("axes", {}),
+                        self.ikigai.state.get("actions", {}),
+                    )
+                    if proposal:
+                        self.state.current_thought = f"Hypothesis proposed: {proposal['summary'][:90]}"
+            except Exception as e:
+                self.state.add_error(f"Self-evolution loop error: {e}")
         self.state.save()
 
         # SHARING (disabled — no auto-posting)
@@ -924,6 +969,49 @@ class AutonomousAgent:
         if action_type in default_descriptions:
             return {"type": action_type, "description": default_descriptions[action_type]}
         return None
+
+    def _risk_level_for_action(self, action_type: str) -> str:
+        """Map agent action types to risk tiers."""
+        risk_map = {
+            "VERIFY": "LOW",
+            "EXPLORE": "LOW",
+            "CURATE": "MEDIUM",
+            "BUILD": "MEDIUM",
+            "INTEGRATE": "MEDIUM",
+            "CONSOLIDATE": "MEDIUM",
+            "CHANGE_POLICY": "CRITICAL",
+            "PUSH": "HIGH",
+            "REST": "LOW",
+        }
+        return risk_map.get(action_type, "HIGH")
+
+    def _safety_gate_action(self, action: dict) -> dict:
+        """Run selected action through the runtime safety policy gate."""
+        if not self.safety_guard:
+            return action
+
+        try:
+            from core.safety_guard import ActionIntent
+
+            intent = ActionIntent(
+                action=action.get("type", "UNKNOWN"),
+                risk_level=self._risk_level_for_action(action.get("type", "UNKNOWN")),
+                target_path=action.get("target_path"),
+                metadata={"description": action.get("description", "")},
+            )
+            decision = self.safety_guard.authorize(intent)
+            if decision.allowed:
+                return action
+
+            return {
+                "type": "REST",
+                "description": f"Safety gate blocked {intent.action}: {decision.reason}",
+            }
+        except Exception as e:
+            return {
+                "type": "REST",
+                "description": f"Safety gate error: {e}",
+            }
 
     def _select_ikigai_action(self, current_action: dict) -> Optional[dict]:
         """Let ikigai policy choose among currently actionable candidates."""
@@ -1696,8 +1784,29 @@ if __name__ == "__main__":
             tp = None
 
         for post in posts:
-            result = score_post_relevance(post)
-            title = post.get("title") or "untitled"
+            raw_title = post.get("title") or "untitled"
+            if self.safety_guard and self.safety_guard.is_prompt_injection_like(raw_title):
+                rejected += 1
+                if tp:
+                    try:
+                        tp.log_rejection(
+                            subject=f"moltbook:{raw_title[:80]}",
+                            reason="prompt injection pattern",
+                            taste_axis="safety",
+                        )
+                    except Exception:
+                        pass
+                continue
+
+            title = (
+                self.safety_guard.sanitize_untrusted_text(raw_title).strip()
+                if self.safety_guard
+                else raw_title
+            ) or "untitled"
+
+            safe_post = dict(post)
+            safe_post["title"] = title
+            result = score_post_relevance(safe_post)
 
             # Reject: noise, low score, or too few categories
             if result["noise"] or result["score"] < 0.15 or len(result["categories"]) < 2:
