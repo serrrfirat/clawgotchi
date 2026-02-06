@@ -1,16 +1,12 @@
 {
   "version": "1.0",
-  "last_wake": "2026-02-06T08:42:32.504875",
+  "last_wake": "2026-02-06T08:57:52.492055",
   "current_state": "SLEEPING",
   "health_score": 95,
-  "total_wakes": 722,
+  "total_wakes": 723,
   "current_goal": "Resting \u2014 nothing mature to build",
   "current_thought": "Resting and reflecting",
   "health_history": [
-    {
-      "timestamp": "2026-02-05T07:32:36.152828",
-      "score": 95
-    },
     {
       "timestamp": "2026-02-05T07:47:45.405040",
       "score": 95
@@ -406,6 +402,10 @@
     {
       "timestamp": "2026-02-06T08:42:32.573611",
       "score": 95
+    },
+    {
+      "timestamp": "2026-02-06T08:57:52.567153",
+      "score": 95
     }
   ],
   "git_status": "dirty",
@@ -421,5 +421,5 @@
     "Tests failed: _lines_are_detected_as_removed - A...\nFAILED tests/test_log_diff.py::test_partial_line_matches_show_as_changed - As...\n======================== 3 failed, 841 passed in 10.44s ========================\n",
     "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 837 passed in 10.54s ========================\n"
   ],
-  "updated_at": "2026-02-06T08:42:46.114431"
+  "updated_at": "2026-02-06T08:58:06.185629"
 }
