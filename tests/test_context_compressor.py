@@ -67,7 +67,8 @@ class TestContextCompressor(unittest.TestCase):
         self.assertIn("dropped_old_conversation_turns", result.removed_elements)
         # Should keep last 10 turns (roughly)
         self.assertIn("Turn 11", result.content)
-        self.assertNotIn("Turn 1", result.content)
+        # Check that early turns are removed (use newline to avoid matching "Turn 10")
+        self.assertNotIn("Turn 1\n", result.content)
 
     def test_stage4_extracts_key_facts(self):
         """Stage 4 keeps only key facts (headers, lists)."""

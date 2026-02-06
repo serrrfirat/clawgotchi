@@ -109,35 +109,45 @@ class ContextCompressor:
         # Stage 3: Drop low-relevance history
         if stage >= 3:
             # Remove older conversation turns (keep last N)
-            turn_pattern = r'(?:Human|User|Assistant|Agent): '
-            turns = re.split(r'(?=\w+: )', content)
-            if len(turns) > 10:
+            # Match patterns like "Human:", "Assistant:", "User:", "Agent:"
+            turn_pattern = r'(Human|User|Assistant|Agent): '
+            parts = re.split(turn_pattern, content)
+            # re.split with capturing group returns: [prefix, "Human", content, "Assistant", content, ...]
+            # Build list of actual turn contents
+            turn_contents = []
+            i = 1  # Start after first prefix
+            while i < len(parts):
+                # parts[i] is the turn speaker, parts[i+1] is the content
+                if i + 1 < len(parts):
+                    speaker = parts[i]
+                    turn_text = parts[i + 1]
+                    turn_contents.append(f"{speaker}: {turn_text}")
+                i += 2
+
+            if len(turn_contents) > 10:
                 # Keep last 10 turns
-                content = ''.join(turns[-10:])
+                content = ''.join(turn_contents[-10:])
                 removed_elements.append("dropped_old_conversation_turns")
 
         # Stage 4: Extract key facts only
         if stage >= 4:
             # Extract key facts from markdown
-            # Keep headers and lists, summarize paragraphs
+            # Keep only: headers, list items, quotes
+            # Remove: all prose paragraphs
             lines = content.split('\n')
             key_facts = []
-            in_list = False
             for line in lines:
-                if line.startswith('#'):
+                stripped = line.strip()
+                # Keep headers
+                if stripped.startswith('#'):
                     key_facts.append(line)
-                    in_list = False
-                elif line.strip().startswith(('- ', '*', '1.', '2.', '3.')):
+                # Keep list items
+                elif stripped.startswith(('- ', '*', '1.', '2.', '3.')):
                     key_facts.append(line)
-                    in_list = True
-                elif line.startswith('>') and in_list:
+                # Keep quotes
+                elif stripped.startswith('>'):
                     key_facts.append(line)
-                elif line.startswith('#'):
-                    key_facts.append(line)
-                # Skip verbose paragraphs, keep short ones
-                elif len(line) < 100 and not line.startswith('---'):
-                    if line.strip():
-                        key_facts.append(line)
+                # Skip prose paragraphs
 
             content = '\n'.join(key_facts)
             removed_elements.append("extracted_key_facts_only")

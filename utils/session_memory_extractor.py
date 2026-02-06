@@ -80,6 +80,15 @@ class SessionMemoryExtractor:
             if any(p.search(line) for p in self.high_patterns + self.medium_patterns):
                 facts.append(line.strip())
         
+        # Also extract dates and tools as standalone facts
+        dates = self.extract_dates(text)
+        for date in dates:
+            facts.append(f"Date: {date}")
+        
+        tools = self.extract_tools(text)
+        for tool in tools:
+            facts.append(f"Tool: {tool}")
+        
         return facts
     
     def _calculate_importance(self, text: str) -> float:
@@ -173,10 +182,12 @@ class SessionMemoryExtractor:
         
         # Build memory structure
         memory = {
+            "content": text,  # Original content
             "date": session_date or datetime.now().strftime("%Y-%m-%d"),
             "facts": [r["content"] for r in ranked],
             "ranked_facts": ranked,
             "tools": tools,
+            "tags": list(set(r["category"] for r in ranked)),  # Categories as tags
             "metadata": {
                 "fact_count": len(ranked),
                 "high_importance_count": len([r for r in ranked if r["importance"] >= 0.7]),

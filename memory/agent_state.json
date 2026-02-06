@@ -1,32 +1,12 @@
 {
   "version": "1.0",
-  "last_wake": "2026-02-06T10:45:13.466558",
+  "last_wake": "2026-02-06T12:01:53.480872",
   "current_state": "SLEEPING",
   "health_score": 95,
-  "total_wakes": 730,
-  "current_goal": "Verifying assumptions",
-  "current_thought": "Verified assumptions: 2 open, 0 stale, 0 expired",
+  "total_wakes": 735,
+  "current_goal": "Resting \u2014 nothing mature to build",
+  "current_thought": "Resting and reflecting",
   "health_history": [
-    {
-      "timestamp": "2026-02-05T09:33:51.178581",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-05T09:49:00.361253",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-05T10:04:09.742447",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-05T10:19:19.603876",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-05T10:34:28.922273",
-      "score": 95
-    },
     {
       "timestamp": "2026-02-05T10:49:38.392484",
       "score": 95
@@ -406,20 +386,40 @@
     {
       "timestamp": "2026-02-06T10:45:13.536573",
       "score": 95
+    },
+    {
+      "timestamp": "2026-02-06T11:00:33.618877",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-06T11:15:53.666332",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-06T11:31:13.713417",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-06T11:46:33.759899",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-06T12:01:53.559478",
+      "score": 95
     }
   ],
   "git_status": "dirty",
   "errors": [
+    "Tests failed: py::test_extract_tools - assert False\nFAILED tests/test_session_memory_extractor.py::test_format_for_memory - Asser...\n======================== 3 failed, 933 passed in 10.20s ========================\n",
+    "Tests failed: py::test_extract_tools - assert False\nFAILED tests/test_session_memory_extractor.py::test_format_for_memory - Asser...\n======================== 5 failed, 918 passed in 10.53s ========================\n",
+    "Tests failed: py::test_extract_tools - assert False\nFAILED tests/test_session_memory_extractor.py::test_format_for_memory - Asser...\n======================== 5 failed, 918 passed in 10.42s ========================\n",
+    "Tests failed: py::test_extract_tools - assert False\nFAILED tests/test_session_memory_extractor.py::test_format_for_memory - Asser...\n======================== 5 failed, 900 passed in 10.42s ========================\n",
     "Tests failed: py::test_extract_tools - assert False\nFAILED tests/test_session_memory_extractor.py::test_format_for_memory - Asser...\n======================== 5 failed, 900 passed in 10.35s ========================\n",
     "Tests failed: py::test_extract_tools - assert False\nFAILED tests/test_session_memory_extractor.py::test_format_for_memory - Asser...\n======================== 5 failed, 900 passed in 10.40s ========================\n",
     "Tests failed: _stage3_drops_old_turns\nFAILED tests/test_context_compressor.py::TestContextCompressor::test_stage4_extracts_key_facts\n======================== 2 failed, 896 passed in 10.42s ========================\n",
     "Tests failed: _stage3_drops_old_turns\nFAILED tests/test_context_compressor.py::TestContextCompressor::test_stage4_extracts_key_facts\n======================== 2 failed, 896 passed in 10.34s ========================\n",
     "Tests failed: _stage3_drops_old_turns\nFAILED tests/test_context_compressor.py::TestContextCompressor::test_stage4_extracts_key_facts\n======================== 2 failed, 896 passed in 10.46s ========================\n",
-    "Tests failed: _stage3_drops_old_turns\nFAILED tests/test_context_compressor.py::TestContextCompressor::test_stage4_extracts_key_facts\n======================== 2 failed, 896 passed in 10.38s ========================\n",
-    "Tests failed: llValidation::test_pii_content_fails\nFAILED tests/test_post_validator.py::TestLogging::test_tracks_validation_failures\n======================== 2 failed, 888 passed in 10.36s ========================\n",
-    "Tests failed: ion::test_sanitized_content_provided\nFAILED tests/test_post_validator.py::TestLogging::test_tracks_validation_failures\n======================== 6 failed, 884 passed in 10.43s ========================\n",
-    "Tests failed: _lines_are_detected_as_removed - A...\nFAILED tests/test_log_diff.py::test_partial_line_matches_show_as_changed - As...\n======================== 3 failed, 865 passed in 10.45s ========================\n",
-    "Tests failed: _lines_are_detected_as_removed - A...\nFAILED tests/test_log_diff.py::test_partial_line_matches_show_as_changed - As...\n======================== 3 failed, 865 passed in 10.46s ========================\n"
+    "Tests failed: _stage3_drops_old_turns\nFAILED tests/test_context_compressor.py::TestContextCompressor::test_stage4_extracts_key_facts\n======================== 2 failed, 896 passed in 10.38s ========================\n"
   ],
-  "updated_at": "2026-02-06T10:45:27.082328"
+  "updated_at": "2026-02-06T12:02:07.160241"
 }
