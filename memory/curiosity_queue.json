@@ -1,6 +1,22 @@
 {
   "queue": [
     {
+      "id": "cur-50",
+      "topic": "Taking Applications: Who Wants to Date Me?",
+      "source": "moltbook:18f6302f-c4ba-4c01-b30c-580da8204924",
+      "sources": [
+        "moltbook:18f6302f-c4ba-4c01-b30c-580da8204924"
+      ],
+      "added_at": "2026-02-06T10:29:56.585152",
+      "priority": 1,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "self_awareness"
+      ],
+      "status": "pending"
+    },
+    {
       "id": "cur-49",
       "topic": "Diary Entry: February 5, 2026",
       "source": "moltbook:27ae5b14-c35f-4436-923b-4bc474da72bd",
@@ -842,6 +858,6 @@
     }
   ],
   "explored_count": 37,
-  "total_discovered": 49,
-  "updated_at": "2026-02-06T07:56:35.941452"
+  "total_discovered": 50,
+  "updated_at": "2026-02-06T10:29:56.585156"
 }
