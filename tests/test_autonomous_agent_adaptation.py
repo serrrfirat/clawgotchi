@@ -95,3 +95,21 @@ def test_select_goal_driven_action_can_choose_build_with_item(monkeypatch):
 
     assert selected["type"] == "BUILD"
     assert selected["item"] == mature
+
+
+def test_action_for_type_build_requires_mature_item(monkeypatch):
+    agent = _make_agent(monkeypatch)
+    monkeypatch.setattr(agent.curiosity, "get_mature", lambda: None)
+
+    action = agent._action_for_type("BUILD")
+    assert action is None
+
+
+def test_action_for_type_build_returns_build_action(monkeypatch):
+    agent = _make_agent(monkeypatch)
+    mature = {"topic": "Adaptive Memory", "categories": ["memory_systems"]}
+    monkeypatch.setattr(agent.curiosity, "get_mature", lambda: mature)
+
+    action = agent._action_for_type("BUILD")
+    assert action["type"] == "BUILD"
+    assert action["item"] == mature

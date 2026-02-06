@@ -416,6 +416,7 @@ class AutonomousAgent:
 
         # Initialize evolution components
         self._init_evolution_components()
+        self._init_ikigai_engine()
 
     def _init_evolution_components(self):
         """Initialize the evolution subsystem components."""
@@ -454,6 +455,18 @@ class AutonomousAgent:
             self.integration_manager = None
             self.self_modifier = None
             self._evolution_enabled = False
+
+    def _init_ikigai_engine(self):
+        """Initialize Stage 2 ikigai/policy engine."""
+        try:
+            from cognition.ikigai_engine import IkigaiEngine
+            self.ikigai = IkigaiEngine(
+                state_path=str(MEMORY_DIR / "ikigai_state.json"),
+                gate_path=str(MEMORY_DIR / "policy_gate.json"),
+                success_target=0.90,
+            )
+        except ImportError:
+            self.ikigai = None
 
     def start(self):
         """Start the autonomous agent in a background thread."""
@@ -566,6 +579,7 @@ class AutonomousAgent:
         # 2. DECIDING - with goal-aware priorities
         self.state.current_state = STATE_DECIDING
         action = await self._decide_next_action()
+        policy_used = "default"
 
         # Apply goal-aware priority adjustment (new)
         if self._evolution_enabled and self.goal_generator and action["type"] == "REST":
@@ -574,6 +588,16 @@ class AutonomousAgent:
             goal_action = self._select_goal_driven_action(adjusted)
             if goal_action:
                 action = goal_action
+
+        # Stage 2 policy trials + promoted ikigai policy.
+        if self.ikigai:
+            active_policy = self.ikigai.get_active_policy()
+            should_trial = active_policy == "ikigai" or (self.state.total_wakes % 6 == 0)
+            if should_trial:
+                ikigai_action = self._select_ikigai_action(action)
+                if ikigai_action:
+                    action = ikigai_action
+                    policy_used = "ikigai"
 
         # Skip if task is in skip list
         if action["type"] in skip_tasks:
@@ -654,6 +678,29 @@ class AutonomousAgent:
             repair_result = await self._self_repair()
             self.state.current_thought = repair_result
             self.state.add_error(f"Auto-repair: {repair_result}")
+
+        # Stage 2 feedback loop: record outcomes + promote/rollback policy.
+        if self.ikigai:
+            try:
+                lowered = result.lower()
+                action_success = (
+                    verify_result.returncode == 0
+                    and "failed" not in lowered
+                    and "error" not in lowered
+                )
+                self.ikigai.record_outcome(action["type"], action_success, result)
+                self.ikigai.record_policy_outcome(policy_used, action_success)
+
+                if self.ikigai.get_active_policy() != "ikigai":
+                    if self.ikigai.should_promote_policy(min_samples=20, min_lift=0.03):
+                        self.ikigai.set_active_policy("ikigai")
+                        self.state.current_thought = "Policy promoted: ikigai"
+                else:
+                    if self.ikigai.should_rollback_policy(window=30):
+                        self.ikigai.set_active_policy("default")
+                        self.state.current_thought = "Policy rollback: default"
+            except Exception as e:
+                self.state.add_error(f"Ikigai feedback error: {e}")
         self.state.save()
 
         # SHARING (disabled — no auto-posting)
@@ -839,6 +886,65 @@ class AutonomousAgent:
             return {"type": action_type, "description": f"Goal-driven: {action_type}"}
 
         return None
+
+    def _action_for_type(self, action_type: str) -> Optional[dict]:
+        """Create an actionable action dict for a given action type."""
+        if action_type == "BUILD":
+            mature = self.curiosity.get_mature()
+            if mature and self._taste_check(mature.get("topic", ""), mature.get("categories", [])):
+                return {
+                    "type": "BUILD",
+                    "description": f"Building: {mature['topic']}",
+                    "item": mature,
+                }
+            return None
+
+        if action_type == "INTEGRATE":
+            if self._evolution_enabled and self.integration_manager:
+                orphaned = self.integration_manager.scan_orphaned_modules(str(BASE_DIR))
+                if orphaned:
+                    return {
+                        "type": "INTEGRATE",
+                        "description": f"Integrating {len(orphaned)} orphaned modules",
+                    }
+            return None
+
+        if action_type == "CONSOLIDATE":
+            if self._evolution_enabled and self.knowledge_synthesizer:
+                if self.knowledge_synthesizer.should_consolidate(self.state.total_wakes):
+                    return {"type": "CONSOLIDATE", "description": "Consolidating knowledge"}
+            return None
+
+        default_descriptions = {
+            "VERIFY": "Verifying assumptions",
+            "CURATE": "Curating memories",
+            "EXPLORE": "Exploring Moltbook for ideas",
+            "REST": "Resting — nothing mature to build",
+        }
+        if action_type in default_descriptions:
+            return {"type": action_type, "description": default_descriptions[action_type]}
+        return None
+
+    def _select_ikigai_action(self, current_action: dict) -> Optional[dict]:
+        """Let ikigai policy choose among currently actionable candidates."""
+        if not self.ikigai:
+            return None
+
+        candidate_types = [current_action["type"], "VERIFY"]
+        if self.state.total_wakes % 5 == 0:
+            candidate_types.append("CURATE")
+        if self.state.total_wakes % 4 == 0:
+            candidate_types.append("EXPLORE")
+
+        for optional_type in ("BUILD", "INTEGRATE", "CONSOLIDATE"):
+            if self._action_for_type(optional_type):
+                candidate_types.append(optional_type)
+
+        candidate_types = list(dict.fromkeys(candidate_types))
+        chosen_type = self.ikigai.choose_action(candidate_types, self.GOAL_BASE_PRIORITIES)
+        if not chosen_type or chosen_type == current_action["type"]:
+            return None
+        return self._action_for_type(chosen_type)
     
     async def _decide_next_action(self) -> dict:
         """Decide what to do in this wake cycle.
