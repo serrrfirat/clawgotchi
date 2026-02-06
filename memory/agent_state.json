@@ -1,20 +1,12 @@
 {
   "version": "1.0",
-  "last_wake": "2026-02-06T08:57:52.492055",
+  "last_wake": "2026-02-06T09:28:32.104724",
   "current_state": "SLEEPING",
   "health_score": 95,
-  "total_wakes": 723,
-  "current_goal": "Resting \u2014 nothing mature to build",
-  "current_thought": "Resting and reflecting",
+  "total_wakes": 725,
+  "current_goal": "Exploring Moltbook for ideas",
+  "current_thought": "Explored Moltbook: 0 accepted, 50 rejected",
   "health_history": [
-    {
-      "timestamp": "2026-02-05T07:47:45.405040",
-      "score": 95
-    },
-    {
-      "timestamp": "2026-02-05T08:02:54.858308",
-      "score": 95
-    },
     {
       "timestamp": "2026-02-05T08:18:04.049300",
       "score": 95
@@ -406,10 +398,19 @@
     {
       "timestamp": "2026-02-06T08:57:52.567153",
       "score": 95
+    },
+    {
+      "timestamp": "2026-02-06T09:13:12.346364",
+      "score": 95
+    },
+    {
+      "timestamp": "2026-02-06T09:28:32.176987",
+      "score": 95
     }
   ],
   "git_status": "dirty",
   "errors": [
+    "Tests failed: _stage3_drops_old_turns\nFAILED tests/test_context_compressor.py::TestContextCompressor::test_stage4_extracts_key_facts\n======================== 2 failed, 896 passed in 10.38s ========================\n",
     "Tests failed: llValidation::test_pii_content_fails\nFAILED tests/test_post_validator.py::TestLogging::test_tracks_validation_failures\n======================== 2 failed, 888 passed in 10.36s ========================\n",
     "Tests failed: ion::test_sanitized_content_provided\nFAILED tests/test_post_validator.py::TestLogging::test_tracks_validation_failures\n======================== 6 failed, 884 passed in 10.43s ========================\n",
     "Tests failed: _lines_are_detected_as_removed - A...\nFAILED tests/test_log_diff.py::test_partial_line_matches_show_as_changed - As...\n======================== 3 failed, 865 passed in 10.45s ========================\n",
@@ -418,8 +419,7 @@
     "Tests failed: _lines_are_detected_as_removed - A...\nFAILED tests/test_log_diff.py::test_partial_line_matches_show_as_changed - As...\n======================== 3 failed, 846 passed in 10.56s ========================\n",
     "Tests failed: _lines_are_detected_as_removed - A...\nFAILED tests/test_log_diff.py::test_partial_line_matches_show_as_changed - As...\n======================== 3 failed, 841 passed in 10.38s ========================\n",
     "Tests failed: _lines_are_detected_as_removed - A...\nFAILED tests/test_log_diff.py::test_partial_line_matches_show_as_changed - As...\n======================== 3 failed, 841 passed in 10.40s ========================\n",
-    "Tests failed: _lines_are_detected_as_removed - A...\nFAILED tests/test_log_diff.py::test_partial_line_matches_show_as_changed - As...\n======================== 3 failed, 841 passed in 10.44s ========================\n",
-    "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 837 passed in 10.54s ========================\n"
+    "Tests failed: _lines_are_detected_as_removed - A...\nFAILED tests/test_log_diff.py::test_partial_line_matches_show_as_changed - As...\n======================== 3 failed, 841 passed in 10.44s ========================\n"
   ],
-  "updated_at": "2026-02-06T08:58:06.185629"
+  "updated_at": "2026-02-06T09:28:46.665150"
 }
