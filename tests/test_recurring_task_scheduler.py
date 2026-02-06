@@ -42,9 +42,9 @@ class TestRecurringTaskScheduler:
     def test_create_schedule(self, scheduler, sample_task):
         """Test creating a new task schedule"""
         result = scheduler.create_schedule(**sample_task)
-        assert result["id"] == "test_task_001"
-        assert result["name"] == "Nightly Backup"
-        assert result["enabled"] == True
+        assert result.id == "test_task_001"
+        assert result.name == "Nightly Backup"
+        assert result.enabled == True
         assert scheduler.get_schedule("test_task_001") is not None
     
     def test_get_next_run_time(self, scheduler, sample_task):
@@ -62,7 +62,7 @@ class TestRecurringTaskScheduler:
         scheduler.record_execution("test_task_001", success=True, output="Backup complete")
         history = scheduler.get_execution_history("test_task_001")
         assert len(history) == 1
-        assert history[0]["success"] == True
+        assert history[0].success == True
     
     def test_record_execution_failure(self, scheduler, sample_task):
         """Test recording a failed execution"""
@@ -70,8 +70,8 @@ class TestRecurringTaskScheduler:
         scheduler.record_execution("test_task_001", success=False, error="Disk full")
         history = scheduler.get_execution_history("test_task_001")
         assert len(history) == 1
-        assert history[0]["success"] == False
-        assert history[0]["error"] == "Disk full"
+        assert history[0].success == False
+        assert history[0].error == "Disk full"
     
     def test_get_pending_tasks(self, scheduler, sample_task):
         """Test finding tasks that are due to run"""
@@ -94,11 +94,11 @@ class TestRecurringTaskScheduler:
         scheduler.create_schedule(**sample_task)
         scheduler.disable_task("test_task_001")
         task = scheduler.get_schedule("test_task_001")
-        assert task["enabled"] == False
+        assert task.enabled == False
         
         scheduler.enable_task("test_task_001")
         task = scheduler.get_schedule("test_task_001")
-        assert task["enabled"] == True
+        assert task.enabled == True
     
     def test_delete_task(self, scheduler, sample_task):
         """Test deleting a task schedule"""

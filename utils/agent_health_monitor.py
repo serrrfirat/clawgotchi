@@ -163,12 +163,20 @@ class AgentHealthMonitor:
             except (ValueError, TypeError):
                 pass
 
-        # Get current metrics
-        cpu = self.get_cpu_percent()
-        memory = self.get_memory_percent()
-
-        self.record_cpu(cpu)
-        self.record_memory(memory)
+        # Get current metrics only if psutil is available
+        cpu = 0.0
+        memory = 0.0
+        if HAS_PSUTIL:
+            cpu = self.get_cpu_percent()
+            memory = self.get_memory_percent()
+            self.record_cpu(cpu)
+            self.record_memory(memory)
+        else:
+            # Use last recorded values if available
+            if self.metrics["cpu_percent"]:
+                cpu = self.metrics["cpu_percent"][-1]
+            if self.metrics["memory_percent"]:
+                memory = self.metrics["memory_percent"][-1]
 
         # Calculate averages from history
         cpu_history = self.metrics["cpu_percent"]
@@ -199,7 +207,8 @@ class AgentHealthMonitor:
             issues.append({"type": "low_success_rate", "message": f"Success rate at {success_rate:.1f}%"})
 
         # Determine overall status
-        if not HAS_PSUTIL:
+        # If we have no data and no psutil, then UNKNOWN
+        if not HAS_PSUTIL and not (cpu_history or memory_history):
             status = HealthStatus.UNKNOWN
         elif issues:
             critical_count = sum(1 for i in issues if (

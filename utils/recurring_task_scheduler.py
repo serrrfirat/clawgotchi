@@ -81,16 +81,27 @@ class CronParser:
         if part == '*':
             return current
         
-        # Handle */n intervals
+        # Handle */n intervals (modulo logic)
         if part.startswith('*/'):
-            interval = int(part[2:])
-            if interval == 0:
-                return current
-            next_val = current + interval
-            while next_val <= max_val:
-                if next_val >= min_val:
-                    return next_val
-                next_val += interval
+            try:
+                interval = int(part[2:])
+                if interval == 0:
+                    return current
+                
+                # Find next value divisible by interval that is >= current
+                # E.g. interval=15, current=12 -> next=15
+                # interval=15, current=15 -> next=15
+                # interval=15, current=16 -> next=30
+                
+                # Standard cron starts at min_val (usually 0)
+                start = min_val
+                while start <= max_val:
+                    if start >= current:
+                        return start
+                    start += interval
+                return None
+            except ValueError:
+                pass
             return None
         
         # Handle ranges (e.g., 1-5)
