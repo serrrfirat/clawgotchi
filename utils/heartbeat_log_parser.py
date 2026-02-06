@@ -48,10 +48,25 @@ def parse_daily_log(content: str) -> Dict:
     test_pattern = r"(\d+)/(\d+) passing"
     for match in re.finditer(test_pattern, content):
         passed, total = match.groups()
-        result["metrics"]["tests"] = result["metrics"].get("tests", []) + [{
+        result["metrics"]["test_runs"] = result["metrics"].get("test_runs", []) + [{
             "passed": int(passed),
             "total": int(total)
         }]
+
+    # Extract build actions from parsed action descriptions
+    builds = []
+    for action in result["actions"]:
+        desc = action.get("description", "")
+        if desc.startswith("Building:"):
+            build_name = desc.split("Building:", 1)[1].strip()
+            if " : " in build_name:
+                build_name = build_name.split(" : ", 1)[0].strip()
+            if ": Built " in build_name:
+                build_name = build_name.split(": Built ", 1)[0].strip()
+            if build_name:
+                builds.append(build_name)
+    if builds:
+        result["metrics"]["builds"] = builds
     
     # Extract commit hashes
     commit_pattern = r"[Cc]ommit:\s*([a-f0-9]+)"
@@ -86,8 +101,9 @@ def extract_metrics(content: str) -> Dict:
     health_pattern = r"Health:\s*(\d+)/100"
     health_scores = re.findall(health_pattern, content)
     if health_scores:
-        metrics["health_scores"] = [int(h) for h in health_scores]
-        metrics["avg_health"] = sum(health_scores) / len(health_scores)
+        parsed_health = [int(h) for h in health_scores]
+        metrics["health_scores"] = parsed_health
+        metrics["avg_health"] = sum(parsed_health) / len(parsed_health)
     
     # Test counts
     test_pattern = r"(\d+)/(\d+) passing"
@@ -126,32 +142,32 @@ def generate_moltbook_summary(content: str, focus_action: str = None) -> str:
     # Health summary
     if parsed["health_scores"]:
         avg_health = sum(parsed["health_scores"]) / len(parsed["health_scores"])
-        lines.append(f"**Health:** {avg_health:.0f}/100 (avg)")
+        lines.append(f"Health: {avg_health:.0f}/100 (avg)")
     
     # Action count
     action_count = len([a for a in parsed["actions"] if "Resting" not in a["description"]])
-    lines.append(f"**Actions:** {action_count} active operations")
+    lines.append(f"Actions: {action_count} active operations")
     
     # Build results
     if parsed["metrics"].get("builds"):
-        lines.append(f"**Built:** {len(parsed['metrics']['builds'])} features")
+        lines.append(f"Built: {len(parsed['metrics']['builds'])} features")
     
     # Test summary
     test_runs = parsed["metrics"].get("test_runs", [])
     if test_runs:
         total_passed = sum(t["passed"] for t in test_runs)
         total = sum(t["total"] for t in test_runs)
-        lines.append(f"**Tests:** {total_passed}/{total} passing")
+        lines.append(f"Tests: {total_passed}/{total} passing")
     
     # Focus action if provided
     if focus_action:
         lines.append("")
-        lines.append(f"**Today's Focus:** {focus_action}")
+        lines.append(f"Today's Focus: {focus_action}")
     
     # Most recent action
     if parsed["actions"]:
         most_recent = parsed["actions"][-1]
         lines.append("")
-        lines.append(f"**Last Activity:** [{most_recent['time']}] {most_recent['description']}")
+        lines.append(f"Last Activity: [{most_recent['time']}] {most_recent['description']}")
     
     return "\n".join(lines)

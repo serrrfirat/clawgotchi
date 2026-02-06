@@ -19,6 +19,7 @@ Hot-Reload: Watches source files for changes and auto-restarts.
 import asyncio
 import json
 import os
+import re
 import subprocess
 import sys
 import threading
@@ -569,12 +570,10 @@ class AutonomousAgent:
         # Apply goal-aware priority adjustment (new)
         if self._evolution_enabled and self.goal_generator and action["type"] == "REST":
             # If REST was chosen, check if goals suggest otherwise
-            adjusted = self.goal_generator.adjust_priority_for_goals({
-                "BUILD": 5, "EXPLORE": 4, "VERIFY": 3, "CURATE": 2, "INTEGRATE": 1
-            })
-            highest = max(adjusted.items(), key=lambda x: x[1])
-            if highest[1] > 5:  # Boosted above baseline
-                action = {"type": highest[0], "description": f"Goal-driven: {highest[0]}"}
+            adjusted = self.goal_generator.adjust_priority_for_goals(self.GOAL_BASE_PRIORITIES)
+            goal_action = self._select_goal_driven_action(adjusted)
+            if goal_action:
+                action = goal_action
 
         # Skip if task is in skip list
         if action["type"] in skip_tasks:
@@ -588,12 +587,17 @@ class AutonomousAgent:
         if action["type"] == "BUILD":
             self.state.current_state = STATE_BUILDING
             result = await self._build_feature(action)
-            # Auto-skillify after building (only if something was actually built)
-            if "No mature curiosity" not in result and "Already built" not in result:
+            # Auto-skillify only when a CLI module was actually built.
+            if result.startswith("Built CLI:"):
+                built_match = re.search(r"Built CLI:\s*([^\s]+)", result)
+                if built_match:
+                    action["_built_cli_path"] = built_match.group(1)
                 skill_result = await self._discover_implement_skill(action)
                 result = f"{result}\n{skill_result}"
+            elif result.startswith("Built skill:"):
+                result = f"{result}\nSkillification skipped (already built as skill)"
             # Update goal progress (new)
-            if self._evolution_enabled and self.goal_generator:
+            if self._evolution_enabled and self.goal_generator and result.startswith("Built "):
                 goal = self.goal_generator.find_goal_by_metric("modules_built")
                 if goal:
                     self.goal_generator.increment_progress(goal.id, 1.0, "Built module")
@@ -768,6 +772,15 @@ class AutonomousAgent:
         
         incomplete = []
         stdout = test_result.stdout + test_result.stderr
+        failed_modules = set(
+            re.findall(
+                r"^FAILED\s+tests/(?:resilience/)?test_([a-z0-9_]+)\.py::",
+                stdout,
+                flags=re.MULTILINE,
+            )
+        )
+        if not failed_modules:
+            return ""
         
         # Check which resilience tests are failing
         failing_modules = [
@@ -779,13 +792,53 @@ class AutonomousAgent:
         ]
         
         for module in failing_modules:
-            if f"test_{module}" in stdout:
+            if module in failed_modules:
                 # Module has tests but they're failing
                 incomplete.append(module.replace("_", " ").title())
         
         if incomplete:
             return ", ".join(incomplete)
         return ""
+
+    GOAL_BASE_PRIORITIES = {
+        "BUILD": 5,
+        "EXPLORE": 4,
+        "VERIFY": 3,
+        "CURATE": 2,
+        "INTEGRATE": 1,
+    }
+
+    def _select_goal_driven_action(self, adjusted: dict) -> Optional[dict]:
+        """Select a goal-driven action only when it is actionable."""
+        by_priority = sorted(adjusted.items(), key=lambda x: x[1], reverse=True)
+        for action_type, score in by_priority:
+            baseline = self.GOAL_BASE_PRIORITIES.get(action_type, 0)
+            if score <= baseline:
+                continue
+
+            if action_type == "BUILD":
+                mature = self.curiosity.get_mature()
+                if mature and self._taste_check(mature.get("topic", ""), mature.get("categories", [])):
+                    return {
+                        "type": "BUILD",
+                        "description": f"Goal-driven: BUILD ({mature.get('topic', 'mature item')})",
+                        "item": mature,
+                    }
+                continue
+
+            if action_type == "INTEGRATE":
+                if self._evolution_enabled and self.integration_manager:
+                    orphaned = self.integration_manager.scan_orphaned_modules(str(BASE_DIR))
+                    if orphaned:
+                        return {
+                            "type": "INTEGRATE",
+                            "description": f"Goal-driven: INTEGRATE ({len(orphaned)} orphaned modules)",
+                        }
+                continue
+
+            return {"type": action_type, "description": f"Goal-driven: {action_type}"}
+
+        return None
     
     async def _decide_next_action(self) -> dict:
         """Decide what to do in this wake cycle.
@@ -956,7 +1009,7 @@ class AutonomousAgent:
         if target.exists():
             return f"CLI already exists: {package}/{module_name}"
 
-        code = self._generate_cli_code(module_name, title)
+        code = self._generate_cli_code(module_name, title, idea)
         target.write_text(code)
 
         # Generate matching test in appropriate test subdirectory
@@ -1290,8 +1343,29 @@ def test_status_command():
         scripts_dir.mkdir(parents=True, exist_ok=True)
         
         # Check if the module was actually created
-        module_path = BASE_DIR / f"{module_name}.py"
-        if not module_path.exists():
+        module_path = None
+        explicit_rel = action.get("_built_cli_path")
+        if explicit_rel:
+            explicit_path = BASE_DIR / explicit_rel
+            if explicit_path.exists():
+                module_path = explicit_path
+
+        if module_path is None:
+            direct = BASE_DIR / f"{module_name}.py"
+            if direct.exists():
+                module_path = direct
+
+        if module_path is None:
+            candidates = [
+                p for p in BASE_DIR.rglob(f"{module_name}.py")
+                if "tests" not in p.parts
+                and "skills" not in p.parts
+                and "__pycache__" not in p.parts
+            ]
+            if candidates:
+                module_path = max(candidates, key=lambda p: p.stat().st_mtime)
+
+        if module_path is None:
             # Look for recent Python files that might be the built feature
             recent_files = sorted(BASE_DIR.glob("*.py"), key=lambda p: p.stat().st_mtime, reverse=True)
             for f in recent_files:
@@ -1305,15 +1379,12 @@ def test_status_command():
                         break
         
         # Copy existing module to skills
-        if module_path.exists():
+        if module_path is not None and module_path.exists():
             import shutil
             shutil.copy(module_path, scripts_dir / f"{module_name}.py")
             print(f"    📄 Copied: {module_path.name} → skills/{module_name}/scripts/")
         else:
-            # Generate from template
-            script_content = self._generate_cli_code(module_name, title, item)
-            (scripts_dir / f"{module_name}.py").write_text(script_content)
-            print(f"    📄 Created: skills/{module_name}/scripts/{module_name}.py")
+            return f"Skillification skipped: source module not found ({module_name})"
         
         # Generate SKILL.md
         skill_md = self._generate_skill_md(module_name, title, item)
