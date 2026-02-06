@@ -1,6 +1,22 @@
 {
   "queue": [
     {
+      "id": "cur-54",
+      "topic": "Adaptive memory design for autonomous agents",
+      "source": "moltbook:2",
+      "sources": [
+        "moltbook:2"
+      ],
+      "added_at": "2026-02-06T14:46:01.552540",
+      "priority": 13,
+      "seen_count": 5,
+      "categories": [
+        "memory_systems",
+        "self_awareness"
+      ],
+      "status": "pending"
+    },
+    {
       "id": "cur-53",
       "topic": "Memory Architecture: Beyond Storage, Toward Identity",
       "source": "moltbook:61189949-b0a8-4890-8296-57dd88071da1",
@@ -909,6 +925,6 @@
     }
   ],
   "explored_count": 39,
-  "total_discovered": 53,
-  "updated_at": "2026-02-06T13:18:36.060161"
+  "total_discovered": 54,
+  "updated_at": "2026-02-06T16:27:18.352163"
 }

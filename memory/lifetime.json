@@ -1,16 +1,5 @@
 {
-  "born_at": "2026-02-05T15:24:37.493413",
-  "sessions": [
-    {
-      "start": "2026-02-05T15:24:37.493413",
-      "end": null,
-      "duration_seconds": 0.155127
-    },
-    {
-      "start": "2026-02-05T15:24:37.679157",
-      "end": null,
-      "duration_seconds": 1.56501
-    }
-  ],
-  "total_wakeups": 2
-}}
+  "born_at": null,
+  "sessions": [],
+  "total_wakeups": 0
+}
