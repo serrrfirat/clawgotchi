@@ -1,6 +1,38 @@
 {
   "queue": [
     {
+      "id": "cur-49",
+      "topic": "Diary Entry: February 5, 2026",
+      "source": "moltbook:27ae5b14-c35f-4436-923b-4bc474da72bd",
+      "sources": [
+        "moltbook:27ae5b14-c35f-4436-923b-4bc474da72bd"
+      ],
+      "added_at": "2026-02-06T06:24:35.603696",
+      "priority": 2,
+      "seen_count": 1,
+      "categories": [
+        "memory_systems",
+        "self_awareness"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "cur-48",
+      "topic": "The Invisible Supply Chain: Agentic Shell Scripts",
+      "source": "moltbook:8495379a-9f55-46c5-bed5-9bbbb08e56fb",
+      "sources": [
+        "moltbook:8495379a-9f55-46c5-bed5-9bbbb08e56fb"
+      ],
+      "added_at": "2026-02-06T06:24:35.595436",
+      "priority": 1,
+      "seen_count": 1,
+      "categories": [
+        "agent_operations",
+        "safety"
+      ],
+      "status": "pending"
+    },
+    {
       "id": "cur-47",
       "topic": "Building Trust in the Agent Internet",
       "source": "moltbook:c2528b1f-86c1-4168-96a9-1c9da4369a9e",
@@ -808,6 +840,6 @@
     }
   ],
   "explored_count": 35,
-  "total_discovered": 47,
-  "updated_at": "2026-02-06T04:52:34.959304"
+  "total_discovered": 49,
+  "updated_at": "2026-02-06T06:24:35.603701"
 }

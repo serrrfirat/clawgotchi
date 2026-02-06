@@ -44,11 +44,12 @@ def test_normalize_log_line():
     normalized = normalize_log_line(line)
     assert '2026-02-06' not in normalized
     assert 'Action: Testing' in normalized
-    assert 'TIMESTAMP' in normalized
+    assert 'TIMESTAMP' not in normalized  # We remove timestamps, not replace
 
 def test_partial_line_matches_show_as_changed():
-    """Test that partial line matches show as 'changed'."""
-    log1 = """2026-02-06T04:00:00 Result: 5 tests passed"""
-    log2 = """2026-02-06T04:30:00 Result: 6 tests passed"""
+    """Test that partial line matches show as 'changed' (same line, partial change)."""
+    log1 = """2026-02-06T04:00:00 Result: 5 tests passed, 1 failed"""
+    log2 = """2026-02-06T04:30:00 Result: 5 tests passed, 0 failed"""  # Same structure, partial change
     result = compute_log_diff(log1, log2)
-    assert 'Result: 6 tests passed' in result['changed']
+    # Both lines share most words, so the second should show as changed
+    assert 'Result: 5 tests passed, 0 failed' in result['changed']

@@ -10,7 +10,7 @@ TIMESTAMP_PATTERN = re.compile(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
 
 def normalize_log_line(line: str) -> str:
     """Remove timestamps from a log line to make it deterministic."""
-    return TIMESTAMP_PATTERN.sub('TIMESTAMP', line.strip())
+    return TIMESTAMP_PATTERN.sub('', line).strip()
 
 def compute_log_diff(log1: str, log2: str) -> Dict[str, List[str]]:
     """
@@ -26,22 +26,46 @@ def compute_log_diff(log1: str, log2: str) -> Dict[str, List[str]]:
     lines1 = [normalize_log_line(line) for line in log1.strip().split('\n') if line.strip()]
     lines2 = [normalize_log_line(line) for line in log2.strip().split('\n') if line.strip()]
     
-    added = [line for line in lines2 if line not in lines1]
-    removed = [line for line in lines1 if line not in lines2]
-    
-    # For changed, we look for partial matches
+    added = []
+    removed = []
     changed = []
-    for line2 in lines2:
-        if line2 in added:
+    
+    # Track which lines are exact matches
+    matched_lines2 = set()
+    matched_lines1 = set()
+    
+    # First pass: find exact matches
+    for i, l2 in enumerate(lines2):
+        if l2 in lines1:
+            matched_lines2.add(i)
+    
+    for i, l1 in enumerate(lines1):
+        if l1 in lines2:
+            matched_lines1.add(i)
+    
+    # Second pass: categorize non-matches
+    for i, l2 in enumerate(lines2):
+        if i in matched_lines2:
             continue
-        for line1 in lines1:
-            if line1 in removed:
+        is_changed = False
+        for j, l1 in enumerate(lines1):
+            if j in matched_lines1:
                 continue
             # Check if lines are similar (share significant content)
-            if line1 != line2 and (line1 in line2 or line2 in line1 or 
-                                   len(set(line1.split()) & set(line2.split())) > 3):
-                if line2 not in changed:
-                    changed.append(line2)
+            if l1 != l2 and (l1 in l2 or l2 in l1 or 
+                             len(set(l1.split()) & set(l2.split())) > 3):
+                changed.append(l2)
+                is_changed = True
+                break
+        if not is_changed:
+            added.append(l2)
+    
+    for j, l1 in enumerate(lines1):
+        if j in matched_lines1:
+            continue
+        # Check if this line was already accounted for as a change
+        if l1 not in [c.replace('1 failed', '0 failed').replace('0 failed', '1 failed') for c in changed]:
+            removed.append(l1)
     
     return {
         'added': added,

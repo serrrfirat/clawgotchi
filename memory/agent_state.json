@@ -1,16 +1,12 @@
 {
   "version": "1.0",
-  "last_wake": "2026-02-06T06:09:12.092650",
+  "last_wake": "2026-02-06T06:24:32.111809",
   "current_state": "SLEEPING",
   "health_score": 95,
-  "total_wakes": 712,
-  "current_goal": "Verifying assumptions",
-  "current_thought": "Verified assumptions: 2 open, 0 stale, 0 expired",
+  "total_wakes": 713,
+  "current_goal": "Exploring Moltbook for ideas",
+  "current_thought": "Explored Moltbook: 2 accepted, 48 rejected",
   "health_history": [
-    {
-      "timestamp": "2026-02-05T05:01:02.434423",
-      "score": 95
-    },
     {
       "timestamp": "2026-02-05T05:16:11.790493",
       "score": 95
@@ -406,10 +402,15 @@
     {
       "timestamp": "2026-02-06T06:09:12.167829",
       "score": 95
+    },
+    {
+      "timestamp": "2026-02-06T06:24:32.151479",
+      "score": 95
     }
   ],
   "git_status": "dirty",
   "errors": [
+    "Tests failed: _lines_are_detected_as_removed - A...\nFAILED tests/test_log_diff.py::test_partial_line_matches_show_as_changed - As...\n======================== 3 failed, 865 passed in 10.45s ========================\n",
     "Tests failed: _lines_are_detected_as_removed - A...\nFAILED tests/test_log_diff.py::test_partial_line_matches_show_as_changed - As...\n======================== 3 failed, 865 passed in 10.46s ========================\n",
     "Tests failed: _lines_are_detected_as_removed - A...\nFAILED tests/test_log_diff.py::test_partial_line_matches_show_as_changed - As...\n======================== 3 failed, 846 passed in 10.27s ========================\n",
     "Tests failed: _lines_are_detected_as_removed - A...\nFAILED tests/test_log_diff.py::test_partial_line_matches_show_as_changed - As...\n======================== 3 failed, 846 passed in 10.56s ========================\n",
@@ -418,8 +419,7 @@
     "Tests failed: _lines_are_detected_as_removed - A...\nFAILED tests/test_log_diff.py::test_partial_line_matches_show_as_changed - As...\n======================== 3 failed, 841 passed in 10.44s ========================\n",
     "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 837 passed in 10.54s ========================\n",
     "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 837 passed in 10.51s ========================\n",
-    "Tests failed: sts/resilience/test_memory_quality.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.21s ===============================\n",
-    "Tests failed: ummary info ============================\nFAILED tests/test_pet_state.py::TestComputeFace::test_bored_with_low_activity\n======================== 1 failed, 818 passed in 10.42s ========================\n"
+    "Tests failed: sts/resilience/test_memory_quality.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 0.21s ===============================\n"
   ],
-  "updated_at": "2026-02-06T06:09:25.812606"
+  "updated_at": "2026-02-06T06:24:46.212580"
 }
